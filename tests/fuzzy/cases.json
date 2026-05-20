@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "comment": "Sprint 2 smoke set. Sprint 2 PRD requires ≥80% pass rate at 50 cases — we start with 8 covering domestic/overseas, group types, and vibe combinations.",
+  "cases": [
+    {
+      "id": "kyoto-couple-food",
+      "destination": "京都",
+      "days": 5,
+      "people": 2,
+      "preferences": ["food", "culture"],
+      "groupType": "couple",
+      "budget": { "min": 600, "max": 1500 },
+      "specialNeeds": []
+    },
+    {
+      "id": "tokyo-solo-shopping",
+      "destination": "东京",
+      "days": 4,
+      "people": 1,
+      "preferences": ["shopping", "food"],
+      "groupType": "solo",
+      "budget": { "min": 400, "max": 1200 },
+      "specialNeeds": []
+    },
+    {
+      "id": "shanghai-family-leisure",
+      "destination": "上海",
+      "days": 3,
+      "people": 4,
+      "preferences": ["leisure", "food"],
+      "groupType": "family",
+      "budget": { "min": 300, "max": 800 },
+      "specialNeeds": ["baby"]
+    },
+    {
+      "id": "chengdu-friends-food",
+      "destination": "成都",
+      "days": 4,
+      "people": 3,
+      "preferences": ["food", "culture"],
+      "groupType": "friends",
+      "budget": { "min": 250, "max": 700 },
+      "specialNeeds": []
+    },
+    {
+      "id": "lisbon-couple-culture",
+      "destination": "Lisbon",
+      "days": 5,
+      "people": 2,
+      "preferences": ["culture", "food", "leisure"],
+      "groupType": "couple",
+      "budget": { "min": 800, "max": 1800 },
+      "specialNeeds": []
+    },
+    {
+      "id": "yunnan-solo-nature",
+      "destination": "大理",
+      "days": 6,
+      "people": 1,
+      "preferences": ["nature", "leisure"],
+      "groupType": "solo",
+      "budget": { "min": 200, "max": 600 },
+      "specialNeeds": []
+    },
+    {
+      "id": "bangkok-friends-nightlife",
+      "destination": "Bangkok",
+      "days": 4,
+      "people": 4,
+      "preferences": ["food", "shopping", "leisure"],
+      "groupType": "friends",
+      "budget": { "min": 500, "max": 1200 },
+      "specialNeeds": []
+    },
+    {
+      "id": "xian-family-culture",
+      "destination": "西安",
+      "days": 3,
+      "people": 4,
+      "preferences": ["culture", "food"],
+      "groupType": "family",
+      "budget": { "min": 300, "max": 800 },
+      "specialNeeds": []
+    }
+  ]
+}
