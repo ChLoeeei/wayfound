@@ -5,7 +5,10 @@ import path from 'path';
 import {defineConfig, loadEnv} from 'vite';
 
 export default defineConfig(({mode}) => {
-  const env = loadEnv(mode, '.', '');
+  const fileEnv = loadEnv(mode, '.', '');
+  // Merge .env file values with process.env (CI/CD providers like Cloudflare
+  // Pages and Railway inject env vars via process.env, not .env files)
+  const env = { ...fileEnv, ...process.env };
   return {
     plugins: [react(), tailwindcss()],
     define: {
