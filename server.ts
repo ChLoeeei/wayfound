@@ -21,6 +21,23 @@ async function startServer() {
 
   app.use(express.json({ limit: '1mb' }));
 
+  // Allow requests from Cloudflare Pages and local dev
+  app.use((req, res, next) => {
+    const allowed = [
+      'https://wayfound-ezv.pages.dev',
+      'http://localhost:3000',
+      'http://localhost:5173',
+    ];
+    const origin = req.headers.origin || '';
+    if (allowed.includes(origin) || origin.endsWith('.pages.dev')) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    }
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
+  });
+
   app.use((req, _res, next) => {
     if (req.url.startsWith('/api/')) {
       console.log(`[api] ${req.method} ${req.url}`);
