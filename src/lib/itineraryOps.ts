@@ -173,7 +173,7 @@ export function proxyImageUrl(url: string | undefined): string | undefined {
   try {
     const u = new URL(url, window.location.origin);
     if (/(?:^|\.)(autonavi|amap)\.com$/.test(u.host)) {
-      return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+      return `${process.env.API_BASE_URL}/api/image-proxy?url=${encodeURIComponent(url)}`;
     }
   } catch {
     return url;

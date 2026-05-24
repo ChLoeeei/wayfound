@@ -66,7 +66,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
 
     try {
       const days = diffDays(input.startDate, input.endDate);
-      const res = await fetch('/api/generate-itinerary', {
+      const res = await fetch(`${process.env.API_BASE_URL}/api/generate-itinerary`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -105,7 +105,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
     setPlanFormOpen(false);
 
     try {
-      const res = await fetch('/api/clarify-input', {
+      const res = await fetch(`${process.env.API_BASE_URL}/api/clarify-input`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ input }),

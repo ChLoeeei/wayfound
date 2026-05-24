@@ -146,7 +146,7 @@ export default function ItineraryPane({
     setVerifying(true);
     setIssues([]);
     try {
-      const res = await fetch('/api/verify-itinerary', {
+      const res = await fetch(`${process.env.API_BASE_URL}/api/verify-itinerary`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ itinerary }),

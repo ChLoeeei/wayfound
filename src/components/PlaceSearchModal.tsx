@@ -70,7 +70,7 @@ export default function PlaceSearchModal({
       setError('');
       try {
         const params = new URLSearchParams({ q: query, region: destination, limit: '10' });
-        const res = await fetch(`/api/search-places?${params.toString()}`);
+        const res = await fetch(`${process.env.API_BASE_URL}/api/search-places?${params.toString()}`);
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Search failed');
         setResults(data.results ?? []);
