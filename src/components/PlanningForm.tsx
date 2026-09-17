@@ -160,7 +160,7 @@ export default function PlanningForm({ loading, onSubmit, memory = emptyMemory()
             <input
               type="text"
               required
-              placeholder="e.g. Beijing / Kyoto"
+              placeholder="e.g. 北京 / Kyoto"
               value={destination}
               onChange={e => setDestination(e.target.value)}
               data-testid="field-destination"
