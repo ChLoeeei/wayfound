@@ -14,6 +14,16 @@ import { insertPlace } from '../lib/itineraryOps';
 import { downloadAsPng, downloadAsPdf } from '../lib/export';
 import { loginWithGoogle, logout, saveItinerary, shareItinerary, onAuthStateChanged } from '../supabase';
 import type { User } from '@supabase/supabase-js';
+import {
+  loadMemory,
+  saveMemory,
+  clearMemory,
+  recordPlanningSession,
+  recordPlaceDeleted,
+  buildMemoryPromptContext,
+  summariseMemory,
+  type TravelMemory,
+} from '../lib/memory';
 
 interface ItineraryAppProps {
   darkMode: boolean;
@@ -31,6 +41,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
   const [error, setError] = useState('');
 
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+  const [memory, setMemory] = useState<TravelMemory>(() => loadMemory());
   const [user, setUser] = useState<User | null>(null);
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -66,6 +77,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
 
     try {
       const days = diffDays(input.startDate, input.endDate);
+      const memoryContext = buildMemoryPromptContext(memory, input.destination);
       const res = await fetch(`${process.env.API_BASE_URL}/api/generate-itinerary`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -80,6 +92,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
           startDate: input.startDate,
           endDate: input.endDate,
           clarifications: input.clarifications,
+          memoryContext: memoryContext || undefined,
         }),
       });
 
@@ -92,6 +105,10 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
       setItinerary(it);
       setStage('ready');
       itineraryDrawer.setSnap('half');
+
+      const updatedMemory = recordPlanningSession(memory, input);
+      saveMemory(updatedMemory);
+      setMemory(updatedMemory);
     } catch (err: any) {
       setError(err.message);
       setStage('idle');
@@ -132,6 +149,18 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
     await runGeneration(merged);
   };
 
+  const handleRequestDelete = (place: Place, dayNumber: number, period: SlotPeriod, atIndex: number) => {
+    setUndo({ place, dayNumber, period, atIndex });
+    const updatedMemory = recordPlaceDeleted(memory, place.type);
+    saveMemory(updatedMemory);
+    setMemory(updatedMemory);
+  };
+
+  const handleClearMemory = () => {
+    clearMemory();
+    setMemory(loadMemory());
+  };
+
   const handleSaveToCloud = async () => {
     if (!user) {
       await loginWithGoogle();
@@ -153,7 +182,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
   const handleExportPng = async () => {
     if (!itinerary) return;
     if (!itineraryPaneRef.current) {
-      setError('导出失败：行程容器未挂载');
+      setError('Export failed: itinerary container not mounted');
       console.error('[export] itineraryPaneRef.current is null');
       return;
     }
@@ -162,7 +191,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
     try {
       await downloadAsPng(itineraryPaneRef.current, itinerary.title);
     } catch (e: any) {
-      setError(e.message ?? '导出失败');
+      setError(e.message ?? 'Export failed');
       console.error('[export] PNG failed:', e);
     } finally {
       setExporting(false);
@@ -180,7 +209,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
     setShareUrl(null);
     try {
       const id = await shareItinerary(itinerary);
-      if (!id) throw new Error('分享失败');
+      if (!id) throw new Error('Failed to create share link');
       const url = `${window.location.origin}${window.location.pathname}#/share/${id}`;
       setShareUrl(url);
       try {
@@ -190,7 +219,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
       }
       setTimeout(() => setShareUrl(null), 8000);
     } catch (e: any) {
-      setError(e.message ?? '分享失败');
+      setError(e.message ?? 'Failed to create share link');
     } finally {
       setSharing(false);
     }
@@ -208,6 +237,8 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
     shareUrl,
     error,
     darkMode,
+    memory,
+    onClearMemory: handleClearMemory,
     onSubmit: handleFormSubmit,
     onSaveToCloud: handleSaveToCloud,
     onLogout: logout,
@@ -229,9 +260,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
           selectedPlaceId={selectedPlaceId}
           onSelectPlace={setSelectedPlaceId}
           onUpdateItinerary={setItinerary}
-          onRequestDelete={(place, dayNumber, period, atIndex) =>
-            setUndo({ place, dayNumber, period, atIndex })
-          }
+          onRequestDelete={handleRequestDelete}
           onAddPlaceToSlot={(dayNumber, period) => setSearchTarget({ dayNumber, period })}
           rootRef={itineraryPaneRef}
         />
@@ -240,7 +269,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
           <div className="h-full min-h-[40vh] flex flex-col items-center justify-center text-center opacity-60">
             <Plane size={40} className="mb-4 opacity-30" />
             <p className="font-display text-xl">Your journey awaits.</p>
-            <p className="font-sans text-xs mt-2 text-text-muted">填写信息以开始规划</p>
+            <p className="font-sans text-xs mt-2 text-text-muted">Fill in your trip details to get started</p>
           </div>
         )
       )}
@@ -289,7 +318,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
               data-testid="open-plan-form"
               className="px-3 py-2 text-xs uppercase tracking-widest font-medium bg-accent text-white rounded-full inline-flex items-center gap-1"
             >
-              <SlidersHorizontal size={12} /> 规划
+              <SlidersHorizontal size={12} /> Plan
             </button>
           </div>
         </header>
@@ -307,7 +336,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
           open={true}
           snap={itineraryDrawer.snap}
           onSnapChange={itineraryDrawer.setSnap}
-          title={itinerary ? itinerary.title : '行程'}
+          title={itinerary ? itinerary.title : 'Itinerary'}
           testId="itinerary-sheet"
         >
           <div className="p-4">{itineraryContent}</div>
@@ -320,7 +349,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
             if (s === 'peek') setPlanFormOpen(false);
           }}
           onClose={() => setPlanFormOpen(false)}
-          title="规划行程"
+          title="Plan your trip"
           modal
           testId="plan-sheet"
         >
@@ -330,7 +359,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
 
       {undo && itinerary && (
         <UndoSnack
-          message={`已删除「${undo.place.name}」`}
+          message={`Deleted "${undo.place.name}"`}
           onUndo={() => {
             const restored = insertPlace(itinerary, undo.place, undo.dayNumber, undo.period, undo.atIndex);
             setItinerary(restored);

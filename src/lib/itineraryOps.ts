@@ -3,9 +3,9 @@ import type { Itinerary, Day, Place, SlotPeriod, TimeSlot } from '../types';
 export const PERIOD_ORDER: SlotPeriod[] = ['morning', 'afternoon', 'evening'];
 
 export const PERIOD_LABEL: Record<SlotPeriod, string> = {
-  morning: '上午',
-  afternoon: '下午',
-  evening: '晚上',
+  morning: 'Morning',
+  afternoon: 'Afternoon',
+  evening: 'Evening',
 };
 
 export const PERIOD_TIME_HINT: Record<SlotPeriod, string> = {

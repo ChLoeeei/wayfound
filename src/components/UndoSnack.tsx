@@ -29,7 +29,7 @@ export default function UndoSnack({ message, onUndo, onDismiss, duration = 5000 
         className="inline-flex items-center gap-1 font-medium text-accent hover:text-white transition-colors"
       >
         <Undo2 size={14} />
-        撤销
+        Undo
       </button>
     </div>
   );

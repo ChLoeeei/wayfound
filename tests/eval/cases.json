@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "comment": "Evaluation harness case set — 25 queries spanning domestic (Amap-verifiable) and international (general-knowledge fallback) destinations, 1-14 day trips, all group types, and the full vibe/special-needs space. Used by tests/eval/run-eval.ts, not by the CI-gating tests/fuzzy suite.",
+  "cases": [
+    { "id": "beijing-solo-history", "destination": "北京", "days": 4, "people": 1, "preferences": ["culture", "food"], "groupType": "solo", "budget": { "min": 300, "max": 900 }, "specialNeeds": [] },
+    { "id": "shanghai-couple-food-shopping", "destination": "上海", "days": 3, "people": 2, "preferences": ["food", "shopping"], "groupType": "couple", "budget": { "min": 400, "max": 1200 }, "specialNeeds": [] },
+    { "id": "chengdu-friends-food", "destination": "成都", "days": 4, "people": 3, "preferences": ["food", "culture"], "groupType": "friends", "budget": { "min": 250, "max": 700 }, "specialNeeds": [] },
+    { "id": "xian-family-culture", "destination": "西安", "days": 5, "people": 4, "preferences": ["culture", "food"], "groupType": "family", "budget": { "min": 300, "max": 800 }, "specialNeeds": ["baby"] },
+    { "id": "hangzhou-couple-nature", "destination": "杭州", "days": 3, "people": 2, "preferences": ["nature", "leisure"], "groupType": "couple", "budget": { "min": 350, "max": 1000 }, "specialNeeds": [] },
+    { "id": "guilin-family-nature", "destination": "桂林", "days": 5, "people": 4, "preferences": ["nature", "adventure"], "groupType": "family", "budget": { "min": 300, "max": 900 }, "specialNeeds": ["vegetarian"] },
+    { "id": "sanya-couple-leisure", "destination": "三亚", "days": 6, "people": 2, "preferences": ["leisure", "nature"], "groupType": "couple", "budget": { "min": 600, "max": 2000 }, "specialNeeds": [] },
+    { "id": "lijiang-solo-adventure", "destination": "丽江", "days": 4, "people": 1, "preferences": ["adventure", "nature"], "groupType": "solo", "budget": { "min": 200, "max": 600 }, "specialNeeds": [] },
+    { "id": "qingdao-friends-food-leisure", "destination": "青岛", "days": 3, "people": 3, "preferences": ["food", "leisure"], "groupType": "friends", "budget": { "min": 250, "max": 700 }, "specialNeeds": [] },
+    { "id": "harbin-couple-culture", "destination": "哈尔滨", "days": 4, "people": 2, "preferences": ["culture", "food"], "groupType": "couple", "budget": { "min": 300, "max": 800 }, "specialNeeds": [] },
+    { "id": "chongqing-friends-food-adventure", "destination": "重庆", "days": 3, "people": 4, "preferences": ["food", "adventure"], "groupType": "friends", "budget": { "min": 200, "max": 600 }, "specialNeeds": [] },
+    { "id": "suzhou-couple-culture-leisure", "destination": "苏州", "days": 2, "people": 2, "preferences": ["culture", "leisure"], "groupType": "couple", "budget": { "min": 300, "max": 900 }, "specialNeeds": [] },
+    { "id": "shenzhen-solo-shopping", "destination": "深圳", "days": 3, "people": 1, "preferences": ["shopping", "food"], "groupType": "solo", "budget": { "min": 300, "max": 1000 }, "specialNeeds": ["accessibility"] },
+    { "id": "tokyo-family-food-culture", "destination": "Tokyo", "days": 6, "people": 4, "preferences": ["food", "culture"], "groupType": "family", "budget": { "min": 500, "max": 1500 }, "specialNeeds": ["baby"] },
+    { "id": "kyoto-couple-culture-nature", "destination": "Kyoto", "days": 5, "people": 2, "preferences": ["culture", "nature"], "groupType": "couple", "budget": { "min": 600, "max": 1500 }, "specialNeeds": [] },
+    { "id": "paris-couple-culture-food", "destination": "Paris", "days": 5, "people": 2, "preferences": ["culture", "food"], "groupType": "couple", "budget": { "min": 700, "max": 2000 }, "specialNeeds": [] },
+    { "id": "london-solo-culture", "destination": "London", "days": 4, "people": 1, "preferences": ["culture", "shopping"], "groupType": "solo", "budget": { "min": 500, "max": 1500 }, "specialNeeds": [] },
+    { "id": "newyork-friends-shopping-food", "destination": "New York", "days": 5, "people": 3, "preferences": ["shopping", "food"], "groupType": "friends", "budget": { "min": 600, "max": 1800 }, "specialNeeds": [] },
+    { "id": "bangkok-family-food-leisure", "destination": "Bangkok", "days": 6, "people": 4, "preferences": ["food", "leisure"], "groupType": "family", "budget": { "min": 300, "max": 900 }, "specialNeeds": ["vegetarian"] },
+    { "id": "bali-couple-nature-leisure", "destination": "Bali", "days": 7, "people": 2, "preferences": ["nature", "leisure"], "groupType": "couple", "budget": { "min": 400, "max": 1200 }, "specialNeeds": [] },
+    { "id": "seoul-friends-shopping-food", "destination": "Seoul", "days": 4, "people": 3, "preferences": ["shopping", "food"], "groupType": "friends", "budget": { "min": 350, "max": 1000 }, "specialNeeds": [] },
+    { "id": "rome-couple-culture-food", "destination": "Rome", "days": 14, "people": 2, "preferences": ["culture", "food"], "groupType": "couple", "budget": { "min": 500, "max": 1400 }, "specialNeeds": [] },
+    { "id": "barcelona-friends-culture-adventure", "destination": "Barcelona", "days": 5, "people": 4, "preferences": ["culture", "adventure"], "groupType": "friends", "budget": { "min": 400, "max": 1100 }, "specialNeeds": [] },
+    { "id": "dubai-family-shopping-leisure", "destination": "Dubai", "days": 1, "people": 5, "preferences": ["shopping", "leisure"], "groupType": "family", "budget": { "min": 800, "max": 3000 }, "specialNeeds": ["pet"] },
+    { "id": "sydney-solo-nature-adventure", "destination": "Sydney", "days": 6, "people": 1, "preferences": ["nature", "adventure"], "groupType": "solo", "budget": { "min": 500, "max": 1500 }, "specialNeeds": [] }
+  ]
+}

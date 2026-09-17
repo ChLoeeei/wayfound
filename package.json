@@ -14,6 +14,7 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:fuzzy": "vitest run --config vitest.fuzzy.config.ts",
+    "eval": "tsx tests/eval/run-eval.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },

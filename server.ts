@@ -1,11 +1,41 @@
 import 'dotenv/config';
 import express from "express";
 import path from "path";
+import fs from "fs";
+import { randomUUID } from "node:crypto";
 import { createServer as createViteServer } from "vite";
 import OpenAI from "openai";
 import { buildClarifications } from "./src/lib/clarifications";
-import { generateItinerary, type PlanningRequest } from "./server/agent";
+import { generateItinerary, type PlanningRequest, type ToolCallRecord, type AgentStepRecord } from "./server/agent";
 import { searchPlaces, parseLngLat } from "./server/tools/amap";
+import { computeSourceAttributions, computeGroundingWarning } from "./server/tools/attributions";
+
+// Persistent per-request trace files for the debug TraceViewer
+// (src/components/TraceViewer.tsx) — one JSON file per generation request,
+// written unconditionally (no env gate; reading them back is what's
+// gated — see the GET /api/trace/:requestId route below and the
+// frontend's debug-only entry point). No retention/cleanup policy: this
+// is a debug aid, not a production logging pipeline — files accumulate
+// under server/logs/traces/ until something else cleans them up.
+const TRACE_DIR = path.join(process.cwd(), "server", "logs", "traces");
+const REQUEST_ID_PATTERN = /^[a-f0-9-]{36}$/; // matches crypto.randomUUID()'s format — also the sanitization boundary for the :requestId route param below
+
+function writeTraceFile(requestId: string, payload: Record<string, unknown>) {
+  try {
+    fs.mkdirSync(TRACE_DIR, { recursive: true });
+    fs.writeFileSync(path.join(TRACE_DIR, `${requestId}.json`), JSON.stringify(payload, null, 2));
+  } catch (err) {
+    // Trace persistence is a debug aid, not a hard dependency — never let
+    // a filesystem hiccup here affect the actual itinerary response.
+    console.error("[trace] failed to write trace file:", err);
+  }
+}
+
+// Same flag as server/agent.ts's recovery-layer gating (see its "5-layer
+// error-recovery pipeline" comment) — this is layer 5, the route-level
+// try/catch below. Not exercised by `npm run eval` (which calls
+// generateItinerary() directly), only relevant when hitting this route.
+const RECOVERY_DISABLED = process.env.DISABLE_ERROR_RECOVERY === 'true';
 
 function proxyAmapImageUrl(url: string | undefined): string | undefined {
   if (!url) return undefined;
@@ -146,8 +176,21 @@ async function startServer() {
   });
 
   app.post("/api/generate-itinerary", async (req, res) => {
+    const requestId = randomUUID();
+    const startedAt = Date.now();
+    // Populated so we can tell whether get_destination_context (Wikivoyage,
+    // CC BY-SA 4.0) / search_places-via-OSM actually contributed to this
+    // itinerary — needed for honest, non-blanket UI attribution below.
+    const trace: ToolCallRecord[] = [];
+    // Full reasoning-step -> tool-call -> result -> next-step trace, for
+    // the persistent per-request debug log + TraceViewer. Independent of
+    // `trace` above (see AgentStepRecord's docstring in server/agent.ts).
+    const stepTrace: AgentStepRecord[] = [];
+    let destinationForTrace = '';
+
     try {
-      const { destination, days, people, preferences, groupType, budget, specialNeeds, startDate, endDate, clarifications } = req.body as PlanningRequest;
+      const { destination, days, people, preferences, groupType, budget, specialNeeds, startDate, endDate, clarifications, memoryContext } = req.body as PlanningRequest;
+      destinationForTrace = destination ?? '';
 
       if (!destination || !days) {
         return res.status(400).json({ error: "Destination and days are required." });
@@ -165,9 +208,21 @@ async function startServer() {
           startDate,
           endDate,
           clarifications,
+          memoryContext,
         },
-        { client: deepseek },
+        { client: deepseek, trace, stepTrace },
       );
+
+      // Shared with tests/eval/run-eval.ts so the eval harness's
+      // scoreDestinationContextUsage checks the same attribution logic
+      // production actually runs, not a hand-copied approximation of it.
+      const sourceAttributions = computeSourceAttributions(trace, destination);
+      // Honesty disclaimer for the UI — true when search_places mostly/
+      // entirely failed to find anything real this run, meaning a
+      // meaningful share of these places likely came from the model's
+      // general knowledge rather than a verified search hit. See
+      // computeGroundingWarning's docstring; rendered in ItineraryPane.tsx.
+      const groundingWarning = computeGroundingWarning(trace);
 
       // Debug: count valid coordinates
       try {
@@ -190,10 +245,63 @@ async function startServer() {
         console.log('[agent] sample coords:', JSON.stringify(sample));
       } catch {}
 
-      res.json(itinerary);
+      writeTraceFile(requestId, {
+        requestId,
+        destination: destinationForTrace,
+        createdAt: new Date(startedAt).toISOString(),
+        durationMs: Date.now() - startedAt,
+        error: null,
+        steps: stepTrace,
+      });
+
+      res.json({
+        ...(itinerary as object),
+        ...(sourceAttributions.length > 0 ? { sourceAttributions } : {}),
+        ...(groundingWarning ? { groundingWarning } : {}),
+        requestId,
+      });
     } catch (error: any) {
       console.error("Error generating itinerary:", error);
-      res.status(500).json({ error: "Failed to generate itinerary. Please try again." });
+      writeTraceFile(requestId, {
+        requestId,
+        destination: destinationForTrace,
+        createdAt: new Date(startedAt).toISOString(),
+        durationMs: Date.now() - startedAt,
+        error: error.message ?? String(error),
+        steps: stepTrace,
+      });
+      // Recovery layer 5: still always respond (never leave an Express 4
+      // async handler's rejection unhandled — that hangs the request
+      // rather than usefully demonstrating "no recovery"). What toggles is
+      // whether the client sees a friendly message or the raw error.
+      if (RECOVERY_DISABLED) {
+        res.status(500).json({ error: error.message ?? String(error) });
+      } else {
+        res.status(500).json({ error: "Failed to generate itinerary. Please try again." });
+      }
+    }
+  });
+
+  // Debug trace viewer's data source (see src/components/TraceViewer.tsx).
+  // Unauthenticated but keyed by an unguessable UUID — reasonable for a
+  // demo project's debug aid, not something to rely on for anything
+  // actually sensitive. REQUEST_ID_PATTERN both validates the param and
+  // doubles as the path-traversal guard before touching the filesystem.
+  app.get("/api/trace/:requestId", (req, res) => {
+    const { requestId } = req.params;
+    if (!REQUEST_ID_PATTERN.test(requestId)) {
+      return res.status(400).json({ error: "Invalid request id." });
+    }
+    const filePath = path.join(TRACE_DIR, `${requestId}.json`);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: "No trace found for this request id." });
+    }
+    try {
+      const content = fs.readFileSync(filePath, "utf-8");
+      res.type("application/json").send(content);
+    } catch (error: any) {
+      console.error("[trace] failed to read trace file:", error);
+      res.status(500).json({ error: "Failed to read trace." });
     }
   });
 

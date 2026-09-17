@@ -20,10 +20,10 @@ export default function SharedItineraryView({ shareId }: SharedItineraryViewProp
     loadPublicItinerary(shareId)
       .then(data => {
         if (cancelled) return;
-        if (!data) setError('行程不存在或未公开');
+        if (!data) setError('This itinerary does not exist or is not public');
         setItinerary(data);
       })
-      .catch(e => !cancelled && setError(e.message ?? '加载失败'))
+      .catch(e => !cancelled && setError(e.message ?? 'Failed to load'))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
@@ -33,7 +33,7 @@ export default function SharedItineraryView({ shareId }: SharedItineraryViewProp
   if (loading) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-bg-base text-text-muted">
-        <Loader2 className="animate-spin mr-2" size={18} /> 加载分享行程...
+        <Loader2 className="animate-spin mr-2" size={18} /> Loading shared itinerary...
       </div>
     );
   }
@@ -42,12 +42,12 @@ export default function SharedItineraryView({ shareId }: SharedItineraryViewProp
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-bg-base text-text-main p-8 text-center">
         <Plane size={36} className="opacity-30 mb-4" />
-        <p className="font-display text-xl">{error || '未找到行程'}</p>
+        <p className="font-display text-xl">{error || 'Itinerary not found'}</p>
         <a
           href="#/"
           className="mt-4 px-4 py-2 text-sm border border-border rounded-full hover:border-accent"
         >
-          返回首页
+          Back to home
         </a>
       </div>
     );
@@ -59,13 +59,13 @@ export default function SharedItineraryView({ shareId }: SharedItineraryViewProp
         <div className="max-w-2xl mx-auto px-6 py-3 flex items-center justify-between">
           <h1 className="text-base font-display font-medium tracking-wide flex items-center gap-2">
             <Plane size={16} className="text-accent" /> WAYFOUND
-            <span className="text-xs text-text-muted ml-2">分享视图 · 只读</span>
+            <span className="text-xs text-text-muted ml-2">Shared view · read-only</span>
           </h1>
           <a
             href="#/"
             className="text-xs text-text-muted hover:text-accent flex items-center gap-1"
           >
-            创建你的行程 <ExternalLink size={12} />
+            Create your own itinerary <ExternalLink size={12} />
           </a>
         </div>
       </div>

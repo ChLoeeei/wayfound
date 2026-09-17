@@ -29,9 +29,9 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
       return (
         <div className="h-screen w-full flex flex-col items-center justify-center bg-bg-base text-text-main font-sans p-6">
           <div className="max-w-lg w-full bg-surface border border-border rounded-2xl p-6 shadow-md">
-            <h2 className="text-xl font-display font-medium mb-3">页面出了点小状况</h2>
+            <h2 className="text-xl font-display font-medium mb-3">Something went wrong</h2>
             <p className="text-text-muted text-sm mb-4">
-              {this.state.error.message || '渲染时抛出未知错误'}
+              {this.state.error.message || 'An unknown error was thrown while rendering'}
             </p>
             <pre className="text-[11px] text-text-muted/70 bg-bg-base border border-border rounded-md p-3 overflow-auto max-h-60 mb-4 whitespace-pre-wrap">
               {this.state.error.stack ?? ''}
@@ -41,13 +41,13 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
                 onClick={this.reset}
                 className="px-4 py-2 text-sm bg-accent text-white rounded-full hover:opacity-90"
               >
-                重试
+                Retry
               </button>
               <button
                 onClick={() => window.location.reload()}
                 className="px-4 py-2 text-sm border border-border rounded-full hover:border-accent"
               >
-                刷新页面
+                Reload page
               </button>
             </div>
           </div>

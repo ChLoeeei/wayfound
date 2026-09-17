@@ -43,7 +43,7 @@ describe('PlaceCard', () => {
     );
     expect(screen.getByText('Fushimi Inari')).toBeInTheDocument();
     expect(screen.getByText('4.8')).toBeInTheDocument();
-    expect(screen.getByText('景点')).toBeInTheDocument();
+    expect(screen.getByText('Attraction')).toBeInTheDocument();
   });
 
   it('shows the running index +1', () => {
@@ -136,7 +136,7 @@ describe('PlaceCard', () => {
       </Wrap>,
     );
     // Expand to surface the slot picker
-    fireEvent.click(screen.getByLabelText('展开'));
+    fireEvent.click(screen.getByLabelText('Expand'));
     const picker = screen.getByTestId('place-slot-p1') as HTMLSelectElement;
     expect(picker.value).toBe('morning');
     fireEvent.change(picker, { target: { value: 'afternoon' } });

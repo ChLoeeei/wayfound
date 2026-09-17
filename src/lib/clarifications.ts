@@ -20,7 +20,7 @@ export function buildClarifications(input: PlanningInput): ClarificationQuestion
   if (input.vibes.length >= 4) {
     out.push({
       id: 'primaryVibe',
-      question: '你勾了好几个 Vibe，最想突出哪一个？我会给它更多权重。',
+      question: "You picked several vibes — which one matters most? I'll weight it heavier.",
       options: input.vibes,
     });
   }
@@ -29,8 +29,8 @@ export function buildClarifications(input: PlanningInput): ClarificationQuestion
   if (input.groupType === 'family' && input.people >= 3 && !input.specialNeeds.includes('baby')) {
     out.push({
       id: 'kidsOnBoard',
-      question: '同行有小孩吗？方便我调整行程强度。',
-      options: ['有小孩', '都是大人'],
+      question: "Are kids coming along? That'll help me tune the pace.",
+      options: ['Yes, kids too', 'Adults only'],
     });
   }
 
@@ -38,8 +38,8 @@ export function buildClarifications(input: PlanningInput): ClarificationQuestion
   if (input.budget.min > 0 && input.budget.max > input.budget.min * 5) {
     out.push({
       id: 'budgetLean',
-      question: `预算 ¥${input.budget.min} – ¥${input.budget.max} 跨度比较大，更倾向经济还是体验？`,
-      options: ['偏经济', '中庸', '偏体验'],
+      question: `Your budget of ¥${input.budget.min}–¥${input.budget.max} is a wide range — lean more budget-friendly or more splurge?`,
+      options: ['More budget-friendly', 'Balanced', 'More splurge-y'],
     });
   }
 
@@ -48,8 +48,8 @@ export function buildClarifications(input: PlanningInput): ClarificationQuestion
   if (days >= 8) {
     out.push({
       id: 'multiCity',
-      question: `${days} 天比较长，要不要安排多城市？`,
-      options: ['只在一个城市', '可以加一两个邻近城市'],
+      question: `${days} days is a good chunk of time — want to cover multiple cities?`,
+      options: ['Stay in one city', 'Add a nearby city or two'],
     });
   }
 
@@ -57,7 +57,7 @@ export function buildClarifications(input: PlanningInput): ClarificationQuestion
   if (/[,，/、]/.test(input.destination)) {
     out.push({
       id: 'destinationFocus',
-      question: '目的地里出现了多个地点，主要想集中在哪一个？',
+      question: 'Looks like you listed a few places — which one should I focus on?',
     });
   }
 

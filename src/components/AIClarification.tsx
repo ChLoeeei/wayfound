@@ -16,7 +16,7 @@ export default function AIClarification({ questions, onResolve }: AIClarificatio
     <div className="max-w-2xl mx-auto py-8" data-testid="ai-clarification">
       <div className="flex items-center gap-2 mb-6 text-accent">
         <Sparkles size={18} />
-        <span className="font-mono text-xs uppercase tracking-widest">让我再问一两个问题</span>
+        <span className="font-mono text-xs uppercase tracking-widest">A couple quick questions first</span>
       </div>
 
       <div className="space-y-6">
@@ -44,7 +44,7 @@ export default function AIClarification({ questions, onResolve }: AIClarificatio
             <input
               type="text"
               value={answers[q.id] ?? ''}
-              placeholder="或者自己写一句"
+              placeholder="Or type your own answer"
               onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
               className="w-full bg-bg-base border border-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent"
             />
@@ -59,7 +59,7 @@ export default function AIClarification({ questions, onResolve }: AIClarificatio
           data-testid="clarify-skip"
           className="px-4 py-2 text-sm text-text-muted hover:text-text-main transition-colors"
         >
-          跳过，直接生成
+          Skip, generate now
         </button>
         <button
           type="button"
@@ -68,7 +68,7 @@ export default function AIClarification({ questions, onResolve }: AIClarificatio
           data-testid="clarify-continue"
           className="px-5 py-2 bg-accent text-white text-sm rounded-full hover:opacity-90 transition-all disabled:opacity-50"
         >
-          继续生成
+          Continue
         </button>
       </div>
     </div>

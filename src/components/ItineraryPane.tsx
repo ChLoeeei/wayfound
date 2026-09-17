@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldAlert, Loader2, RefreshCw, Plus } from 'lucide-react';
+import { ShieldAlert, Loader2, RefreshCw, Plus, Info } from 'lucide-react';
 import {
   DndContext,
   PointerSensor,
@@ -23,6 +23,7 @@ import {
   deletePlace,
 } from '../lib/itineraryOps';
 import PlaceCard from './PlaceCard';
+import TraceViewer, { isDebugMode } from './TraceViewer';
 
 interface ItineraryPaneProps {
   itinerary: Itinerary;
@@ -83,6 +84,7 @@ export default function ItineraryPane({
   const [verifying, setVerifying] = useState(false);
   const [issues, setIssues] = useState<VerifyIssue[]>([]);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [showTrace, setShowTrace] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -172,6 +174,36 @@ export default function ItineraryPane({
           <p className="text-text-muted text-lg font-light leading-relaxed">{itinerary.summary}</p>
         )}
 
+        {itinerary.groundingWarning && (
+          <p
+            className="mt-3 flex items-start gap-1.5 text-[12px] text-amber-700 dark:text-amber-500"
+            data-testid="grounding-warning"
+          >
+            <Info size={14} className="mt-[1px] shrink-0" />
+            Some details were generated from general knowledge — please verify addresses/hours before traveling.
+          </p>
+        )}
+
+        {itinerary.sourceAttributions && itinerary.sourceAttributions.length > 0 && (
+          <p className="mt-3 text-[11px] text-text-muted/70" data-testid="source-attributions">
+            {itinerary.sourceAttributions.join(' · ')}
+          </p>
+        )}
+
+        {itinerary.requestId && isDebugMode() && (
+          <button
+            onClick={() => setShowTrace(true)}
+            className="mt-2 text-[11px] text-text-muted/70 underline hover:text-accent transition-colors"
+            data-testid="open-trace-viewer"
+          >
+            View agent trace
+          </button>
+        )}
+
+        {showTrace && itinerary.requestId && (
+          <TraceViewer requestId={itinerary.requestId} onClose={() => setShowTrace(false)} />
+        )}
+
         {!readOnly && (
           <div className="mt-6">
             <button
@@ -180,7 +212,7 @@ export default function ItineraryPane({
               className="inline-flex items-center gap-2 px-4 py-2 bg-surface border border-border rounded-full hover:border-accent hover:text-accent transition-colors text-sm uppercase tracking-wide font-medium disabled:opacity-50"
             >
               {verifying ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-              AI 检查行程
+              AI check itinerary
             </button>
           </div>
         )}
@@ -189,7 +221,7 @@ export default function ItineraryPane({
           <div className="mt-4 p-4 border border-delete/30 bg-delete/5 rounded-xl text-left">
             <h4 className="flex items-center gap-2 text-delete font-medium mb-3">
               <ShieldAlert size={18} />
-              AI 检测到 {issues.length} 个问题
+              AI found {issues.length} issue{issues.length === 1 ? '' : 's'}
             </h4>
             <ul className="space-y-3">
               {issues.map((iss, i) => (
@@ -243,7 +275,7 @@ export default function ItineraryPane({
                       >
                         {slot.places.length === 0 && (
                           <p className="text-xs text-text-muted/70 italic px-3 py-2">
-                            这个时段还没有安排
+                            Nothing planned for this slot yet
                           </p>
                         )}
 
@@ -281,7 +313,7 @@ export default function ItineraryPane({
                             data-testid={`add-place-${day.dayNumber}-${slot.period}`}
                           >
                             <Plus size={14} />
-                            添加地点
+                            Add place
                           </button>
                         )}
                       </DroppableSlot>

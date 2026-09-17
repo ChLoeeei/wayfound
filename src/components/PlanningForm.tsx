@@ -11,34 +11,39 @@ import {
   Loader2,
   Navigation,
   Users,
+  X,
 } from 'lucide-react';
+import { emptyMemory, summariseMemory, type TravelMemory } from '../lib/memory';
 
 interface PlanningFormProps {
   loading: boolean;
   onSubmit: (input: PlanningInput) => void;
+  /** Cross-session memory used to prefill defaults and show a "remembered" banner. */
+  memory?: TravelMemory;
+  onClearMemory?: () => void;
 }
 
 const VIBES: { value: Vibe; label: string }[] = [
-  { value: 'nature', label: '自然' },
-  { value: 'culture', label: '人文' },
-  { value: 'food', label: '美食' },
-  { value: 'shopping', label: '购物' },
-  { value: 'leisure', label: '休闲' },
-  { value: 'adventure', label: '探险' },
+  { value: 'nature', label: 'Nature' },
+  { value: 'culture', label: 'Culture' },
+  { value: 'food', label: 'Food' },
+  { value: 'shopping', label: 'Shopping' },
+  { value: 'leisure', label: 'Leisure' },
+  { value: 'adventure', label: 'Adventure' },
 ];
 
 const GROUP_TYPES: { value: GroupType; label: string }[] = [
-  { value: 'solo', label: '独行' },
-  { value: 'couple', label: '情侣' },
-  { value: 'family', label: '家庭' },
-  { value: 'friends', label: '朋友' },
+  { value: 'solo', label: 'Solo' },
+  { value: 'couple', label: 'Couple' },
+  { value: 'family', label: 'Family' },
+  { value: 'friends', label: 'Friends' },
 ];
 
 const SPECIAL_NEEDS: { value: SpecialNeed; label: string }[] = [
-  { value: 'accessibility', label: '无障碍' },
-  { value: 'vegetarian', label: '素食' },
-  { value: 'baby', label: '带婴儿' },
-  { value: 'pet', label: '宠物友好' },
+  { value: 'accessibility', label: 'Accessibility' },
+  { value: 'vegetarian', label: 'Vegetarian' },
+  { value: 'baby', label: 'Traveling with baby' },
+  { value: 'pet', label: 'Pet friendly' },
 ];
 
 const BUDGET_MIN = 100;
@@ -78,15 +83,21 @@ export function isPlanningInputValid(input: PlanningInput): boolean {
   return true;
 }
 
-export default function PlanningForm({ loading, onSubmit }: PlanningFormProps) {
+export default function PlanningForm({ loading, onSubmit, memory = emptyMemory(), onClearMemory }: PlanningFormProps) {
   const [destination, setDestination] = useState('');
   const [startDate, setStartDate] = useState(todayISO());
   const [endDate, setEndDate] = useState(addDaysISO(todayISO(), 4));
   const [people, setPeople] = useState(2);
-  const [groupType, setGroupType] = useState<GroupType>('couple');
-  const [vibes, setVibes] = useState<Vibe[]>(['food']);
-  const [budget, setBudget] = useState<BudgetRange>({ min: 300, max: 1500 });
-  const [specialNeeds, setSpecialNeeds] = useState<SpecialNeed[]>([]);
+  // Prefilled from remembered preferences when a returning visitor has any;
+  // these are lazy initializers so they only apply on first mount.
+  const [groupType, setGroupType] = useState<GroupType>(() => memory.groupType ?? 'couple');
+  const [vibes, setVibes] = useState<Vibe[]>(() =>
+    memory.preferredVibes.length > 0 ? memory.preferredVibes.slice(0, 3) : ['food'],
+  );
+  const [budget, setBudget] = useState<BudgetRange>(() => memory.lastBudget ?? { min: 300, max: 1500 });
+  const [specialNeeds, setSpecialNeeds] = useState<SpecialNeed[]>(() => [...memory.specialNeeds]);
+
+  const memorySummary = useMemo(() => summariseMemory(memory), [memory]);
 
   const days = useMemo(() => diffDays(startDate, endDate), [startDate, endDate]);
 
@@ -119,18 +130,37 @@ export default function PlanningForm({ loading, onSubmit }: PlanningFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-8" data-testid="planning-form">
+      {memorySummary && (
+        <div
+          className="flex items-start justify-between gap-3 bg-accent/5 border border-accent/20 rounded-xl px-4 py-3 text-xs text-text-muted"
+          data-testid="memory-banner"
+        >
+          <span>{memorySummary}</span>
+          {onClearMemory && (
+            <button
+              type="button"
+              onClick={onClearMemory}
+              data-testid="memory-clear"
+              aria-label="Forget remembered preferences"
+              className="shrink-0 text-text-muted hover:text-text-main"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      )}
       <div className="space-y-6">
         {/* Destination */}
         <div>
           <label className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3 block">
-            目的地
+            Destination
           </label>
           <div className="relative">
             <Navigation className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
             <input
               type="text"
               required
-              placeholder="例如：京都 / Oaxaca"
+              placeholder="e.g. Kyoto / Oaxaca"
               value={destination}
               onChange={e => setDestination(e.target.value)}
               data-testid="field-destination"
@@ -143,7 +173,7 @@ export default function PlanningForm({ loading, onSubmit }: PlanningFormProps) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3 block">
-              出发
+              Start
             </label>
             <div className="relative">
               <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
@@ -164,7 +194,7 @@ export default function PlanningForm({ loading, onSubmit }: PlanningFormProps) {
           </div>
           <div>
             <label className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3 block">
-              结束
+              End
             </label>
             <div className="relative">
               <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
@@ -182,7 +212,7 @@ export default function PlanningForm({ loading, onSubmit }: PlanningFormProps) {
         </div>
         {days > 0 && (
           <p className="text-xs text-text-muted -mt-4" data-testid="days-summary">
-            共 {days} 天
+            {days} day{days === 1 ? '' : 's'} total
           </p>
         )}
 
@@ -190,7 +220,7 @@ export default function PlanningForm({ loading, onSubmit }: PlanningFormProps) {
         <div className="grid grid-cols-5 gap-4">
           <div className="col-span-2">
             <label className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3 block">
-              人数
+              Travelers
             </label>
             <div className="relative">
               <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
@@ -207,7 +237,7 @@ export default function PlanningForm({ loading, onSubmit }: PlanningFormProps) {
           </div>
           <div className="col-span-3">
             <label className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3 block">
-              出行类型
+              Trip type
             </label>
             <div className="flex gap-2 flex-wrap">
               {GROUP_TYPES.map(g => (
@@ -232,7 +262,7 @@ export default function PlanningForm({ loading, onSubmit }: PlanningFormProps) {
         {/* Vibes */}
         <div>
           <label className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3 block">
-            旅行 Vibe
+            Trip vibe
           </label>
           <div className="flex flex-wrap gap-2">
             {VIBES.map(v => (
@@ -256,7 +286,7 @@ export default function PlanningForm({ loading, onSubmit }: PlanningFormProps) {
         {/* Budget */}
         <div>
           <label className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3 block">
-            预算 ¥{budget.min} – ¥{budget.max} / 人 · 天
+            Budget ¥{budget.min} – ¥{budget.max} / person · day
           </label>
           <div className="space-y-3 px-1">
             <input
@@ -291,7 +321,7 @@ export default function PlanningForm({ loading, onSubmit }: PlanningFormProps) {
         {/* Special needs */}
         <div>
           <label className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3 block">
-            特殊需求 <span className="text-text-muted/70 normal-case">(选填)</span>
+            Special needs <span className="text-text-muted/70 normal-case">(optional)</span>
           </label>
           <div className="flex flex-wrap gap-2">
             {SPECIAL_NEEDS.map(n => (
@@ -321,10 +351,10 @@ export default function PlanningForm({ loading, onSubmit }: PlanningFormProps) {
       >
         {loading ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin" /> 生成中
+            <Loader2 className="w-4 h-4 animate-spin" /> Generating
           </>
         ) : (
-          <>生成行程</>
+          <>Generate itinerary</>
         )}
       </button>
     </form>

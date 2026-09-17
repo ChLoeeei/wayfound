@@ -8,18 +8,18 @@
 export type GroupType = 'family' | 'couple' | 'friends' | 'solo';
 
 export type Vibe =
-  | 'nature'      // 自然
-  | 'culture'     // 人文
-  | 'food'        // 美食
-  | 'shopping'    // 购物
-  | 'leisure'     // 休闲
-  | 'adventure';  // 探险
+  | 'nature'
+  | 'culture'
+  | 'food'
+  | 'shopping'
+  | 'leisure'
+  | 'adventure';
 
 export type SpecialNeed =
-  | 'accessibility' // 无障碍
-  | 'vegetarian'    // 素食
-  | 'baby'          // 带婴儿
-  | 'pet';          // 宠物友好
+  | 'accessibility'
+  | 'vegetarian'
+  | 'baby'           // traveling with a baby
+  | 'pet';            // pet friendly
 
 export interface BudgetRange {
   /** lower bound, RMB per person per day */
@@ -107,6 +107,35 @@ export interface Itinerary {
   days: Day[];
   createdAt?: string;
   updatedAt?: string;
+  /**
+   * Human-readable attribution strings for any third-party content used
+   * while generating this itinerary — currently only ever
+   * "Destination context from Wikivoyage, CC BY-SA 4.0" when the agent's
+   * get_destination_context tool was actually called. Computed server-side
+   * (server.ts, from the generation's tool-call trace) so the UI doesn't
+   * need to know licensing details — see src/components/ItineraryPane.tsx
+   * for where this renders.
+   */
+  sourceAttributions?: string[];
+  /**
+   * The generation request's id, for fetching its reasoning/tool-call
+   * trace from GET /api/trace/:requestId — see
+   * src/components/TraceViewer.tsx. Always present on a freshly-generated
+   * itinerary; absent on one loaded from a saved/shared record (traces
+   * aren't persisted alongside saved itineraries, only ever written
+   * per-request server-side).
+   */
+  requestId?: string;
+  /**
+   * True when this run's place searches mostly/entirely failed to find
+   * anything real (see server/tools/attributions.ts's
+   * computeGroundingWarning) — a meaningful share of these places likely
+   * came from the model's general knowledge rather than a verified
+   * search hit. Renders as a small honesty disclaimer, same spot as
+   * sourceAttributions — see src/components/ItineraryPane.tsx. Absent
+   * (not just false) when there's nothing to warn about.
+   */
+  groundingWarning?: boolean;
 }
 
 // -------- Map integration helpers ---------------------------

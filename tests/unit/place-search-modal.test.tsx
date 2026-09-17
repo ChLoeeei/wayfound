@@ -34,7 +34,7 @@ describe('PlaceSearchModal', () => {
     const fetchSpy = vi.fn();
     globalThis.fetch = fetchSpy as any;
     setup();
-    expect(screen.getByText('输入关键词开始搜索')).toBeInTheDocument();
+    expect(screen.getByText('Type to search')).toBeInTheDocument();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
@@ -108,7 +108,7 @@ describe('PlaceSearchModal', () => {
     fireEvent.change(screen.getByTestId('search-input'), { target: { value: 'xxxx' } });
     await waitFor(
       () => {
-        expect(screen.getByText('没有结果')).toBeInTheDocument();
+        expect(screen.getByText('No results')).toBeInTheDocument();
       },
       { timeout: 2000 },
     );

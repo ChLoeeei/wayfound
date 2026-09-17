@@ -115,12 +115,12 @@ export default function PlaceSearchModal({
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <h3 className="font-medium">添加地点</h3>
+          <h3 className="font-medium">Add a place</h3>
           <button
             type="button"
             onClick={onClose}
             className="text-text-muted hover:text-text-main"
-            aria-label="关闭"
+            aria-label="Close"
           >
             <X size={18} />
           </button>
@@ -132,7 +132,7 @@ export default function PlaceSearchModal({
             <input
               ref={inputRef}
               type="text"
-              placeholder={`搜索 ${destination} 的地点 / 餐厅...`}
+              placeholder={`Search places / restaurants in ${destination}...`}
               value={query}
               onChange={e => setQuery(e.target.value)}
               data-testid="search-input"
@@ -141,7 +141,7 @@ export default function PlaceSearchModal({
           </div>
           <div className="flex items-center gap-3 text-xs">
             <label className="flex items-center gap-2 text-text-muted">
-              加到
+              Add to
               <select
                 value={dayNumber}
                 onChange={e => setDayNumber(parseInt(e.target.value, 10))}
@@ -154,7 +154,7 @@ export default function PlaceSearchModal({
                   </option>
                 ))}
               </select>
-              的
+              ·
               <select
                 value={period}
                 onChange={e => setPeriod(e.target.value as SlotPeriod)}
@@ -175,17 +175,17 @@ export default function PlaceSearchModal({
           {loading && (
             <div className="p-6 flex items-center justify-center text-text-muted text-sm">
               <Loader2 size={16} className="animate-spin mr-2" />
-              搜索中...
+              Searching...
             </div>
           )}
           {error && (
             <div className="p-6 text-center text-delete text-sm">{error}</div>
           )}
           {!loading && !error && results.length === 0 && query.trim() && (
-            <div className="p-6 text-center text-text-muted text-sm">没有结果</div>
+            <div className="p-6 text-center text-text-muted text-sm">No results</div>
           )}
           {!loading && !error && !query.trim() && (
-            <div className="p-6 text-center text-text-muted/70 text-sm">输入关键词开始搜索</div>
+            <div className="p-6 text-center text-text-muted/70 text-sm">Type to search</div>
           )}
           {results.map(r => (
             <button

@@ -12,11 +12,11 @@ describe('UndoSnack', () => {
   });
 
   it('renders the message', () => {
-    render(<UndoSnack message="已删除「外滩」" onUndo={() => {}} onDismiss={() => {}} />);
-    expect(screen.getByText('已删除「外滩」')).toBeInTheDocument();
+    render(<UndoSnack message='Deleted "The Bund"' onUndo={() => {}} onDismiss={() => {}} />);
+    expect(screen.getByText('Deleted "The Bund"')).toBeInTheDocument();
   });
 
-  it('fires onUndo when 撤销 is clicked', () => {
+  it('fires onUndo when Undo is clicked', () => {
     let undone = false;
     render(
       <UndoSnack

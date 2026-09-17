@@ -50,7 +50,7 @@ export default function BottomSheet({
       {modal && (
         <button
           type="button"
-          aria-label="关闭"
+          aria-label="Close"
           onClick={onClose}
           className="fixed inset-0 z-30 bg-black/40 backdrop-blur-[2px]"
           data-testid={`${testId}-backdrop`}
@@ -67,7 +67,7 @@ export default function BottomSheet({
         <button
           type="button"
           onClick={cycle}
-          aria-label="展开/收起"
+          aria-label="Expand/collapse"
           data-testid={`${testId}-grabber`}
           className="w-full pt-2 pb-1 flex items-center justify-center cursor-pointer"
         >
@@ -81,7 +81,7 @@ export default function BottomSheet({
               <button
                 type="button"
                 onClick={cycle}
-                aria-label="切换高度"
+                aria-label="Toggle height"
                 className="p-1 text-text-muted hover:text-text-main transition-colors"
               >
                 <ChevronUp
@@ -95,7 +95,7 @@ export default function BottomSheet({
                 <button
                   type="button"
                   onClick={onClose}
-                  aria-label="关闭"
+                  aria-label="Close"
                   data-testid={`${testId}-close`}
                   className="p-1 text-text-muted hover:text-text-main transition-colors"
                 >

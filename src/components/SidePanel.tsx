@@ -3,6 +3,7 @@ import { Plane, Loader2, Share2, Download, FileImage, Moon, Sun, Cloud, LogOut }
 import PlanningForm from './PlanningForm';
 import type { PlanningInput } from '../types';
 import type { User } from '@supabase/supabase-js';
+import type { TravelMemory } from '../lib/memory';
 
 interface SidePanelProps {
   variant: 'desktop' | 'sheet';
@@ -16,6 +17,8 @@ interface SidePanelProps {
   shareUrl: string | null;
   error: string;
   darkMode: boolean;
+  memory: TravelMemory;
+  onClearMemory: () => void;
   onSubmit: (input: PlanningInput) => void;
   onSaveToCloud: () => void;
   onLogout: () => void;
@@ -37,6 +40,8 @@ export default function SidePanel({
   shareUrl,
   error,
   darkMode,
+  memory,
+  onClearMemory,
   onSubmit,
   onSaveToCloud,
   onLogout,
@@ -70,7 +75,7 @@ export default function SidePanel({
         </>
       )}
 
-      <PlanningForm loading={generating} onSubmit={onSubmit} />
+      <PlanningForm loading={generating} onSubmit={onSubmit} memory={memory} onClearMemory={onClearMemory} />
 
       {error && <p className="text-delete text-sm text-center mt-4">{error}</p>}
 
@@ -82,7 +87,7 @@ export default function SidePanel({
             className="flex items-center gap-3 text-sm text-text-muted hover:text-accent transition-colors w-full p-2 disabled:opacity-50"
           >
             {saving ? <Loader2 size={16} className="animate-spin" /> : <Cloud size={16} />}
-            {user ? (savedSuccess ? '已保存！' : '保存到云端') : '登录后保存到云端'}
+            {user ? (savedSuccess ? 'Saved!' : 'Save to cloud') : 'Log in to save to cloud'}
           </button>
           <button
             onClick={onExportPng}
@@ -91,7 +96,7 @@ export default function SidePanel({
             className="flex items-center gap-3 text-sm text-text-muted hover:text-accent transition-colors w-full p-2 disabled:opacity-50"
           >
             {exporting ? <Loader2 size={16} className="animate-spin" /> : <FileImage size={16} />}
-            导出长图
+            Export image
           </button>
           <button
             onClick={onExportPdf}
@@ -100,7 +105,7 @@ export default function SidePanel({
             className="flex items-center gap-3 text-sm text-text-muted hover:text-accent transition-colors w-full p-2 disabled:opacity-50"
           >
             {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-            导出 PDF
+            Export PDF
           </button>
           <button
             onClick={onShare}
@@ -109,7 +114,7 @@ export default function SidePanel({
             className="flex items-center gap-3 text-sm text-text-muted hover:text-accent transition-colors w-full p-2 disabled:opacity-50"
           >
             {sharing ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
-            {shareUrl ? '已复制分享链接' : '生成分享链接'}
+            {shareUrl ? 'Share link copied' : 'Create share link'}
           </button>
           {shareUrl && (
             <p
@@ -124,7 +129,7 @@ export default function SidePanel({
               onClick={onLogout}
               className="flex items-center gap-3 text-sm text-text-muted hover:text-delete transition-colors w-full p-2"
             >
-              <LogOut size={16} /> 退出 {user.email}
+              <LogOut size={16} /> Log out {user.email}
             </button>
           )}
         </div>

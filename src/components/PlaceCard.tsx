@@ -19,13 +19,13 @@ interface PlaceCardProps {
 }
 
 const TYPE_LABEL: Record<string, string> = {
-  attraction: '景点',
-  restaurant: '餐厅',
-  hotel: '住宿',
-  shopping: '购物',
-  cafe: '咖啡',
-  nightlife: '夜生活',
-  leisure: '休闲',
+  attraction: 'Attraction',
+  restaurant: 'Restaurant',
+  hotel: 'Hotel',
+  shopping: 'Shopping',
+  cafe: 'Cafe',
+  nightlife: 'Nightlife',
+  leisure: 'Leisure',
 };
 
 export default function PlaceCard({
@@ -71,7 +71,7 @@ export default function PlaceCard({
       {!disableDrag && (
         <button
           type="button"
-          aria-label="拖拽"
+          aria-label="Drag"
           data-testid={`place-drag-${place.id}`}
           {...attributes}
           {...listeners}
@@ -91,7 +91,7 @@ export default function PlaceCard({
               e.stopPropagation();
               onDelete();
             }}
-            title="删除"
+            title="Delete"
           >
             <Trash2 size={14} />
           </button>
@@ -127,7 +127,7 @@ export default function PlaceCard({
                 setExpanded(v => !v);
               }}
               className="text-text-muted hover:text-text-main"
-              aria-label="展开"
+              aria-label="Expand"
             >
               <ChevronDown
                 size={16}
@@ -162,7 +162,7 @@ export default function PlaceCard({
           {/* Slot picker */}
           {onChangeSlot && (
             <label className="flex items-center gap-2 text-xs text-text-muted">
-              移到
+              Move to
               <select
                 data-testid={`place-slot-${place.id}`}
                 value={period}
@@ -192,7 +192,7 @@ export default function PlaceCard({
                 onClick={e => e.stopPropagation()}
                 className="inline-flex items-center gap-1 text-accent hover:text-text-main"
               >
-                查看详情 <ExternalLink size={11} />
+                View details <ExternalLink size={11} />
               </a>
             )}
             <a
@@ -202,7 +202,7 @@ export default function PlaceCard({
               onClick={e => e.stopPropagation()}
               className="inline-flex items-center gap-1 text-accent hover:text-text-main"
             >
-              在高德打开 <ExternalLink size={11} />
+              Open in Amap <ExternalLink size={11} />
             </a>
           </div>
         </div>
