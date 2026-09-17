@@ -32,6 +32,33 @@ export function allPlaces(itinerary: Itinerary): Place[] {
   return itinerary.days.flatMap(placesOfDay);
 }
 
+/**
+ * Validate + normalize a place's coordinates for map rendering. Shared by
+ * both map panes (AmapMapPane.tsx, LeafletMapPane.tsx) so the two engines
+ * agree on what counts as a plottable point rather than each having its
+ * own copy that could drift — rejects non-finite values, the (0,0) "null
+ * island" sentinel a bad LLM coordinate sometimes produces, and anything
+ * outside valid lat/lng ranges.
+ */
+export function sanitiseMapCoord(c: { lat: number; lng: number } | undefined): { lat: number; lng: number } | null {
+  if (!c) return null;
+  const lat = typeof c.lat === 'number' ? c.lat : parseFloat(String(c.lat));
+  const lng = typeof c.lng === 'number' ? c.lng : parseFloat(String(c.lng));
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (lat === 0 && lng === 0) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return { lat, lng };
+}
+
+/** The day whose route should be drawn: the selected place's day, or day 1 if nothing is selected. Shared by both map panes. */
+export function pickActiveMapDay(itinerary: Itinerary, selectedPlaceId: string | null): Day | null {
+  if (selectedPlaceId) {
+    const found = findPlace(itinerary, selectedPlaceId);
+    if (found) return found.day;
+  }
+  return itinerary.days[0] ?? null;
+}
+
 /** Locate a place by id along with its day & slot. */
 export function findPlace(
   itinerary: Itinerary,

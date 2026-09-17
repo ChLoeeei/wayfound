@@ -31,7 +31,9 @@ flowchart LR
 
     Agent --> Itinerary["Structured Itinerary JSON\n+ sourceAttributions + groundingWarning"]
     Itinerary --> Client
-    Client --> MapPane["Amap JS SDK map + list\n(drag / edit / export)"]
+    Client --> MapRoute{"mainland China\ndestination?"}
+    MapRoute -->|yes| AmapPane["Amap JS SDK map\n(drag / edit / export)"]
+    MapRoute -->|no| LeafletPane["Leaflet + OSM tiles\n(drag / edit / export)"]
 
     Server -. "per-request reasoning + tool-call trace" .-> Traces[("server/logs/traces/*.json\nGET /api/trace/:id")]
     Client -->|"auth / saved & shared trips"| Supabase[("Supabase\n(Auth + Postgres)")]
@@ -46,6 +48,7 @@ Every arrow into the dashed boxes on the map/routing side is a fallback, not a h
 | Frontend | React 19 + TypeScript, Vite 6, Tailwind CSS v4, `@dnd-kit` (drag & drop), `motion` |
 | Backend | Express (`tsx` in dev, `esbuild` CJS bundle in prod) |
 | Agent / LLM | DeepSeek (`deepseek-chat`) via the OpenAI SDK, manual ReAct-style tool-calling loop |
+| Map rendering | Amap JS SDK (China) / Leaflet + OpenStreetMap raster tiles (international) — routed by the same destination heuristic the backend uses (`server/tools/provider.ts`'s `getMapProvider`, shared client-side) |
 | Place data (China) | Amap (高德) Web Service API |
 | Place data (international) | Geoapify Places + Routing (primary) → OpenStreetMap Overpass, two independent instances (fallback) |
 | Routing (international) | Geoapify Routing → OpenRouteService → Mapbox Directions → haversine estimate (4-layer fallback, never throws) |
