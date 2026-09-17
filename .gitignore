@@ -12,3 +12,4 @@ tests/eval/reports/
 server/logs/
 .claude/settings.local.json
 {{pkgetc}}/
+CLAUDE.md
