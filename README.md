@@ -132,3 +132,4 @@ Reports land in `tests/eval/reports/latest.{json,md}`, with each case's full gen
 - `get_weather`, `validate_itinerary` (auto-correction loop), `search_flights`, `search_hotels` are specced but not implemented; `/api/verify-itinerary` exists as a standalone critic endpoint, not wired into the generation loop itself.
 - Memory (returning-user preferences) is per-browser `localStorage`, not synced to a Supabase account across devices.
 - Trace files (`server/logs/traces/`) have no retention/cleanup policy yet — fine for a demo, not for long-running production use as-is.
+- `Place.imageUrl` is unvalidated model output, not real photo data — confirmed live to occasionally show a completely unrelated stock photo (the LLM has no real image to draw on for providers that don't return one, and nothing downstream checks the content matches). Investigated, not yet fixed.
