@@ -52,7 +52,7 @@ Every arrow into the dashed boxes on the map/routing side is a fallback, not a h
 | Destination context | Wikivoyage MediaWiki API (CC BY-SA 4.0), grounds `aiNote` / "why visit" copy |
 | Auth / persistence | Supabase (Auth + Postgres) |
 | Testing | Vitest (unit/component), a separate LLM-judge fuzzy suite, Playwright (E2E), a standalone agent eval harness (below) |
-| Deploy | Frontend on Cloudflare Pages, backend on Railway |
+| Deploy | Frontend on Cloudflare Pages, backend on Render |
 
 ## Reliability engineering: the map-provider story
 
