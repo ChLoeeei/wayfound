@@ -8,3 +8,7 @@ coverage/
 !.env.example
 playwright-report/
 test-results/
+tests/eval/reports/
+server/logs/
+.claude/settings.local.json
+{{pkgetc}}/
