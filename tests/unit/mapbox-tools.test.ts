@@ -443,6 +443,33 @@ describe('Geoapify integration (primary provider)', () => {
     expect(r.pois.map(p => p.name)).toEqual(['Eiffel Tower']);
   });
 
+  it('retries Geoapify with a simplified query before ever falling through to Overpass', async () => {
+    // Regression test: Geoapify used to get exactly one attempt (the raw
+    // keywords) before falling to Overpass, unlike Overpass's own
+    // original + 2-simplified-candidate retry — found via live testing
+    // (a compound query like "Odaiba Aqua City shopping" missed on
+    // Geoapify's first try and fell straight to Overpass, which happened
+    // to be down that day). Both providers now get the same retry budget.
+    process.env.GEOAPIFY_PLACES_API_KEY = 'test-places-key';
+    vi.resetModules();
+    const { searchPlaces } = await import('../../server/tools/mapbox');
+    globalThis.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.includes('nominatim.openstreetmap.org')) return jsonResponse(NOMINATIM_PARIS);
+      if (url.includes('overpass')) throw new Error('should not reach Overpass — Geoapify simplified retry should have succeeded first');
+      if (url.includes('api.geoapify.com/v1/geocode/search')) {
+        const params = new URL(url).searchParams;
+        // "Tower" is a descriptor word, so the first simplified candidate
+        // is the strip-descriptors form ("Eiffel Tower" -> "Eiffel").
+        if (params.get('text') === 'Eiffel') return jsonResponse(GEOAPIFY_FEATURE_COLLECTION);
+        return jsonResponse({ type: 'FeatureCollection', features: [] });
+      }
+      throw new Error(`unexpected url: ${url}`);
+    }) as any;
+
+    const r = await searchPlaces('Eiffel Tower', 'search-region-geoapify-retry');
+    expect(r.pois.map(p => p.name)).toEqual(['Eiffel Tower']);
+  });
+
   it('getPoiDetails routes a "geoapify:" id to Geoapify Place Details, not Overpass', async () => {
     process.env.GEOAPIFY_PLACES_API_KEY = 'test-places-key';
     vi.resetModules();

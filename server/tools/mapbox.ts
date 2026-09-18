@@ -489,12 +489,18 @@ async function overpassSearchOnce(
  * first — confirmed, not assumed, more reliable than the free public
  * Overpass ecosystem as of live testing):
  *   1. Geoapify (/v1/geocode/search, hard-filtered by radius) — skipped
- *      entirely if GEOAPIFY_PLACES_API_KEY is unset.
+ *      entirely if GEOAPIFY_PLACES_API_KEY is unset. If the original
+ *      keywords return 0 results, retries with up to 2 simplified
+ *      candidates (see buildSimplifiedQueries) before falling through —
+ *      fixed after live testing showed a compound/verbose query (e.g.
+ *      "Odaiba Aqua City shopping") that Geoapify's free-text search
+ *      didn't match would previously fall straight to Overpass on a
+ *      single miss, giving Geoapify only one attempt vs. Overpass's
+ *      three; both providers now get the same retry budget.
  *   2. OpenStreetMap Overpass (around:<radius> query, hard-filtered by
- *      construction) — primary instance, then an independent mirror. If
- *      the original keywords return 0 results here, retries with up to 2
- *      simplified candidates (see buildSimplifiedQueries) before giving
- *      up — deliberately conservative vs. the old Mapbox implementation's
+ *      construction) — primary instance, then an independent mirror. Same
+ *      original + up-to-2-simplified-candidates retry pattern —
+ *      deliberately conservative vs. the old Mapbox implementation's
  *      up-to-4, given Overpass's tight per-IP concurrency limit.
  * Never throws — any/all provider failures degrade to `{ pois: [], count: 0 }`.
  */
@@ -509,12 +515,25 @@ export async function searchPlaces(
   const proximity = region ? await resolveProximity(region) : null;
   if (!proximity) return { pois: [], count: 0 };
 
-  const geoapifyPois = await geoapifySearchPlaces(keywords, proximity, SEARCH_RADIUS_METERS, cappedLimit);
+  // Computed once, shared by both providers' retry sequences below —
+  // stripDescriptors/leadingSubstrings is pure string manipulation on
+  // `keywords`, not tied to either provider.
+  const candidates = buildSimplifiedQueries(keywords, 2);
+
+  let geoapifyPois = await geoapifySearchPlaces(keywords, proximity, SEARCH_RADIUS_METERS, cappedLimit);
+  if (geoapifyPois.length === 0 && candidates.length > 0) {
+    for (const candidate of candidates) {
+      geoapifyPois = await geoapifySearchPlaces(candidate.query, proximity, SEARCH_RADIUS_METERS, cappedLimit);
+      if (geoapifyPois.length > 0) {
+        console.log(`[geoapify] simplified retry succeeded: ${JSON.stringify(keywords)} -> ${JSON.stringify(candidate.query)}`);
+        break;
+      }
+    }
+  }
   if (geoapifyPois.length > 0) return { pois: geoapifyPois, count: geoapifyPois.length };
 
   let pois = await overpassSearchOnce(keywords, proximity, cappedLimit, 'original');
   if (pois.length === 0) {
-    const candidates = buildSimplifiedQueries(keywords, 2);
     if (candidates.length > 0) {
       console.log(`[osm] 0 results for ${JSON.stringify(keywords)} — retrying with ${candidates.length} simplified quer${candidates.length === 1 ? 'y' : 'ies'}`);
     }
