@@ -12,8 +12,20 @@ function jsonResponse(body: unknown, status = 200): Response {
 // assume degrades the same way.
 process.env.MAPBOX_ACCESS_TOKEN = '';
 
-const { searchPlaces, getPoiDetails, calculateDistance, stripDescriptors, leadingSubstrings, buildSimplifiedQueries, drainMapboxRequestLog } =
+const { searchPlaces, getPoiDetails, calculateDistance, stripDescriptors, leadingSubstrings, buildSimplifiedQueries, drainMapboxRequestLog, __resetOverpassCircuitForTests } =
   await import('../../server/tools/mapbox');
+
+// The Overpass circuit breaker (server/tools/mapbox.ts) is real
+// process-lifetime state with a 60s wall-clock cooldown — without this,
+// a test that intentionally fails both Overpass instances would leave
+// later tests sharing this file's top-level module import (most of them
+// do) seeing a falsely-open breaker instead of exercising their own
+// mocked responses. Scoped at the top level of this file, not inside one
+// describe block, so it runs after every test regardless of which
+// describe it's in.
+afterEach(() => {
+  __resetOverpassCircuitForTests();
+});
 
 const NOMINATIM_PARIS = [{ lat: '48.8566', lon: '2.3522' }];
 
@@ -181,6 +193,35 @@ describe('searchPlaces (OpenStreetMap)', () => {
 
       const r = await searchPlaces('Eiffel Tower', 'search-region-mirror-2');
       expect(r.pois.map(p => p.name)).toEqual(['Eiffel Tower']);
+    },
+    20000,
+  );
+
+  it(
+    'circuit breaker: after both instances fail outright once, later Overpass attempts in the same window skip the network entirely',
+    async () => {
+      let overpassCallCount = 0;
+      globalThis.fetch = vi.fn(async (url: string) => {
+        if (url.includes('nominatim.openstreetmap.org')) return jsonResponse(NOMINATIM_PARIS);
+        if (url.includes('overpass')) {
+          overpassCallCount++;
+          throw new TypeError('fetch failed');
+        }
+        throw new Error(`unexpected url: ${url}`);
+      }) as any;
+
+      // First call: both Overpass instances genuinely get hit and fail —
+      // this is what trips the breaker.
+      await searchPlaces('Eiffel Tower', 'search-region-breaker-1');
+      const callsAfterFirstSearch = overpassCallCount;
+      expect(callsAfterFirstSearch).toBeGreaterThan(0);
+
+      // Second call, same process, well within the cooldown window: the
+      // breaker should skip Overpass outright — no new fetch calls to any
+      // overpass host, despite this being a different keyword (a
+      // simplified-query retry loop would normally hit it again).
+      await searchPlaces('Louvre Museum', 'search-region-breaker-2');
+      expect(overpassCallCount).toBe(callsAfterFirstSearch);
     },
     20000,
   );

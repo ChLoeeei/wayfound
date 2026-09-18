@@ -44,21 +44,28 @@
  *
  * RELIABILITY TRADEOFF, why Geoapify is primary now — confirmed by hand,
  * not assumed: the free public Overpass ecosystem failed 100% of
- * search_places calls in TWO separate live eval runs (Tokyo, then Paris),
- * and a direct curl probe against both overpass-api.de (its own
- * /api/status endpoint reports a "Rate limit: 2" per-IP concurrency cap)
- * and the overpass.kumi.systems mirror confirmed this wasn't a false
- * alarm — connection refused / no response from both, at the same time
- * Nominatim answered normally, ruling out a local/network-side cause.
- * overpassPost() (see below) still tries the mirror whenever the primary
- * fails outright — real mitigation, not a full fix, since a global
- * bad-Overpass-day can still take both down, which is exactly what
- * happened twice. Geoapify (commercially operated infrastructure behind
- * its free tier: 3,000 credits/day, no card) is tried first specifically
- * because of this; Overpass is kept as a zero-cost second opinion, not
- * removed. Every provider call in this file is still built to fail SOFT
- * (empty result, never a thrown error) after a short timeout and limited
- * retries, so an unavailable Overpass (or Geoapify) degrades to "no POIs
+ * search_places calls in MULTIPLE separate live eval runs across
+ * multiple days (Tokyo and Paris on one day, Tokyo/Kyoto/Bali again on a
+ * later day), and a direct curl probe against both overpass-api.de (its
+ * own /api/status endpoint reports a "Rate limit: 2" per-IP concurrency
+ * cap) and the overpass.kumi.systems mirror confirmed this wasn't a
+ * false alarm each time — connection refused / no response from both, at
+ * the same time Nominatim answered normally, ruling out a local/
+ * network-side cause. overpassPost() (see below) still tries the mirror
+ * whenever the primary fails outright — real mitigation, not a full fix,
+ * since a global bad-Overpass-day can still take both down, which is
+ * exactly what kept happening. Geoapify (commercially operated
+ * infrastructure behind its free tier: 3,000 credits/day, no card) is
+ * tried first specifically because of this; Overpass is kept as a
+ * zero-cost second opinion, not removed. A circuit breaker (see
+ * overpassCircuitOpen/tripOverpassCircuit below) additionally stops
+ * re-discovering the same outage from scratch for every keyword in a
+ * multi-place itinerary once one attempt has already shown both
+ * instances are down — a real, measured cost otherwise (a single
+ * fully-exhausted keyword was taking 8-9 network attempts). Every
+ * provider call in this file is still built to fail SOFT (empty result,
+ * never a thrown error) after a short timeout and limited retries, so an
+ * unavailable Overpass (or Geoapify) degrades to "no POIs
  * found, agent falls back to general knowledge" (existing, already-relied-
  * on behavior) rather than blocking or crashing a generation request.
  *
@@ -386,7 +393,54 @@ function elementToPoi(el: OverpassElement): Poi | null {
  * lone-primary failure was before this existed; overpassSearchOnce and
  * getPoiDetails' existing try/catch + `!res.ok` handling covers both.
  */
+// ==================== Overpass circuit breaker ====================
+//
+// Set when overpassPost() sees BOTH the primary and the mirror fail
+// outright in the same attempt — a real "the server is unreachable"
+// signal, not just "found nothing this time" (see the RELIABILITY
+// TRADEOFF note in this file's module docstring — this has now been
+// confirmed live on multiple separate days, not a one-off). While
+// tripped, searchPlaces/getPoiDetails skip Overpass entirely instead of
+// re-discovering the same outage from scratch for every single keyword
+// in a multi-place itinerary generation: a fully-exhausted keyword
+// against a dead Overpass was measured taking 8-9 network attempts
+// (primary retries + mirror retry, each with backoff delays and a 9s
+// timeout) — multiplied across the ~15-25 search_places calls one
+// itinerary can make, that's minutes of pure waste on an outage the
+// very first attempt already revealed. Auto-clears after
+// OVERPASS_COOLDOWN_MS so a recovered Overpass gets tried again rather
+// than being blacklisted for the rest of the process's lifetime.
+const OVERPASS_COOLDOWN_MS = 60_000;
+let overpassUnavailableUntil = 0;
+
+function overpassCircuitOpen(): boolean {
+  return Date.now() < overpassUnavailableUntil;
+}
+
+function tripOverpassCircuit(reason: string) {
+  const wasAlreadyOpen = overpassCircuitOpen();
+  overpassUnavailableUntil = Date.now() + OVERPASS_COOLDOWN_MS;
+  if (!wasAlreadyOpen) {
+    console.log(`[osm] both Overpass instances failed (${reason}) — skipping Overpass for the next ${OVERPASS_COOLDOWN_MS / 1000}s`);
+  }
+}
+
+/**
+ * Test-only: clears the circuit breaker's cooldown. Its 60s wall-clock
+ * cooldown is real process-lifetime state — without this, one test that
+ * intentionally fails both Overpass instances would leave the breaker
+ * open for every test that runs afterward in the same module instance
+ * (most of this file's tests share one top-level import rather than
+ * re-importing per test). Not used anywhere outside tests.
+ */
+export function __resetOverpassCircuitForTests() {
+  overpassUnavailableUntil = 0;
+}
+
 async function overpassPost(ql: string): Promise<{ res: Response; base: string }> {
+  if (overpassCircuitOpen()) {
+    throw new Error('Overpass circuit breaker open (both instances failed recently)');
+  }
   const body = `data=${encodeURIComponent(ql)}`;
   const headers = { 'User-Agent': USER_AGENT, 'Content-Type': 'application/x-www-form-urlencoded' };
   try {
@@ -396,8 +450,14 @@ async function overpassPost(ql: string): Promise<{ res: Response; base: string }
   } catch (err: any) {
     console.log(`[osm] primary Overpass instance failed (network): ${err?.message ?? err}, trying mirror`);
   }
-  const res = await overpassMirrorFetch(OVERPASS_MIRROR, { method: 'POST', headers, body });
-  return { res, base: OVERPASS_MIRROR };
+  try {
+    const res = await overpassMirrorFetch(OVERPASS_MIRROR, { method: 'POST', headers, body });
+    if (!res.ok) tripOverpassCircuit(`primary and mirror both returned non-2xx, latest HTTP ${res.status}`);
+    return { res, base: OVERPASS_MIRROR };
+  } catch (err: any) {
+    tripOverpassCircuit(`network: ${err?.message ?? err}`);
+    throw err;
+  }
 }
 
 /**
