@@ -170,6 +170,26 @@ export interface RunAgentOptions {
    * (persists this to a per-request file for the debug trace viewer).
    */
   stepTrace?: AgentStepRecord[];
+  /** Sampling temperature for the main tool-use loop (default 0.6). The JSON-repair retries keep their own lower temperature. */
+  temperature?: number;
+  /**
+   * When provided, token usage of every completion this run made is added
+   * here (side-channel for eval cost reporting; does not affect planning).
+   */
+  usage?: AgentUsage;
+}
+
+export interface AgentUsage {
+  promptTokens: number;
+  completionTokens: number;
+  completions: number;
+}
+
+function addUsage(acc: AgentUsage | undefined, response: OpenAI.Chat.Completions.ChatCompletion) {
+  if (!acc) return;
+  acc.completions++;
+  acc.promptTokens += response.usage?.prompt_tokens ?? 0;
+  acc.completionTokens += response.usage?.completion_tokens ?? 0;
 }
 
 function summariseToolResult(name: string, args: Record<string, any>, result: unknown): string {
@@ -196,7 +216,7 @@ export async function generateItinerary(
   req: PlanningRequest,
   opts: RunAgentOptions,
 ): Promise<unknown> {
-  const { client, model = 'deepseek-chat', maxSteps = 8 } = opts;
+  const { client, model = 'deepseek-chat', maxSteps = 8, temperature = 0.6 } = opts;
 
   const userPrompt = buildUserPrompt(req);
   const ctx = new ToolContext(req.destination);
@@ -211,8 +231,9 @@ export async function generateItinerary(
       messages,
       tools: toolDefinitions,
       tool_choice: 'auto',
-      temperature: 0.6,
+      temperature,
     });
+    addUsage(opts.usage, response);
 
     const msg = response.choices[0]?.message;
     if (!msg) throw new Error('Empty response from DeepSeek');
@@ -251,6 +272,7 @@ export async function generateItinerary(
           response_format: { type: 'json_object' },
           temperature: 0.3,
         });
+        addUsage(opts.usage, retry);
         const retryText = retry.choices[0]?.message?.content || '{}';
         return sanitizeImageUrls(JSON.parse(stripJsonFences(retryText)), ctx);
       }
@@ -313,6 +335,7 @@ export async function generateItinerary(
     response_format: { type: 'json_object' },
     temperature: 0.3,
   });
+  addUsage(opts.usage, final);
   const text = final.choices[0]?.message?.content || '{}';
   opts.stepTrace?.push({
     step: maxSteps,

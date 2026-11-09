@@ -119,12 +119,17 @@ npm run test:e2e       # Playwright
 **Agent eval harness** (tool-call correctness, constraint satisfaction, hallucination rate, Wikivoyage grounding consistency, optional LLM-as-judge quality) — calls the live agent and real external APIs, so it costs real tokens/requests:
 
 ```bash
-npm run eval                                          # all cases in tests/eval/cases.json
-EVAL_FILTER=tokyo-family-food-culture npm run eval     # one case
+npm run eval                                          # held-out test split (30 cases), 1 repeat
+npm run eval:test                                     # test split × 3 repeats, mean ± std (headline numbers)
+EVAL_SPLIT=train npm run eval                          # train | test | all
+EVAL_FILTER=tokyo-family-food-culture npm run eval     # specific case ids
 EVAL_SKIP_JUDGE=1 npm run eval                         # skip the judge call
+TOOL_CACHE_DIR=tests/eval/.tool-cache npm run eval     # replay tool responses across runs
 ```
 
-Reports land in `tests/eval/reports/latest.{json,md}`, with each case's full generated itinerary saved alongside under `tests/eval/reports/itineraries/` for manual review.
+`tests/eval/cases.json` holds 60 cases with a frozen train/test split: 15 domestic + 15 international on each side, and each destination appears in only one split. `train` is reserved for the experience-library learning loop; reported numbers come from `test`. Each run gets a scalar reward, `0.3·tool + 0.3·constraint + 0.2·judge/5 − 0.5·hallucination`, with frozen weights (`tests/eval/scoring.ts`). Runs hit by provider errors are rerun once and flagged if they stay degraded.
+
+Reports land in `tests/eval/reports/latest.{json,md}`, with each run's full generated itinerary saved alongside under `tests/eval/reports/itineraries/` for manual review. A full-split run also writes a compact summary (case ids, `cases.json` hash, commit, flags) to `tests/eval/results/`, which is meant to be committed.
 
 ## Known limitations
 

@@ -12,6 +12,10 @@ export interface EvalCase {
   groupType: string;
   budget: { min: number; max: number };
   specialNeeds: string[];
+  /** Frozen train/test assignment (cases.json v2). Optional only so ad-hoc test fixtures can omit it. */
+  split?: 'train' | 'test';
+  /** domestic = routed to Amap, international = everything else. Must agree with getMapProvider. */
+  region?: 'domestic' | 'international';
 }
 
 /**
@@ -246,4 +250,50 @@ export function scoreDestinationContextUsage(
 
   const score = attributionConsistent ? 1 : 0.4;
   return { called, calledCount: calls.length, successCount, attributionConsistent, score, issues };
+}
+
+// ==================== 5. Scalar reward (v2 learning loop + ablation) ====================
+
+/**
+ * r = 0.3·tool_correct + 0.3·constraint + 0.2·judge − 0.5·halluc_rate
+ * (Wayfound v2 Optimization Plan, "Evaluation plan"). All inputs are 0-1;
+ * judge is weighted_total/5. Range is [-0.5, 0.8].
+ *
+ * FROZEN: these weights are tuned once and then fixed, so rewards stay
+ * comparable across learning epochs and ablation rows. Changing them
+ * invalidates every reward already reported; bump REWARD_VERSION if you must.
+ */
+export const REWARD_VERSION = 1;
+export const REWARD_WEIGHTS = { toolCorrect: 0.3, constraint: 0.3, judge: 0.2, hallucination: 0.5 } as const;
+
+export interface RewardInput {
+  toolCorrect: number;
+  constraint: number;
+  /** Judge weighted_total on its native 0-5 scale, or null when the judge was skipped. */
+  judgeOutOf5: number | null;
+  hallucinationRate: number;
+}
+
+export interface Reward {
+  value: number;
+  /**
+   * False when the judge was skipped: the judge term is then left out
+   * (not imputed), so a no-judge reward is NOT comparable to a with-judge
+   * one. Aggregation keeps the two apart.
+   */
+  includesJudge: boolean;
+}
+
+const clamp01 = (n: number) => Math.max(0, Math.min(1, Number.isFinite(n) ? n : 0));
+
+export function computeReward(input: RewardInput): Reward {
+  const w = REWARD_WEIGHTS;
+  const includesJudge = input.judgeOutOf5 !== null && Number.isFinite(input.judgeOutOf5);
+  const judge = includesJudge ? clamp01((input.judgeOutOf5 as number) / 5) : 0;
+  const value =
+    w.toolCorrect * clamp01(input.toolCorrect) +
+    w.constraint * clamp01(input.constraint) +
+    (includesJudge ? w.judge * judge : 0) -
+    w.hallucination * clamp01(input.hallucinationRate);
+  return { value, includesJudge };
 }
