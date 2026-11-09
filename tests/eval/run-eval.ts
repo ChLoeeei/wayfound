@@ -112,6 +112,8 @@ interface CaseResult {
   degraded: boolean;
   steps: number;
   usage: AgentUsage;
+  /** Real Geoapify HTTP requests this run made (cache hits excluded). */
+  geoapifyRequests: number;
   /** Token usage of the LLM-judge call(s) for this run, kept apart from the agent's own usage. */
   judgeUsage: AgentUsage;
   reward: Reward;
@@ -188,7 +190,7 @@ function collectMapboxDiagnostics(c: EvalCase, trace: ToolCallRecord[]): MapboxD
   return entries;
 }
 
-type RunInfo = Pick<CaseResult, 'id' | 'destination' | 'region' | 'repeat' | 'attempts' | 'degraded' | 'steps' | 'usage' | 'judgeUsage' | 'durationMs'>;
+type RunInfo = Pick<CaseResult, 'id' | 'destination' | 'region' | 'repeat' | 'attempts' | 'degraded' | 'steps' | 'usage' | 'judgeUsage' | 'geoapifyRequests' | 'durationMs'>;
 
 const emptyUsage = (): AgentUsage => ({ promptTokens: 0, cachedPromptTokens: 0, completionTokens: 0, completions: 0 });
 
@@ -427,6 +429,7 @@ async function runCaseOnce(
   const stepTrace: AgentStepRecord[] = [];
   const usage = emptyUsage();
   const judgeUsage = emptyUsage();
+  const geoapifyBefore = geoapifyMeterSnapshot().requests;
   const start = Date.now();
   const region = regionOf(c);
   const tag = repeats > 1 ? ` r${repeat}` : '';
@@ -441,6 +444,7 @@ async function runCaseOnce(
     steps: stepTrace.length,
     usage,
     judgeUsage,
+    geoapifyRequests: geoapifyMeterSnapshot().requests - geoapifyBefore,
     durationMs: Date.now() - start,
   });
   try {
@@ -525,6 +529,7 @@ function toRunMetrics(r: CaseResult): RunMetrics {
     completionTokens: r.usage.completionTokens + r.judgeUsage.completionTokens,
     judgePromptTokens: r.judgeUsage.promptTokens,
     judgeCompletionTokens: r.judgeUsage.completionTokens,
+    geoapifyRequests: r.geoapifyRequests ?? 0,
     durationMs: r.durationMs,
   };
 }
@@ -600,6 +605,7 @@ function headlineRows(g: GroupSummary): Array<[string, string]> {
     ['Avg steps', fmtSpread(m.steps, { digits: 1 })],
     ['Tokens per run, agent+judge (prompt / completion)', `${fmtSpread(m.promptTokens, { digits: 0 })} / ${fmtSpread(m.completionTokens, { digits: 0 })}`],
     ['  of which cached prompt tokens', fmtSpread(m.cachedPromptTokens, { digits: 0 })],
+    ['Geoapify requests per run (after cache)', fmtSpread(m.geoapifyRequests, { digits: 1 })],
     ['  of which judge (prompt / completion)', `${fmtSpread(m.judgePromptTokens, { digits: 0 })} / ${fmtSpread(m.judgeCompletionTokens, { digits: 0 })}`],
   ];
 }

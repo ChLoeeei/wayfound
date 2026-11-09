@@ -25,6 +25,7 @@ export interface RunMetrics {
   completionTokens: number;
   judgePromptTokens: number;
   judgeCompletionTokens: number;
+  geoapifyRequests: number;
   durationMs: number;
 }
 
@@ -59,6 +60,7 @@ export const METRIC_KEYS = [
   'completionTokens',
   'judgePromptTokens',
   'judgeCompletionTokens',
+  'geoapifyRequests',
   'durationMs',
 ] as const;
 export type MetricKey = (typeof METRIC_KEYS)[number];
