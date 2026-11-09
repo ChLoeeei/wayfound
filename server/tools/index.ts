@@ -190,6 +190,11 @@ export class ToolContext {
   }
 }
 
+/** Env flags that change search_places output; folded into its cache key. */
+export function searchBehaviorFingerprint(): string {
+  return process.env.DISABLE_GEOAPIFY_SIMPLIFIED_RETRY === 'true' ? 'geoapify-retry:off' : 'geoapify-retry:on';
+}
+
 export async function runTool(
   ctx: ToolContext,
   name: string,
@@ -202,7 +207,9 @@ export async function runTool(
       const kw = String(keywords ?? '');
       const lim = Number(limit) || 10;
       const result = await cachedToolCall(
-        [ctx.provider, 'search_places', kw, region ?? null, lim],
+        // The retry flag changes what searchPlaces returns, so it must be part of the key, or
+        // the retry-on and retry-off ablation rows would read each other's cached results.
+        [ctx.provider, 'search_places', kw, region ?? null, lim, searchBehaviorFingerprint()],
         () => client.searchPlaces(kw, region, lim),
         r => r.pois.length > 0,
       );

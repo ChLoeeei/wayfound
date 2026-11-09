@@ -61,3 +61,16 @@ describe('sanitizeImageUrls', () => {
     expect(() => sanitizeImageUrls({ days: [{ slots: null }] } as any, { servedPhotoUrls: new Set() })).not.toThrow();
   });
 });
+
+describe('search_places cache key', () => {
+  afterEach(() => {
+    delete process.env.DISABLE_GEOAPIFY_SIMPLIFIED_RETRY;
+  });
+
+  it('differs between Geoapify-retry on and off, so ablation rows never share cached searches', async () => {
+    const { searchBehaviorFingerprint } = await import('../../server/tools/index');
+    const on = searchBehaviorFingerprint();
+    process.env.DISABLE_GEOAPIFY_SIMPLIFIED_RETRY = 'true';
+    expect(searchBehaviorFingerprint()).not.toBe(on);
+  });
+});
