@@ -16,6 +16,9 @@
     "test:fuzzy": "vitest run --config vitest.fuzzy.config.ts",
     "eval": "tsx tests/eval/run-eval.ts",
     "eval:test": "EVAL_SPLIT=test EVAL_REPEATS=3 tsx tests/eval/run-eval.ts",
+    "eval:baseline": "npm run eval:baseline:no-retry && npm run eval:baseline:retry",
+    "eval:baseline:no-retry": "EVAL_SETUP=baseline DISABLE_GEOAPIFY_SIMPLIFIED_RETRY=true TOOL_CACHE_DIR=tests/eval/.tool-cache npm run eval:test",
+    "eval:baseline:retry": "EVAL_SETUP=geoapify-retry TOOL_CACHE_DIR=tests/eval/.tool-cache npm run eval:test",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },

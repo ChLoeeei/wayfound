@@ -47,6 +47,7 @@
  * results; no separate UI credit needed.
  */
 import { createThrottledFetch, readErrorBody } from './http';
+import { cachedToolCall } from './cache';
 import type { Poi, DistanceResult } from './provider';
 
 const PLACES_KEY = process.env.GEOAPIFY_PLACES_API_KEY || '';
@@ -58,7 +59,32 @@ const ROUTING_URL = 'https://api.geoapify.com/v1/routing';
 // Independent spacing/retry state per key — no documented per-minute cap
 // found, so this is a deliberately moderate pace (not a burst) rather than
 // a value tuned against an observed limit like Overpass's was.
+/**
+ * Process-lifetime meter of real Geoapify HTTP attempts (each one costs a
+ * credit against the shared 3,000/day free pool, retries included), plus
+ * how many came back rate-limited (429) or rejected for quota/auth
+ * (401/402/403). Every provider function here degrades soft on those, so
+ * without this meter a 429 just looks like "found nothing". The eval
+ * harness reads it to enforce a daily budget and to invalidate runs that
+ * hit a limit (see tests/eval/progress.ts).
+ */
+export interface GeoapifyMeter {
+  requests: number;
+  rateLimited: number;
+  quotaErrors: number;
+}
+const meter: GeoapifyMeter = { requests: 0, rateLimited: 0, quotaErrors: 0 };
+export function geoapifyMeterSnapshot(): GeoapifyMeter {
+  return { ...meter };
+}
+function recordAttempt({ status }: { status?: number }) {
+  meter.requests++;
+  if (status === 429) meter.rateLimited++;
+  else if (status === 401 || status === 402 || status === 403) meter.quotaErrors++;
+}
+
 const placesFetch = createThrottledFetch({
+  onAttempt: recordAttempt,
   minSpacingMs: 250,
   retryableStatuses: [429, 502, 503, 504],
   maxRetries: 2,
@@ -67,6 +93,7 @@ const placesFetch = createThrottledFetch({
   timeoutMs: 8000,
 });
 const routingFetch = createThrottledFetch({
+  onAttempt: recordAttempt,
   minSpacingMs: 250,
   retryableStatuses: [429, 502, 503, 504],
   maxRetries: 2,
@@ -132,6 +159,24 @@ export async function geoapifySearchPlaces(
   limit: number,
 ): Promise<Poi[]> {
   if (!PLACES_KEY) return [];
+  // HTTP-level cache (opt-in via TOOL_CACHE_DIR, see ./cache.ts): one entry per
+  // exact Geoapify request, so the same query is shared across repeats and
+  // across the retry-on / retry-off ablation rows. Any HTTP 200 is stored,
+  // including a genuine empty result; errors and 429s never are.
+  const r = await cachedToolCall(
+    ['geoapify-http', 'search', keywords, proximity.lat, proximity.lng, radiusMeters, limit],
+    () => geoapifySearchPlacesUncached(keywords, proximity, radiusMeters, limit),
+    v => v.ok,
+  );
+  return r.pois;
+}
+
+async function geoapifySearchPlacesUncached(
+  keywords: string,
+  proximity: { lat: number; lng: number },
+  radiusMeters: number,
+  limit: number,
+): Promise<{ pois: Poi[]; ok: boolean }> {
   const params = new URLSearchParams({
     text: keywords,
     filter: `circle:${proximity.lng},${proximity.lat},${radiusMeters}`,
@@ -144,20 +189,20 @@ export async function geoapifySearchPlaces(
     res = await placesFetch(url);
   } catch (err: any) {
     console.log(`[geoapify] places search failed (network): ${err?.message ?? err}`);
-    return [];
+    return { pois: [], ok: false };
   }
   if (!res.ok) {
     const body = await readErrorBody(res);
     console.log(`[geoapify] places search HTTP ${res.status}${body ? `: ${body}` : ''}`);
-    return [];
+    return { pois: [], ok: false };
   }
   let data: GeoapifyFeatureCollection;
   try {
     data = (await res.json()) as GeoapifyFeatureCollection;
   } catch {
-    return [];
+    return { pois: [], ok: false };
   }
-  return (data.features ?? []).map(featureToPoi).filter((p): p is Poi => p !== null);
+  return { pois: (data.features ?? []).map(featureToPoi).filter((p): p is Poi => p !== null), ok: true };
 }
 
 /**
@@ -168,6 +213,10 @@ export async function geoapifySearchPlaces(
  */
 export async function geoapifyPlaceDetails(placeId: string): Promise<Poi | null> {
   if (!PLACES_KEY || !placeId) return null;
+  return cachedToolCall(['geoapify-http', 'place-details', placeId], () => geoapifyPlaceDetailsUncached(placeId), p => !!p);
+}
+
+async function geoapifyPlaceDetailsUncached(placeId: string): Promise<Poi | null> {
   const params = new URLSearchParams({ id: placeId, apiKey: PLACES_KEY });
   const url = `${PLACE_DETAILS_URL}?${params.toString()}`;
   let res: Response;
@@ -204,6 +253,15 @@ export async function geoapifyRoute(
   type: 1 | 3,
 ): Promise<DistanceResult> {
   if (!ROUTING_KEY) throw new Error('GEOAPIFY_ROUTING_API_KEY is not configured');
+  // Throws on failure, so only successful routes ever reach the cache.
+  return cachedToolCall(['geoapify-http', 'route', origin, destination, type], () => geoapifyRouteUncached(origin, destination, type), () => true);
+}
+
+async function geoapifyRouteUncached(
+  origin: { lat: number; lng: number },
+  destination: { lat: number; lng: number },
+  type: 1 | 3,
+): Promise<DistanceResult> {
   const mode = type === 3 ? 'walk' : 'drive';
   const params = new URLSearchParams({
     waypoints: `${origin.lat},${origin.lng}|${destination.lat},${destination.lng}`,

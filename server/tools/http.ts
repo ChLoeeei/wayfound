@@ -34,6 +34,12 @@ export interface ThrottledFetchOptions {
   retryOnNetworkError?: boolean;
   /** Client-side abort timeout per attempt, ms. Default: none (no abort — relies on the underlying transport's own timeout). */
   timeoutMs?: number;
+  /**
+   * Called once per real network attempt (including internal retries), with
+   * the response or the thrown error. Used to meter paid/quota'd APIs; must
+   * not consume the response body.
+   */
+  onAttempt?: (attempt: { url: string; status?: number; error?: unknown }) => void;
 }
 
 export function createThrottledFetch(options: ThrottledFetchOptions = {}) {
@@ -79,7 +85,9 @@ export function createThrottledFetch(options: ThrottledFetchOptions = {}) {
       let res: Response;
       try {
         res = await attemptOnce(url, init);
+        options.onAttempt?.({ url, status: res.status });
       } catch (err) {
+        options.onAttempt?.({ url, error: err });
         if (!retryOnNetworkError || attempt >= maxRetries) throw err;
         await sleep(retryBaseDelayMs * 2 ** attempt);
         continue;

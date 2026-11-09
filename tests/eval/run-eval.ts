@@ -78,6 +78,8 @@ import type { Itinerary } from '../../src/types';
 import { allCases, caseSetVersion, parseSplit, selectCases } from './cases';
 import { summarizeRuns, fmtSpread, type RunMetrics, type GroupSummary } from './aggregate';
 import { toolCacheDir, toolCacheStats } from '../../server/tools/cache';
+import { geoapifyMeterSnapshot } from '../../server/tools/geoapify';
+import { CheckpointStore, addDailyUsage, budgetExhausted, codeFingerprint, configKey, readDailyUsage } from './progress';
 
 const filterIds = (process.env.EVAL_FILTER ?? '').split(',').map(s => s.trim()).filter(Boolean);
 const split = parseSplit(process.env.EVAL_SPLIT);
@@ -87,6 +89,16 @@ const repeats = Math.max(1, Math.floor(Number(process.env.EVAL_REPEATS ?? 1)) ||
 const temperature = process.env.EVAL_TEMPERATURE !== undefined ? Number(process.env.EVAL_TEMPERATURE) : undefined;
 const degradedReruns = Math.max(0, Math.floor(Number(process.env.EVAL_DEGRADED_RERUNS ?? 1)) || 0);
 const setupLabel = process.env.EVAL_SETUP?.trim() || 'default';
+const geoapifyDailyLimit = Math.floor(Number(process.env.EVAL_GEOAPIFY_DAILY_LIMIT ?? 2700)) || 2700;
+const freshStart = process.env.EVAL_FRESH === '1';
+const allowCodeChange = process.env.EVAL_ALLOW_CODE_CHANGE === '1';
+/** How long to wait before retrying a run invalidated by a Geoapify 429/quota error. */
+const limitRetryWaitMs = Math.max(0, Number(process.env.EVAL_LIMIT_RETRY_WAIT_MS ?? 60000));
+
+const REPORTS_DIR = path.join(process.cwd(), 'tests', 'eval', 'reports');
+const USAGE_FILE = path.join(REPORTS_DIR, 'geoapify-usage.json');
+/** Files whose changes would change scores; resuming across a change is refused (see progress.ts). */
+const SCORING_SOURCES = ['server/agent.ts', 'server/tools', 'tests/eval/scoring.ts', 'tests/fuzzy/judge.ts', 'tests/eval/cases.json'];
 
 interface CaseResult {
   id: string;
@@ -242,36 +254,135 @@ async function main() {
       `${skipJudge ? ', LLM-judge skipped' : ''}${temperature !== undefined ? `, temperature=${temperature}` : ''}${toolCacheDir() ? `, tool cache=${toolCacheDir()}` : ''}\n`,
   );
 
-  // Computed once up front so per-case itinerary files can be named with it as they're generated.
+  // Computed once up front so per-run itinerary files can be named with it as they're generated.
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const itinerariesDir = path.join(process.cwd(), 'tests', 'eval', 'reports', 'itineraries');
+  const itinerariesDir = path.join(REPORTS_DIR, 'itineraries');
   fs.mkdirSync(itinerariesDir, { recursive: true });
 
-  const results: CaseResult[] = [];
+  // ---- Checkpoint: same command = same directory = resume ----
+  const meta = buildMeta(stamp);
+  const { stamp: _s, gitCommit: _g, gitDirty: _d, repeats: _r, ...resultAffecting } = meta;
+  const ckptDir = path.join(REPORTS_DIR, 'checkpoints', `${meta.setup}-${meta.split}-${configKey(resultAffecting)}`);
+  const store = new CheckpointStore<CaseResult>(ckptDir);
+  if (freshStart) {
+    const archived = store.archive();
+    if (archived) console.log(`EVAL_FRESH=1: previous checkpoint moved to ${path.relative(process.cwd(), archived)}`);
+  }
+  const refusal = store.open(resultAffecting, codeFingerprint(process.cwd(), SCORING_SOURCES), allowCodeChange);
+  if (refusal) {
+    console.error(`Refusing to resume: ${refusal}`);
+    process.exit(1);
+  }
+  const total = cases.length * repeats;
+  const already = cases.reduce((n, c) => n + Array.from({ length: repeats }, (_, i) => store.has(c.id, i + 1)).filter(Boolean).length, 0);
+  console.log(`Checkpoint: ${path.relative(process.cwd(), ckptDir)} — ${already}/${total} run(s) already done${already ? ', skipping them' : ''}`);
+
+  const startUsage = readDailyUsage(USAGE_FILE);
+  console.log(`Geoapify today (UTC ${startUsage.date}, eval harness only): ${startUsage.requests}/${geoapifyDailyLimit} request(s)\n`);
+
   const mapboxDiagnostics: MapboxDiagnosticEntry[] = [];
   const mapboxRequests: Array<MapboxRequestLogEntry & { caseId: string; destination: string }> = [];
+  let stopReason: string | null = null;
+  let meterSeen = geoapifyMeterSnapshot().requests;
+  const flushUsage = () => {
+    const now = geoapifyMeterSnapshot().requests;
+    const u = addDailyUsage(USAGE_FILE, now - meterSeen);
+    meterSeen = now;
+    return u;
+  };
 
-  // Repeat-major order: one full pass over the cases per repeat, so an
-  // interrupted run still has complete repeats rather than a few cases × 3.
-  for (let repeat = 1; repeat <= repeats; repeat++) {
+  // Repeat-major order: one full pass over the cases per repeat, so a run
+  // stopped by the budget still has complete repeats rather than a few cases × 3.
+  outer: for (let repeat = 1; repeat <= repeats; repeat++) {
     if (repeats > 1) console.log(`--- repeat ${repeat}/${repeats} ---`);
     for (const c of cases) {
-      const r = await runCaseWithReruns(c, repeat, client, stamp, itinerariesDir, mapboxDiagnostics, mapboxRequests);
-      results.push(r);
+      if (store.has(c.id, repeat)) continue;
+      const usage = flushUsage();
+      if (budgetExhausted(usage, geoapifyDailyLimit)) {
+        stopReason = `Geoapify daily budget reached (${usage.requests}/${geoapifyDailyLimit} on ${usage.date} UTC)`;
+        break outer;
+      }
+      const outcome = await runValidated(c, repeat, client, stamp, itinerariesDir, mapboxDiagnostics, mapboxRequests);
+      flushUsage();
+      if (outcome.kind === 'limit') {
+        stopReason = `Geoapify kept returning 429/quota errors for ${c.id} r${repeat}; the run was not counted`;
+        break outer;
+      }
+      store.save(c.id, repeat, outcome.result);
     }
   }
 
-  const meta = buildMeta(stamp);
-  writeReports(results, stamp, meta);
+  // Reports always cover every completed run in this checkpoint, from all sessions.
+  const results: CaseResult[] = [];
+  for (let repeat = 1; repeat <= repeats; repeat++) {
+    for (const c of cases) {
+      const r = store.load(c.id, repeat);
+      if (r) results.push(r);
+    }
+  }
+  const complete = results.length === total;
+  if (results.length > 0) {
+    writeReports(results, stamp, { ...meta, complete, completedRuns: results.length, plannedRuns: total });
+    if (filterIds.length === 0 && complete) writeCommittedResult(results, stamp, meta);
+    printSummary(results);
+  }
   writeMapboxDiagnosticsLog(mapboxDiagnostics, mapboxRequests, stamp);
-  if (filterIds.length === 0) writeCommittedResult(results, stamp, meta);
-  printSummary(results);
   if (toolCacheDir()) {
     const st = toolCacheStats();
     console.log(`Tool cache: ${st.hits} hit(s), ${st.misses} miss(es), ${st.writes} write(s)`);
   }
-  console.log(`Full itinerary JSON for each generated run: tests/eval/reports/itineraries/${stamp}-<case-id>-r<repeat>.json`);
+  const g = geoapifyMeterSnapshot();
+  const finalUsage = readDailyUsage(USAGE_FILE);
+  console.log(
+    `Geoapify this session: ${g.requests} request(s), ${g.rateLimited} × 429, ${g.quotaErrors} × 401/402/403; today ${finalUsage.requests}/${geoapifyDailyLimit}`,
+  );
+  if (!complete) {
+    console.log(
+      `\nSTOPPED${stopReason ? `: ${stopReason}` : ''}. Progress saved: ${results.length}/${total} run(s) done.` +
+        `\nRun the exact same command again (e.g. after 00:00 UTC) to continue; completed runs are skipped.`,
+    );
+    // Non-zero so a chained command (npm run eval:baseline) does not start the next row.
+    process.exitCode = 2;
+  } else {
+    console.log(`\nAll ${total} run(s) complete.`);
+  }
 }
+
+type RunOutcome = { kind: 'ok'; result: CaseResult } | { kind: 'limit' };
+
+/**
+ * Any Geoapify 429 or quota/auth rejection during a run makes it INVALID:
+ * those calls degrade to "found nothing", which would be scored as agent
+ * hallucination. An invalid run is discarded (never checkpointed), and
+ * retried once after a wait; if it is still invalid the session stops so
+ * the run is redone on resume.
+ */
+async function runValidated(
+  c: EvalCase,
+  repeat: number,
+  client: OpenAI,
+  stamp: string,
+  itinerariesDir: string,
+  mapboxDiagnostics: MapboxDiagnosticEntry[],
+  mapboxRequests: Array<MapboxRequestLogEntry & { caseId: string; destination: string }>,
+): Promise<RunOutcome> {
+  for (let tryNo = 1; tryNo <= 2; tryNo++) {
+    const r = await runCaseWithReruns(c, repeat, client, stamp, itinerariesDir, mapboxDiagnostics, mapboxRequests);
+    if (r.kind === 'ok') return r;
+    if (tryNo === 1) {
+      console.log(`    ✗ INVALID (Geoapify 429/quota error) — discarded, retrying in ${Math.round(limitRetryWaitMs / 1000)}s`);
+      await new Promise(res => setTimeout(res, limitRetryWaitMs));
+    } else {
+      console.log('    ✗ INVALID again — stopping; this run will be redone on resume');
+    }
+  }
+  return { kind: 'limit' };
+}
+
+const limitEvents = () => {
+  const m = geoapifyMeterSnapshot();
+  return m.rateLimited + m.quotaErrors;
+};
 
 async function runCaseWithReruns(
   c: EvalCase,
@@ -281,11 +392,16 @@ async function runCaseWithReruns(
   itinerariesDir: string,
   mapboxDiagnostics: MapboxDiagnosticEntry[],
   mapboxRequests: Array<MapboxRequestLogEntry & { caseId: string; destination: string }>,
-): Promise<CaseResult> {
+): Promise<RunOutcome> {
   let result: CaseResult | null = null;
   for (let attempt = 1; attempt <= 1 + degradedReruns; attempt++) {
     const isLast = attempt === 1 + degradedReruns;
+    const before = limitEvents();
     const { result: r, trace } = await runCaseOnce(c, repeat, attempt, client, stamp, itinerariesDir);
+    if (limitEvents() > before) {
+      drainMapboxRequestLog();
+      return { kind: 'limit' };
+    }
     result = r;
     // Diagnostics only for the attempt we keep, so the log matches the report.
     if (!r.degraded || isLast) {
@@ -296,7 +412,7 @@ async function runCaseWithReruns(
     drainMapboxRequestLog();
     console.log(`    ↻ provider-degraded run, rerunning (${attempt}/${degradedReruns})`);
   }
-  return result!;
+  return { kind: 'ok', result: result! };
 }
 
 async function runCaseOnce(
@@ -445,7 +561,7 @@ function buildMeta(stamp: string) {
     },
   };
 }
-type EvalMeta = ReturnType<typeof buildMeta>;
+type EvalMeta = ReturnType<typeof buildMeta> & { complete?: boolean; completedRuns?: number; plannedRuns?: number };
 
 function avg(nums: number[]): number {
   if (nums.length === 0) return 0;
@@ -512,6 +628,10 @@ function renderMarkdown(summary: ReturnType<typeof buildSummary>, results: CaseR
   lines.push('');
   lines.push(`Generated: ${summary.generatedAt}`);
   lines.push('');
+  if (meta.complete === false) {
+    lines.push(`> **PARTIAL:** ${meta.completedRuns}/${meta.plannedRuns} planned runs done. Rerun the same command to continue. Do not report these numbers yet.`);
+    lines.push('');
+  }
   lines.push(
     `- Setup: **${meta.setup}**, split: **${meta.split}**, ${summary.caseCount} case(s) × ${meta.repeats} repeat(s) = ${summary.runCount} run(s); temperature ${meta.temperature}; judge ${meta.judge ? 'on' : 'off'}`,
   );
