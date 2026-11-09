@@ -511,6 +511,36 @@ describe('Geoapify integration (primary provider)', () => {
     expect(r.pois.map(p => p.name)).toEqual(['Eiffel Tower']);
   });
 
+  it('skips the Geoapify simplified retry when DISABLE_GEOAPIFY_SIMPLIFIED_RETRY=true (ablation baseline)', async () => {
+    process.env.GEOAPIFY_PLACES_API_KEY = 'test-places-key';
+    process.env.DISABLE_GEOAPIFY_SIMPLIFIED_RETRY = 'true';
+    try {
+      vi.resetModules();
+      const { searchPlaces } = await import('../../server/tools/mapbox');
+      const geoapifyTexts: string[] = [];
+      globalThis.fetch = vi.fn(async (url: string) => {
+        if (url.includes('nominatim.openstreetmap.org')) return jsonResponse(NOMINATIM_PARIS);
+        if (url.includes('overpass')) return overpassOk([EIFFEL_ELEMENT]);
+        if (url.includes('api.geoapify.com/v1/geocode/search')) {
+          geoapifyTexts.push(new URL(url).searchParams.get('text') ?? '');
+          return jsonResponse({ type: 'FeatureCollection', features: [] });
+        }
+        throw new Error(`unexpected url: ${url}`);
+      }) as any;
+
+      const r = await searchPlaces('Eiffel Tower', 'search-region-geoapify-noretry');
+      expect(geoapifyTexts).toEqual(['Eiffel Tower']);
+      expect(r.pois.map(p => p.name)).toEqual(['Eiffel Tower']); // served by Overpass instead
+    } finally {
+      delete process.env.DISABLE_GEOAPIFY_SIMPLIFIED_RETRY;
+    }
+  });
+
+  it('marks the straight-line fallback distance as estimated', async () => {
+    const r = await calculateDistance({ lat: 48.8583, lng: 2.2945 }, { lat: 48.8606, lng: 2.3376 });
+    expect(r.estimated).toBe(true);
+  });
+
   it('getPoiDetails routes a "geoapify:" id to Geoapify Place Details, not Overpass', async () => {
     process.env.GEOAPIFY_PLACES_API_KEY = 'test-places-key';
     vi.resetModules();

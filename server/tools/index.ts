@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import * as amap from './amap';
 import * as mapbox from './mapbox';
 import * as wikivoyage from './wikivoyage';
+import { cachedToolCall } from './cache';
 import { getMapProvider, parseLngLat, type MapProvider, type Poi } from './provider';
 
 /**
@@ -156,6 +157,13 @@ function poiToSerializable(p: Poi): SerializablePoi | null {
 export class ToolContext {
   readonly provider: MapProvider;
   private poiCache = new Map<string, Poi>();
+  /**
+   * Every photoUrl actually returned to the model this run (in the same
+   * serialized/proxied form the model saw). The agent uses this to strip
+   * any `Place.imageUrl` the model invented rather than copied — see
+   * sanitizeImageUrls in ../agent.ts.
+   */
+  readonly servedPhotoUrls = new Set<string>();
 
   constructor(destination: string) {
     this.provider = getMapProvider(destination);
@@ -168,6 +176,18 @@ export class ToolContext {
   getPoi(id: string): Poi | undefined {
     return this.poiCache.get(id);
   }
+
+  /** Serializes POIs for the model and records any photoUrl it is shown. */
+  serialize(pois: Poi[]): SerializablePoi[] {
+    const out: SerializablePoi[] = [];
+    for (const p of pois) {
+      const s = poiToSerializable(p);
+      if (!s) continue;
+      if (s.photoUrl) this.servedPhotoUrls.add(s.photoUrl);
+      out.push(s);
+    }
+    return out;
+  }
 }
 
 export async function runTool(
@@ -179,19 +199,31 @@ export async function runTool(
   switch (name) {
     case 'search_places': {
       const { keywords, region, limit } = args;
-      const result = await client.searchPlaces(String(keywords ?? ''), region, Number(limit) || 10);
+      const kw = String(keywords ?? '');
+      const lim = Number(limit) || 10;
+      const result = await cachedToolCall(
+        [ctx.provider, 'search_places', kw, region ?? null, lim],
+        () => client.searchPlaces(kw, region, lim),
+        r => r.pois.length > 0,
+      );
       ctx.rememberPois(result.pois);
       return {
         count: result.count,
-        results: result.pois.map(poiToSerializable).filter(Boolean),
+        results: ctx.serialize(result.pois),
       };
     }
     case 'get_poi_details': {
       const { poiId } = args;
       const cached = ctx.getPoi(String(poiId));
-      const poi = cached ?? (await client.getPoiDetails(String(poiId)));
+      const poi =
+        cached ??
+        (await cachedToolCall(
+          [ctx.provider, 'get_poi_details', String(poiId)],
+          () => client.getPoiDetails(String(poiId)),
+          p => !!p,
+        ));
       if (poi) ctx.rememberPois([poi]);
-      return poi ? poiToSerializable(poi) : null;
+      return poi ? (ctx.serialize([poi])[0] ?? null) : null;
     }
     case 'calculate_distance': {
       const origin = ctx.getPoi(String(args.originPoiId));
@@ -202,12 +234,22 @@ export async function runTool(
       const oc = parseLngLat(origin.location);
       const dc = parseLngLat(dest.location);
       if (!oc || !dc) return { error: 'Invalid coordinates on cached POI.' };
-      const r = await client.calculateDistance(oc, dc);
-      return r;
+      return cachedToolCall(
+        [ctx.provider, 'calculate_distance', oc, dc],
+        () => client.calculateDistance(oc, dc),
+        // Never cache the straight-line fallback: it means every routing provider was down.
+        r => !!r && !(r as { estimated?: boolean }).estimated,
+      );
     }
     case 'get_destination_context': {
       const { destination, topic } = args;
-      const result = await wikivoyage.getDestinationContext(String(destination ?? ''), topic ? String(topic) : undefined);
+      const dest = String(destination ?? '');
+      const t = topic ? String(topic) : undefined;
+      const result = await cachedToolCall(
+        ['wikivoyage', 'get_destination_context', dest, t ?? null],
+        () => wikivoyage.getDestinationContext(dest, t),
+        r => !!r,
+      );
       return result ?? { error: 'No Wikivoyage article found for this destination.' };
     }
     default:

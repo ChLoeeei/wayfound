@@ -581,7 +581,11 @@ export async function searchPlaces(
   const candidates = buildSimplifiedQueries(keywords, 2);
 
   let geoapifyPois = await geoapifySearchPlaces(keywords, proximity, SEARCH_RADIUS_METERS, cappedLimit);
-  if (geoapifyPois.length === 0 && candidates.length > 0) {
+  // DISABLE_GEOAPIFY_SIMPLIFIED_RETRY=true turns this hand-coded retry off,
+  // so the v2 ablation can compare it against learned lessons (read per
+  // call, not at import, so tests and eval runs can toggle it).
+  const geoapifyRetryEnabled = process.env.DISABLE_GEOAPIFY_SIMPLIFIED_RETRY !== 'true';
+  if (geoapifyRetryEnabled && geoapifyPois.length === 0 && candidates.length > 0) {
     for (const candidate of candidates) {
       geoapifyPois = await geoapifySearchPlaces(candidate.query, proximity, SEARCH_RADIUS_METERS, cappedLimit);
       if (geoapifyPois.length > 0) {
@@ -766,7 +770,11 @@ export async function calculateDistance(
   // Rough average speeds, not routed — just enough to make the duration
   // read as "an estimate" rather than 0 ("instant").
   const speedMetersPerSecond = type === 3 ? 1.3 : 11; // ~4.7 km/h walking, ~40 km/h driving-ish average
-  return { distanceMeters: Math.round(distanceMeters), durationSeconds: Math.round(distanceMeters / speedMetersPerSecond) };
+  return {
+    distanceMeters: Math.round(distanceMeters),
+    durationSeconds: Math.round(distanceMeters / speedMetersPerSecond),
+    estimated: true,
+  };
 }
 
 /** Great-circle distance in meters — used for type 0 (straight-line) only. */

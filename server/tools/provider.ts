@@ -40,6 +40,8 @@ export interface PoiSearchResult {
 export interface DistanceResult {
   distanceMeters: number;
   durationSeconds: number;
+  /** True when no routing provider answered and this is a straight-line guess. */
+  estimated?: boolean;
 }
 
 /**

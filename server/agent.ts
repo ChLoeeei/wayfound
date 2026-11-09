@@ -50,7 +50,7 @@ const ITINERARY_SCHEMA_HINT = `Return JSON in EXACTLY this shape:
               "rating": number,
               "estimatedCost": number, // RMB per person
               "duration": number,      // minutes
-              "imageUrl": string,
+              "imageUrl": string,      // copy the POI's photoUrl from search_places/get_poi_details verbatim; "" if it had none. Never invent a URL.
               "aiNote": string,
               "externalUrl": string,
               "searchQuery": string
@@ -236,10 +236,10 @@ export async function generateItinerary(
       opts.stepTrace?.push(stepRecord);
       if (RECOVERY_DISABLED) {
         // Recovery layer 2 off: let a parse failure propagate as-is.
-        return JSON.parse(stripJsonFences(text || '{}'));
+        return sanitizeImageUrls(JSON.parse(stripJsonFences(text || '{}')), ctx);
       }
       try {
-        return JSON.parse(stripJsonFences(text || '{}'));
+        return sanitizeImageUrls(JSON.parse(stripJsonFences(text || '{}')), ctx);
       } catch {
         messages.push({
           role: 'user',
@@ -252,7 +252,7 @@ export async function generateItinerary(
           temperature: 0.3,
         });
         const retryText = retry.choices[0]?.message?.content || '{}';
-        return JSON.parse(stripJsonFences(retryText));
+        return sanitizeImageUrls(JSON.parse(stripJsonFences(retryText)), ctx);
       }
     }
 
@@ -321,7 +321,28 @@ export async function generateItinerary(
     toolCalls: [],
     isFinal: true,
   });
-  return JSON.parse(stripJsonFences(text));
+  return sanitizeImageUrls(JSON.parse(stripJsonFences(text)), ctx);
+}
+
+/**
+ * Keeps a place's `imageUrl` only if it is a photoUrl a tool actually
+ * returned this run; anything else is model-invented (confirmed live: a
+ * Sensō-ji card got an unrelated Unsplash portrait) and is blanked so the
+ * UI shows no image instead of a wrong one. Mutates and returns `itinerary`.
+ */
+export function sanitizeImageUrls<T>(itinerary: T, ctx: Pick<ToolContext, 'servedPhotoUrls'>): T {
+  const days = (itinerary as any)?.days;
+  if (!Array.isArray(days)) return itinerary;
+  for (const day of days) {
+    for (const slot of Array.isArray(day?.slots) ? day.slots : []) {
+      for (const place of Array.isArray(slot?.places) ? slot.places : []) {
+        if (place && typeof place === 'object' && place.imageUrl && !ctx.servedPhotoUrls.has(place.imageUrl)) {
+          place.imageUrl = '';
+        }
+      }
+    }
+  }
+  return itinerary;
 }
 
 function buildUserPrompt(req: PlanningRequest): string {
