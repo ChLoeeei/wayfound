@@ -61,7 +61,7 @@ const RUBRIC_PROMPT = `你是一名资深旅游规划师，请按照以下 7 个
 - preference_match（取向匹配）：景点/餐厅类型是否符合用户 vibes
 - weather_adaptation（天气适配）：是否考虑了出行季节，雨季是否避免大量户外
 
-返回格式：
+返回格式（必须是合法 JSON；reason 内引用地名请用「」，不要使用英文双引号 "）：
 {
   "scores": {
     "route_logic": { "score": N, "reason": "..." },
@@ -86,25 +86,38 @@ export async function judgeItinerary(
 ): Promise<RubricResult> {
   const userMessage = `用户信息：${JSON.stringify(req.userProfile)}\n\n行程内容：${JSON.stringify(req.itinerary)}`;
 
-  const response = await client.chat.completions.create({
-    model,
-    messages: [
-      { role: 'system', content: RUBRIC_PROMPT },
-      { role: 'user', content: userMessage },
-    ],
-    response_format: { type: 'json_object' },
-    temperature: 0,
-  });
+  const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+    { role: 'system', content: RUBRIC_PROMPT },
+    { role: 'user', content: userMessage },
+  ];
+  const ask = async () => {
+    const response = await client.chat.completions.create({
+      model,
+      messages,
+      response_format: { type: 'json_object' },
+      temperature: 0,
+    });
+    return response.choices[0]?.message?.content || '{}';
+  };
 
-  const text = response.choices[0]?.message?.content || '{}';
-  const parsed = JSON.parse(text);
+  let text = await ask();
+  let parsed = parseJudgeOutput(text);
+  if (!parsed) {
+    // One retry with the broken output shown back. Still unparseable -> throw;
+    // callers decide what a missing judge score means.
+    messages.push({ role: 'assistant', content: text });
+    messages.push({ role: 'user', content: '上一条输出不是合法 JSON。请重新输出完整、合法的 JSON，reason 内不要使用英文双引号。' });
+    text = await ask();
+    parsed = parseJudgeOutput(text);
+    if (!parsed) throw new Error(`judge returned unparseable output twice: ${text.slice(0, 200)}`);
+  }
 
   // Be defensive about missing dimensions.
   const scores = {} as Record<RubricDim, DimScore>;
   for (const dim of RUBRIC_DIMENSIONS) {
     const raw = parsed.scores?.[dim];
     scores[dim] = {
-      score: clamp(parseFloat(raw?.score) || 0, 0, 5),
+      score: clamp(parseFloat(String(raw?.score)) || 0, 0, 5),
       reason: typeof raw?.reason === 'string' ? raw.reason : '',
     };
   }
@@ -115,6 +128,29 @@ export async function judgeItinerary(
     weighted_total: total,
     pass: total >= PASS_THRESHOLD,
   };
+}
+
+/**
+ * Parse the judge's JSON. The judge often writes Chinese `reason` text with
+ * unescaped ASCII quotes around place names, which breaks JSON.parse. Since
+ * only the numeric scores feed the reward, fall back to pulling each
+ * dimension's score out with a regex (reasons left empty). Returns null when
+ * neither path recovers all 7 dimensions.
+ */
+export function parseJudgeOutput(text: string): { scores: Record<string, { score: unknown; reason?: unknown }> } | null {
+  try {
+    const parsed = JSON.parse(text);
+    if (RUBRIC_DIMENSIONS.every(d => parsed?.scores?.[d] !== undefined)) return parsed;
+  } catch {
+    // fall through to salvage
+  }
+  const scores: Record<string, { score: unknown; reason: string }> = {};
+  for (const dim of RUBRIC_DIMENSIONS) {
+    const m = text.match(new RegExp(`"${dim}"\\s*:\\s*\\{\\s*"score"\\s*:\\s*"?(\\d+(?:\\.\\d+)?)`));
+    if (!m) return null;
+    scores[dim] = { score: m[1], reason: '' };
+  }
+  return { scores };
 }
 
 function clamp(n: number, min: number, max: number): number {

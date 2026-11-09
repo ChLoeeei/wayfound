@@ -29,7 +29,7 @@ function run(o: Partial<RunMetrics>): RunMetrics {
   return {
     caseId: 'c', region: 'domestic', repeat: 1, failed: false, degraded: false,
     toolCorrect: 1, constraint: 1, hallucinationRate: 0, judge: 4, reward: 0.76, rewardIncludesJudge: true,
-    steps: 5, promptTokens: 1000, completionTokens: 500, durationMs: 1000, ...o,
+    steps: 5, promptTokens: 1000, cachedPromptTokens: 0, completionTokens: 500, judgePromptTokens: 0, judgeCompletionTokens: 0, durationMs: 1000, ...o,
   };
 }
 

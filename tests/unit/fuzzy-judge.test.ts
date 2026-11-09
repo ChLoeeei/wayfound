@@ -49,3 +49,25 @@ describe('weightedTotal — PRD §7.3 rubric math', () => {
     expect(sum).toBeCloseTo(1, 5);
   });
 });
+
+describe('parseJudgeOutput', () => {
+  const dims = ['route_logic', 'time_allocation', 'meal_coverage', 'physical_intensity', 'budget_match', 'preference_match', 'weather_adaptation'];
+  it('parses valid JSON as-is', async () => {
+    const { parseJudgeOutput } = await import('../fuzzy/judge');
+    const ok = { scores: Object.fromEntries(dims.map(d => [d, { score: 4, reason: 'ok' }])) };
+    expect(parseJudgeOutput(JSON.stringify(ok))?.scores.route_logic.reason).toBe('ok');
+  });
+
+  it('salvages scores when a reason contains unescaped double quotes', async () => {
+    const { parseJudgeOutput } = await import('../fuzzy/judge');
+    const broken = `{"scores":{${dims.map((d, i) => `"${d}":{"score":${i % 5},"reason":"去"浅草寺"很合理"}`).join(',')}}}`;
+    expect(() => JSON.parse(broken)).toThrow();
+    const parsed = parseJudgeOutput(broken)!;
+    expect(dims.map(d => Number(parsed.scores[d].score))).toEqual([0, 1, 2, 3, 4, 0, 1]);
+  });
+
+  it('returns null when a dimension is missing entirely', async () => {
+    const { parseJudgeOutput } = await import('../fuzzy/judge');
+    expect(parseJudgeOutput('{"scores":{"route_logic":{"score":3}}}')).toBeNull();
+  });
+});

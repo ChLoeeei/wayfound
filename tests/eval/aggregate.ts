@@ -19,8 +19,12 @@ export interface RunMetrics {
   reward: number;
   rewardIncludesJudge: boolean;
   steps: number;
+  /** Agent + judge combined. */
   promptTokens: number;
+  cachedPromptTokens: number;
   completionTokens: number;
+  judgePromptTokens: number;
+  judgeCompletionTokens: number;
   durationMs: number;
 }
 
@@ -51,7 +55,10 @@ export const METRIC_KEYS = [
   'reward',
   'steps',
   'promptTokens',
+  'cachedPromptTokens',
   'completionTokens',
+  'judgePromptTokens',
+  'judgeCompletionTokens',
   'durationMs',
 ] as const;
 export type MetricKey = (typeof METRIC_KEYS)[number];

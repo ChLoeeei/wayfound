@@ -54,7 +54,7 @@ import path from 'path';
 import OpenAI from 'openai';
 import { createHash } from 'crypto';
 import { execSync } from 'child_process';
-import { generateItinerary, type ToolCallRecord, type AgentStepRecord, type AgentUsage } from '../../server/agent';
+import { generateItinerary, addUsage, type ToolCallRecord, type AgentStepRecord, type AgentUsage } from '../../server/agent';
 import { judgeItinerary, type RubricResult } from '../fuzzy/judge';
 import { getMapProvider } from '../../server/tools/provider';
 import { computeSourceAttributions, computeGroundingWarning } from '../../server/tools/attributions';
@@ -100,6 +100,8 @@ interface CaseResult {
   degraded: boolean;
   steps: number;
   usage: AgentUsage;
+  /** Token usage of the LLM-judge call(s) for this run, kept apart from the agent's own usage. */
+  judgeUsage: AgentUsage;
   reward: Reward;
   durationMs: number;
   error?: string;
@@ -108,6 +110,8 @@ interface CaseResult {
   hallucination: HallucinationScore;
   destinationContext: DestinationContextScore;
   judge?: RubricResult;
+  /** Set when the judge call itself failed; the run's other scores still count, the reward omits the judge term. */
+  judgeError?: string;
   /**
    * Path (relative to tests/eval/reports/) to this case's full generated
    * itinerary JSON — coordinates, aiNote text, the whole day-by-day plan,
@@ -172,7 +176,24 @@ function collectMapboxDiagnostics(c: EvalCase, trace: ToolCallRecord[]): MapboxD
   return entries;
 }
 
-type RunInfo = Pick<CaseResult, 'id' | 'destination' | 'region' | 'repeat' | 'attempts' | 'degraded' | 'steps' | 'usage' | 'durationMs'>;
+type RunInfo = Pick<CaseResult, 'id' | 'destination' | 'region' | 'repeat' | 'attempts' | 'degraded' | 'steps' | 'usage' | 'judgeUsage' | 'durationMs'>;
+
+const emptyUsage = (): AgentUsage => ({ promptTokens: 0, cachedPromptTokens: 0, completionTokens: 0, completions: 0 });
+
+/** Wraps the client so every chat completion made through it is added to `acc` (used to meter the judge). */
+function meteredClient(client: OpenAI, acc: AgentUsage): OpenAI {
+  return {
+    chat: {
+      completions: {
+        create: async (...args: Parameters<OpenAI['chat']['completions']['create']>) => {
+          const r = (await (client.chat.completions.create as any)(...args)) as OpenAI.Chat.Completions.ChatCompletion;
+          addUsage(acc, r);
+          return r;
+        },
+      },
+    },
+  } as unknown as OpenAI;
+}
 
 /** A failed generation scores as the worst case on every term (halluc 1, reward -0.5), never skipped. */
 function failedResult(info: RunInfo, message: string): CaseResult {
@@ -288,7 +309,8 @@ async function runCaseOnce(
 ): Promise<{ result: CaseResult; trace: ToolCallRecord[] }> {
   const trace: ToolCallRecord[] = [];
   const stepTrace: AgentStepRecord[] = [];
-  const usage: AgentUsage = { promptTokens: 0, completionTokens: 0, completions: 0 };
+  const usage = emptyUsage();
+  const judgeUsage = emptyUsage();
   const start = Date.now();
   const region = regionOf(c);
   const tag = repeats > 1 ? ` r${repeat}` : '';
@@ -302,6 +324,7 @@ async function runCaseOnce(
     degraded: isProviderDegraded(trace),
     steps: stepTrace.length,
     usage,
+    judgeUsage,
     durationMs: Date.now() - start,
   });
   try {
@@ -332,7 +355,17 @@ async function runCaseOnce(
     const destinationContext = scoreDestinationContextUsage(trace, itinerary);
     // Only the trip request goes to the judge, not eval bookkeeping (id/split/region).
     const { id: _id, split: _split, region: _region, ...userProfile } = c;
-    const judge = skipJudge ? undefined : await judgeItinerary({ userProfile, itinerary }, client);
+    // A judge failure is the harness's problem, not the agent's: keep the
+    // itinerary's other scores rather than scoring the run as a failed generation.
+    let judge: RubricResult | undefined;
+    let judgeError: string | undefined;
+    if (!skipJudge) {
+      try {
+        judge = await judgeItinerary({ userProfile, itinerary }, meteredClient(client, judgeUsage));
+      } catch (err: any) {
+        judgeError = err.message ?? String(err);
+      }
+    }
     const reward = computeReward({
       toolCorrect: toolCalls.score,
       constraint: constraints.score,
@@ -344,11 +377,11 @@ async function runCaseOnce(
     fs.writeFileSync(path.join(itinerariesDir, itineraryFileName), JSON.stringify(itinerary, null, 2));
 
     console.log(
-      `reward=${reward.value.toFixed(3)} tools=${toolCalls.score.toFixed(2)} constraints=${constraints.score.toFixed(2)} halluc=${(hallucination.rate * 100).toFixed(0)}%${judge ? ` judge=${judge.weighted_total}` : ''} steps=${base.steps}${base.degraded ? ' [PROVIDER-DEGRADED]' : ''} [${base.durationMs}ms]`,
+      `reward=${reward.value.toFixed(3)} tools=${toolCalls.score.toFixed(2)} constraints=${constraints.score.toFixed(2)} halluc=${(hallucination.rate * 100).toFixed(0)}%${judge ? ` judge=${judge.weighted_total}` : ''}${judgeError ? ' judge=ERROR' : ''} steps=${base.steps}${base.degraded ? ' [PROVIDER-DEGRADED]' : ''} [${base.durationMs}ms]`,
     );
     return {
       trace,
-      result: { ...base, reward, toolCalls, constraints, hallucination, destinationContext, judge, itineraryFile: `itineraries/${itineraryFileName}` },
+      result: { ...base, reward, toolCalls, constraints, hallucination, destinationContext, judge, judgeError, itineraryFile: `itineraries/${itineraryFileName}` },
     };
   } catch (err: any) {
     const message = err.message ?? String(err);
@@ -371,8 +404,11 @@ function toRunMetrics(r: CaseResult): RunMetrics {
     reward: r.reward.value,
     rewardIncludesJudge: r.reward.includesJudge,
     steps: r.steps,
-    promptTokens: r.usage.promptTokens,
-    completionTokens: r.usage.completionTokens,
+    promptTokens: r.usage.promptTokens + r.judgeUsage.promptTokens,
+    cachedPromptTokens: (r.usage.cachedPromptTokens ?? 0) + (r.judgeUsage.cachedPromptTokens ?? 0),
+    completionTokens: r.usage.completionTokens + r.judgeUsage.completionTokens,
+    judgePromptTokens: r.judgeUsage.promptTokens,
+    judgeCompletionTokens: r.judgeUsage.completionTokens,
     durationMs: r.durationMs,
   };
 }
@@ -426,6 +462,7 @@ function buildSummary(results: CaseResult[]) {
     failedRunCount: results.length - ok.length,
     degradedRunCount: results.filter(r => r.degraded).length,
     rerunCount: results.reduce((n, r) => n + (r.attempts - 1), 0),
+    judgeErrorCount: results.filter(r => r.judgeError).length,
     /** Mean ± spread across repeats of each repeat's case-average; failed runs count as worst-case. */
     aggregate: summarizeRuns(results.map(toRunMetrics)),
     // Informational, not graded — see scoring.ts's scoreDestinationContextUsage docstring.
@@ -445,7 +482,9 @@ function headlineRows(g: GroupSummary): Array<[string, string]> {
     ['LLM-judge (0-5)', fmtSpread(m.judge)],
     [`Reward${g.rewardIncludesJudge ? '' : ' (no judge term)'}`, fmtSpread(m.reward, { digits: 3 })],
     ['Avg steps', fmtSpread(m.steps, { digits: 1 })],
-    ['Tokens per run (prompt / completion)', `${fmtSpread(m.promptTokens, { digits: 0 })} / ${fmtSpread(m.completionTokens, { digits: 0 })}`],
+    ['Tokens per run, agent+judge (prompt / completion)', `${fmtSpread(m.promptTokens, { digits: 0 })} / ${fmtSpread(m.completionTokens, { digits: 0 })}`],
+    ['  of which cached prompt tokens', fmtSpread(m.cachedPromptTokens, { digits: 0 })],
+    ['  of which judge (prompt / completion)', `${fmtSpread(m.judgePromptTokens, { digits: 0 })} / ${fmtSpread(m.judgeCompletionTokens, { digits: 0 })}`],
   ];
 }
 
@@ -453,13 +492,13 @@ function printSummary(results: CaseResult[]) {
   const s = buildSummary(results);
   console.log('\n=== Eval summary ===');
   console.log(
-    `  ${s.caseCount} case(s), ${s.runCount} run(s): ${s.failedRunCount} failed, ${s.degradedRunCount} still provider-degraded, ${s.rerunCount} rerun(s)`,
+    `  ${s.caseCount} case(s), ${s.runCount} run(s): ${s.failedRunCount} failed, ${s.degradedRunCount} still provider-degraded, ${s.rerunCount} rerun(s), ${s.judgeErrorCount} judge error(s)`,
   );
   console.log(`  (mean ± sample std across ${repeats} repeat(s))`);
   for (const [label, g] of [['overall', s.aggregate.overall], ['domestic', s.aggregate.domestic], ['international', s.aggregate.international]] as const) {
     if (g.runCount === 0) continue;
     console.log(`  [${label}]`);
-    for (const [k, v] of headlineRows(g)) console.log(`    ${k.padEnd(38)} ${v}`);
+    for (const [k, v] of headlineRows(g)) console.log(`    ${k.padEnd(50)} ${v}`);
   }
   console.log(
     `  get_destination_context usage: ${(s.destinationContextUsageRate * 100).toFixed(0)}% of runs; attribution wiring OK in ${(s.destinationContextAttributionWiringOkRate * 100).toFixed(0)}%`,
@@ -476,7 +515,7 @@ function renderMarkdown(summary: ReturnType<typeof buildSummary>, results: CaseR
   lines.push(
     `- Setup: **${meta.setup}**, split: **${meta.split}**, ${summary.caseCount} case(s) × ${meta.repeats} repeat(s) = ${summary.runCount} run(s); temperature ${meta.temperature}; judge ${meta.judge ? 'on' : 'off'}`,
   );
-  lines.push(`- Runs: ${summary.failedRunCount} failed to generate, ${summary.degradedRunCount} still provider-degraded after ${summary.rerunCount} rerun(s)`);
+  lines.push(`- Runs: ${summary.failedRunCount} failed to generate, ${summary.degradedRunCount} still provider-degraded after ${summary.rerunCount} rerun(s), ${summary.judgeErrorCount} judge error(s)`);
   lines.push(`- cases.json v${meta.caseSetVersion} sha256 \`${meta.casesSha256}\`, commit \`${meta.gitCommit ?? 'n/a'}\`${meta.gitDirty ? ' (dirty)' : ''}, reward v${meta.rewardVersion}`);
   lines.push(`- Flags: ${Object.entries(meta.flags).map(([k, v]) => `${k}=${v}`).join(', ')}`);
   lines.push('- Numbers are mean ± sample std across repeats of each repeat\'s case-average. Failed runs count as worst-case (halluc 100%, reward -0.5).');
@@ -499,7 +538,7 @@ function renderMarkdown(summary: ReturnType<typeof buildSummary>, results: CaseR
   lines.push('| Case | Rep | Region | Reward | Tools | Constraints | Halluc. | Judge | Steps | Notes | Time |');
   lines.push('|---|---:|---|---:|---:|---:|---:|---:|---:|---|---:|');
   for (const r of results) {
-    const notes = [r.degraded ? 'provider-degraded' : '', r.attempts > 1 ? `${r.attempts} attempts` : ''].filter(Boolean).join(', ');
+    const notes = [r.degraded ? 'provider-degraded' : '', r.attempts > 1 ? `${r.attempts} attempts` : '', r.judgeError ? 'judge error' : ''].filter(Boolean).join(', ');
     if (r.error) {
       lines.push(`| ${r.id} | ${r.repeat} | ${r.region} | ${r.reward.value.toFixed(3)} | — | — | — | — | ${r.steps} | FAILED: ${r.error} | ${r.durationMs}ms |`);
       continue;
@@ -516,6 +555,7 @@ function renderMarkdown(summary: ReturnType<typeof buildSummary>, results: CaseR
   for (const r of results) {
     const allIssues = [...r.toolCalls.issues, ...r.constraints.issues, ...r.destinationContext.issues];
     if (r.error) allIssues.push(`generation error: ${r.error}`);
+    if (r.judgeError) allIssues.push(`judge error: ${r.judgeError}`);
     if (allIssues.length === 0) continue;
     anyIssues = true;
     lines.push(`**${r.id}** (repeat ${r.repeat})`);
@@ -554,7 +594,7 @@ function writeCommittedResult(results: CaseResult[], stamp: string, meta: EvalMe
   const file = path.join(dir, `${meta.setup}-${meta.split}-${stamp}.json`);
   fs.writeFileSync(
     file,
-    JSON.stringify({ meta, aggregate: summary.aggregate, runs: results.map(r => ({ ...toRunMetrics(r), attempts: r.attempts, error: r.error })) }, null, 2) + '\n',
+    JSON.stringify({ meta, aggregate: summary.aggregate, runs: results.map(r => ({ ...toRunMetrics(r), attempts: r.attempts, error: r.error, judgeError: r.judgeError })) }, null, 2) + '\n',
   );
   console.log(`Committable result summary: ${path.relative(process.cwd(), file)}`);
 }

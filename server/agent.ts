@@ -181,14 +181,17 @@ export interface RunAgentOptions {
 
 export interface AgentUsage {
   promptTokens: number;
+  /** Subset of promptTokens served from DeepSeek's context cache (billed lower). 0 if the API doesn't report it. */
+  cachedPromptTokens?: number;
   completionTokens: number;
   completions: number;
 }
 
-function addUsage(acc: AgentUsage | undefined, response: OpenAI.Chat.Completions.ChatCompletion) {
+export function addUsage(acc: AgentUsage | undefined, response: OpenAI.Chat.Completions.ChatCompletion) {
   if (!acc) return;
   acc.completions++;
   acc.promptTokens += response.usage?.prompt_tokens ?? 0;
+  acc.cachedPromptTokens = (acc.cachedPromptTokens ?? 0) + ((response.usage as any)?.prompt_cache_hit_tokens ?? 0);
   acc.completionTokens += response.usage?.completion_tokens ?? 0;
 }
 
