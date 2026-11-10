@@ -355,7 +355,10 @@ async function main() {
       plannedRuns: total,
       acceptedCodeChanges: store.manifest()?.acceptedCodeChanges ?? [],
     });
-    if (filterIds.length === 0 && complete) writeCommittedResult(results, stamp, meta);
+    if (filterIds.length === 0 && complete) {
+      // The committed record must disclose how its runs were assembled (code changes accepted mid-checkpoint, reused runs, migrations).
+      writeCommittedResult(results, stamp, { ...meta, acceptedCodeChanges: store.manifest()?.acceptedCodeChanges ?? [], checkpointMigrations: (store.manifest() as any)?.migrations ?? [] });
+    }
     printSummary(results);
   }
   writeMapboxDiagnosticsLog(mapboxDiagnostics, mapboxRequests, stamp);
@@ -630,6 +633,7 @@ type EvalMeta = ReturnType<typeof buildMeta> & {
   completedRuns?: number;
   plannedRuns?: number;
   acceptedCodeChanges?: Array<{ from: string; to: string; at: string; completedRunsBefore: number; note: string }>;
+  checkpointMigrations?: Array<{ at: string; from: string; note: string }>;
 };
 
 function avg(nums: number[]): number {

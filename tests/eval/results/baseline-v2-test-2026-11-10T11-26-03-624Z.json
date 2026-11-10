@@ -1,6 +1,6 @@
 {
   "meta": {
-    "stamp": "2026-11-10T10-54-39-443Z",
+    "stamp": "2026-11-10T11-26-03-624Z",
     "setup": "baseline-v2",
     "split": "test",
     "caseSetVersion": 3,
@@ -53,13 +53,43 @@
       "judge": 0.2,
       "hallucination": 0.5
     },
-    "gitCommit": "86af998",
+    "gitCommit": "91e1136",
     "gitDirty": true,
     "flags": {
       "DISABLE_GEOAPIFY_SIMPLIFIED_RETRY": true,
       "DISABLE_ERROR_RECOVERY": false,
       "TOOL_CACHE": true
-    }
+    },
+    "acceptedCodeChanges": [
+      {
+        "from": "2c3401886ed3",
+        "to": "564ab21fb3d0",
+        "at": "2026-11-10T08:27:52.152184Z",
+        "completedRunsBefore": 20,
+        "note": "Reused 55 runs of trips <=5 days from baseline-test-5a3a5d33f0: the segmented-generation fix only changes trips >5 days, and the new max_tokens cap only binds above 4k output tokens, which no short-trip run reached (0 short-trip failures). All trips >5 days are rerun on the new code."
+      },
+      {
+        "from": "564ab21fb3d0",
+        "to": "f2a29a6b0180",
+        "at": "2026-11-10T09:14:06.715Z",
+        "completedRunsBefore": 72,
+        "note": "1ea17db: grounding list + re-search + lenient parsing in the segmented path only (trips >5 days). All 18 long-trip runs were moved to invalidated/ and rerun on this commit; the 72 runs of trips <=5 days are unaffected (that path has no changes, see tests/unit/agent-segmented.test.ts)."
+      },
+      {
+        "from": "f2a29a6b0180",
+        "to": "d59c6c068742",
+        "at": "2026-11-10T09:55:42.315Z",
+        "completedRunsBefore": 90,
+        "note": "86af998: harness-only. cases.json removed from the code fingerprint (each run now stores its own caseHash); agent, tools, scoring and judge are byte-identical to 1ea17db (git diff 1ea17db 86af998 -- server tests/eval/scoring.ts tests/fuzzy/judge.ts is empty). Adds the 5 v3 hard test cases."
+      }
+    ],
+    "checkpointMigrations": [
+      {
+        "at": "2026-11-10T09:54:28.588Z",
+        "from": "baseline-v2-test-59ffb2f0d5",
+        "note": "Checkpoint key no longer includes the case set (cases.json v3); directory renamed, caseHash backfilled on 90 run(s) whose v2 cases are pinned unchanged by tests/unit/eval-cases.test.ts."
+      }
+    ]
   },
   "aggregate": {
     "overall": {
