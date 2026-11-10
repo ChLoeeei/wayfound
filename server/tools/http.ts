@@ -42,6 +42,17 @@ export interface ThrottledFetchOptions {
   onAttempt?: (attempt: { url: string; status?: number; error?: unknown }) => void;
 }
 
+/** Plain fetch with an abort timeout, for clients that don't need throttling. */
+export async function fetchWithTimeout(url: string, timeoutMs: number, init?: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export function createThrottledFetch(options: ThrottledFetchOptions = {}) {
   const minSpacingMs = options.minSpacingMs ?? 150;
   const retryableStatuses = new Set(options.retryableStatuses ?? [429]);

@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from './http';
+
 /**
  * Amap Web Service API client.
  * Docs: https://lbs.amap.com/api/webservice/summary
@@ -7,6 +9,7 @@
  */
 
 const AMAP_KEY = process.env.AMAP_API_KEY || process.env.GAODE_API_KEY || '';
+const AMAP_TIMEOUT_MS = 10_000;
 const AMAP_BASE = 'https://restapi.amap.com';
 
 export interface AmapPoi {
@@ -91,7 +94,7 @@ export async function searchPlaces(
   if (region) params.set('city', region);
 
   const url = `${AMAP_BASE}/v3/place/text?${params.toString()}`;
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url, AMAP_TIMEOUT_MS);
   if (!res.ok) {
     throw new Error(`Amap text search HTTP ${res.status}`);
   }
@@ -118,7 +121,7 @@ export async function getPoiDetails(poiId: string): Promise<AmapPoi | null> {
     output: 'JSON',
   });
   const url = `${AMAP_BASE}/v3/place/detail?${params.toString()}`;
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url, AMAP_TIMEOUT_MS);
   if (!res.ok) throw new Error(`Amap detail HTTP ${res.status}`);
   const data = (await res.json()) as AmapTextSearchRaw;
   if (data.status !== '1') return null;
@@ -158,7 +161,7 @@ export async function calculateDistance(
     output: 'JSON',
   });
   const url = `${AMAP_BASE}/v3/distance?${params.toString()}`;
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url, AMAP_TIMEOUT_MS);
   if (!res.ok) throw new Error(`Amap distance HTTP ${res.status}`);
   const data = (await res.json()) as AmapDistanceRaw;
   if (data.status !== '1') throw new Error(`Amap distance failed: ${data.info}`);

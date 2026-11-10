@@ -5,6 +5,7 @@ import fs from "fs";
 import { randomUUID } from "node:crypto";
 import { createServer as createViteServer } from "vite";
 import OpenAI from "openai";
+import { createDeepSeekClient } from "./server/llm";
 import { buildClarifications } from "./src/lib/clarifications";
 import { generateItinerary, type PlanningRequest, type ToolCallRecord, type AgentStepRecord } from "./server/agent";
 import { searchPlaces, parseLngLat } from "./server/tools/amap";
@@ -75,10 +76,7 @@ async function startServer() {
     next();
   });
 
-  const deepseek = new OpenAI({
-    baseURL: "https://api.deepseek.com",
-    apiKey: process.env.DEEPSEEK_API_KEY,
-  });
+  const deepseek = createDeepSeekClient();
 
   app.post("/api/clarify-input", (req, res) => {
     try {
@@ -122,7 +120,7 @@ async function startServer() {
       if (!/(?:^|\.)(autonavi|amap)\.com$/.test(u.host)) {
         return res.status(400).send('host not allowed');
       }
-      const upstream = await fetch(target);
+      const upstream = await fetch(target, { signal: AbortSignal.timeout(10_000) });
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Cache-Control', 'public, max-age=86400');
       if (!upstream.ok) {

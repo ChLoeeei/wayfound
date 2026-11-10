@@ -118,7 +118,7 @@ const USER_AGENT = 'Wayfound-TravelPlanner/1.0 (educational project)';
 //     overpassPost() below), so keeping its own retries short bounds the
 //     worst case (both instances down) instead of doubling the wait.
 //   - nominatimFetch: Nominatim's usage policy asks for max ~1 request/sec.
-const mapboxFetch = createThrottledFetch({ minSpacingMs: 150, maxRetries: 2, retryBaseDelayMs: 600 });
+const mapboxFetch = createThrottledFetch({ minSpacingMs: 150, maxRetries: 2, retryBaseDelayMs: 600, timeoutMs: 10_000 });
 const orsFetch = createThrottledFetch({
   minSpacingMs: 1600,
   retryableStatuses: [429, 502, 503, 504],

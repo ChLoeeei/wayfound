@@ -3,6 +3,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import OpenAI from 'openai';
 import casesJson from './cases.json';
 import { generateItinerary } from '../../server/agent';
+import { createDeepSeekClient } from '../../server/llm';
 import { judgeItinerary, PASS_THRESHOLD, RUBRIC_DIMENSIONS, type RubricResult } from './judge';
 
 interface FuzzyCase {
@@ -31,10 +32,7 @@ describe.skipIf(!hasKey)('Fuzzy LLM-as-Judge', () => {
   let client: OpenAI;
 
   beforeAll(() => {
-    client = new OpenAI({
-      baseURL: 'https://api.deepseek.com',
-      apiKey: process.env.DEEPSEEK_API_KEY,
-    });
+    client = createDeepSeekClient();
   });
 
   for (const c of cases) {

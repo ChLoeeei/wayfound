@@ -88,6 +88,8 @@ export interface CheckpointManifest {
   config: unknown;
   codeFingerprint: string;
   createdAt: string;
+  /** Code changes explicitly accepted mid-checkpoint (EVAL_ALLOW_CODE_CHANGE=1), so reports can disclose them. */
+  acceptedCodeChanges?: Array<{ from: string; to: string; at: string; completedRunsBefore: number; note: string }>;
 }
 
 export class CheckpointStore<T> {
@@ -101,7 +103,7 @@ export class CheckpointStore<T> {
    * Creates the manifest, or validates it against the current code.
    * Returns a reason string when resuming must be refused.
    */
-  open(config: unknown, fingerprint: string, allowCodeChange: boolean): string | null {
+  open(config: unknown, fingerprint: string, allowCodeChange: boolean, changeNote = ''): string | null {
     fs.mkdirSync(this.runsDir, { recursive: true });
     const mf = path.join(this.dir, 'manifest.json');
     if (!fs.existsSync(mf)) {
@@ -110,10 +112,43 @@ export class CheckpointStore<T> {
       return null;
     }
     const manifest = JSON.parse(fs.readFileSync(mf, 'utf8')) as CheckpointManifest;
-    if (manifest.codeFingerprint !== fingerprint && this.completedCount() > 0 && !allowCodeChange) {
-      return `agent/tools/scoring code changed since this checkpoint was started (${manifest.codeFingerprint} -> ${fingerprint}). Resuming would mix two code versions in one result. Set EVAL_ALLOW_CODE_CHANGE=1 to resume anyway, or EVAL_FRESH=1 to start over.`;
+    if (manifest.codeFingerprint !== fingerprint && this.completedCount() > 0) {
+      if (!allowCodeChange) {
+        return `agent/tools/scoring code changed since this checkpoint was started (${manifest.codeFingerprint} -> ${fingerprint}). Resuming would mix two code versions in one result. Set EVAL_ALLOW_CODE_CHANGE=1 (and EVAL_CODE_CHANGE_NOTE="why it doesn't affect scores") to resume anyway, or EVAL_FRESH=1 to start over.`;
+      }
+      // Accepted: record it and adopt the new fingerprint, so the next resume doesn't need the flag again.
+      manifest.acceptedCodeChanges = [
+        ...(manifest.acceptedCodeChanges ?? []),
+        { from: manifest.codeFingerprint, to: fingerprint, at: new Date().toISOString(), completedRunsBefore: this.completedCount(), note: changeNote },
+      ];
+      manifest.codeFingerprint = fingerprint;
+      fs.writeFileSync(mf, JSON.stringify(manifest, null, 2) + '\n');
     }
     return null;
+  }
+
+  manifest(): CheckpointManifest | null {
+    const mf = path.join(this.dir, 'manifest.json');
+    return fs.existsSync(mf) ? (JSON.parse(fs.readFileSync(mf, 'utf8')) as CheckpointManifest) : null;
+  }
+
+  /**
+   * Moves completed runs matching `predicate` to invalidated/ so they are
+   * redone (e.g. runs recorded as failures that were really network outages).
+   * Returns the moved file names.
+   */
+  invalidate(predicate: (value: T) => boolean): string[] {
+    if (!fs.existsSync(this.runsDir)) return [];
+    const dest = path.join(this.dir, 'invalidated');
+    const moved: string[] = [];
+    for (const f of fs.readdirSync(this.runsDir).filter(f => f.endsWith('.json'))) {
+      const value = JSON.parse(fs.readFileSync(path.join(this.runsDir, f), 'utf8')) as T;
+      if (!predicate(value)) continue;
+      fs.mkdirSync(dest, { recursive: true });
+      fs.renameSync(path.join(this.runsDir, f), path.join(dest, `${f.replace(/\.json$/, '')}-${Date.now()}.json`));
+      moved.push(f);
+    }
+    return moved;
   }
 
   has(caseId: string, repeat: number): boolean {

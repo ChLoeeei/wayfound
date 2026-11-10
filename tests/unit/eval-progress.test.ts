@@ -123,3 +123,43 @@ describe('Geoapify meter + HTTP-level cache', () => {
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('network-failure handling', () => {
+  it('classifies outages as infra errors, and bad model output as not', async () => {
+    const { isInfraError } = await import('../../server/llm');
+    for (const m of [
+      'Invalid response body while trying to fetch https://api.deepseek.com/chat/completions: read ETIMEDOUT',
+      'Invalid response body while trying to fetch https://api.deepseek.com/chat/completions: Socket timeout',
+      'Request timed out.',
+      'Connection error.',
+      'fetch failed',
+    ]) {
+      expect(isInfraError(new Error(m)), m).toBe(true);
+    }
+    expect(isInfraError({ status: 503, message: 'Service Unavailable' })).toBe(true);
+    expect(isInfraError({ status: 429, message: 'rate limited' })).toBe(true);
+    expect(isInfraError(new Error('Unterminated string in JSON at position 24323 (line 1 column 24324)'))).toBe(false);
+    expect(isInfraError({ status: 400, message: 'bad request' })).toBe(false);
+  });
+
+  it('moves matching completed runs to invalidated/ so they are redone', () => {
+    const store = new CheckpointStore<{ error?: string }>(path.join(dir, 'ck'));
+    store.open({}, 'c', false);
+    store.save('ok', 1, {});
+    store.save('net', 1, { error: 'read ETIMEDOUT' });
+    expect(store.invalidate(r => !!r.error)).toEqual(['net-r1.json']);
+    expect(store.has('net', 1)).toBe(false);
+    expect(store.has('ok', 1)).toBe(true);
+    expect(fs.readdirSync(path.join(dir, 'ck', 'invalidated'))).toHaveLength(1);
+  });
+
+  it('records an accepted code change and adopts the new fingerprint', () => {
+    const a = new CheckpointStore(path.join(dir, 'ck'));
+    a.open({}, 'v1', false);
+    a.save('x', 1, {});
+    expect(new CheckpointStore(path.join(dir, 'ck')).open({}, 'v2', true, 'timeouts only')).toBeNull();
+    const b = new CheckpointStore(path.join(dir, 'ck'));
+    expect(b.open({}, 'v2', false)).toBeNull(); // no flag needed the second time
+    expect(b.manifest()!.acceptedCodeChanges).toMatchObject([{ from: 'v1', to: 'v2', completedRunsBefore: 1, note: 'timeouts only' }]);
+  });
+});

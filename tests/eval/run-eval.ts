@@ -79,6 +79,7 @@ import { allCases, caseSetVersion, parseSplit, selectCases } from './cases';
 import { summarizeRuns, fmtSpread, type RunMetrics, type GroupSummary } from './aggregate';
 import { toolCacheDir, toolCacheStats } from '../../server/tools/cache';
 import { geoapifyMeterSnapshot } from '../../server/tools/geoapify';
+import { createDeepSeekClient, isInfraError } from '../../server/llm';
 import { CheckpointStore, addDailyUsage, budgetExhausted, codeFingerprint, configKey, readDailyUsage } from './progress';
 
 const filterIds = (process.env.EVAL_FILTER ?? '').split(',').map(s => s.trim()).filter(Boolean);
@@ -126,6 +127,8 @@ interface CaseResult {
   judge?: RubricResult;
   /** Set when the judge call itself failed; the run's other scores still count, the reward omits the judge term. */
   judgeError?: string;
+  /** Set when the run failed because of the network/API service (see isInfraError); such a run is never checkpointed. */
+  infraError?: string;
   /**
    * Path (relative to tests/eval/reports/) to this case's full generated
    * itinerary JSON — coordinates, aiNote text, the whole day-by-day plan,
@@ -246,10 +249,7 @@ async function main() {
     process.exit(1);
   }
 
-  const client = new OpenAI({
-    baseURL: 'https://api.deepseek.com',
-    apiKey: process.env.DEEPSEEK_API_KEY,
-  });
+  const client = createDeepSeekClient();
 
   console.log(
     `\nRunning eval harness: ${cases.length} case(s) × ${repeats} repeat(s), split=${filterIds.length ? `filter(${filterIds.join(',')})` : split}, setup=${setupLabel}` +
@@ -270,11 +270,15 @@ async function main() {
     const archived = store.archive();
     if (archived) console.log(`EVAL_FRESH=1: previous checkpoint moved to ${path.relative(process.cwd(), archived)}`);
   }
-  const refusal = store.open(resultAffecting, codeFingerprint(process.cwd(), SCORING_SOURCES), allowCodeChange);
+  const refusal = store.open(resultAffecting, codeFingerprint(process.cwd(), SCORING_SOURCES), allowCodeChange, process.env.EVAL_CODE_CHANGE_NOTE ?? '');
   if (refusal) {
     console.error(`Refusing to resume: ${refusal}`);
     process.exit(1);
   }
+  // Runs saved as failures that were really network/API outages (recorded
+  // before infra errors were classified) get redone, not scored.
+  const reclassified = store.invalidate(r => !!r.infraError || (!!r.error && isInfraError({ message: r.error })) || (!!r.judgeError && isInfraError({ message: r.judgeError })));
+  if (reclassified.length) console.log(`Moved ${reclassified.length} network-failure run(s) to invalidated/ to be redone: ${reclassified.join(', ')}`);
   const total = cases.length * repeats;
   const already = cases.reduce((n, c) => n + Array.from({ length: repeats }, (_, i) => store.has(c.id, i + 1)).filter(Boolean).length, 0);
   console.log(`Checkpoint: ${path.relative(process.cwd(), ckptDir)} — ${already}/${total} run(s) already done${already ? ', skipping them' : ''}`);
@@ -310,6 +314,10 @@ async function main() {
         stopReason = `Geoapify kept returning 429/quota errors for ${c.id} r${repeat}; the run was not counted`;
         break outer;
       }
+      if (outcome.kind === 'infra') {
+        stopReason = `network/API errors kept failing ${c.id} r${repeat} (${outcome.message.slice(0, 120)}); the run was not counted`;
+        break outer;
+      }
       store.save(c.id, repeat, outcome.result);
     }
   }
@@ -324,7 +332,13 @@ async function main() {
   }
   const complete = results.length === total;
   if (results.length > 0) {
-    writeReports(results, stamp, { ...meta, complete, completedRuns: results.length, plannedRuns: total });
+    writeReports(results, stamp, {
+      ...meta,
+      complete,
+      completedRuns: results.length,
+      plannedRuns: total,
+      acceptedCodeChanges: store.manifest()?.acceptedCodeChanges ?? [],
+    });
     if (filterIds.length === 0 && complete) writeCommittedResult(results, stamp, meta);
     printSummary(results);
   }
@@ -350,7 +364,7 @@ async function main() {
   }
 }
 
-type RunOutcome = { kind: 'ok'; result: CaseResult } | { kind: 'limit' };
+type RunOutcome = { kind: 'ok'; result: CaseResult } | { kind: 'limit' } | { kind: 'infra'; message: string };
 
 /**
  * Any Geoapify 429 or quota/auth rejection during a run makes it INVALID:
@@ -368,17 +382,23 @@ async function runValidated(
   mapboxDiagnostics: MapboxDiagnosticEntry[],
   mapboxRequests: Array<MapboxRequestLogEntry & { caseId: string; destination: string }>,
 ): Promise<RunOutcome> {
-  for (let tryNo = 1; tryNo <= 2; tryNo++) {
+  // Geoapify limits: 1 retry after a wait. Network/API errors: up to 3 tries
+  // with growing waits (a laptop waking from sleep, a DeepSeek blip).
+  let last: RunOutcome = { kind: 'limit' };
+  for (let tryNo = 1; tryNo <= 3; tryNo++) {
     const r = await runCaseWithReruns(c, repeat, client, stamp, itinerariesDir, mapboxDiagnostics, mapboxRequests);
     if (r.kind === 'ok') return r;
-    if (tryNo === 1) {
-      console.log(`    ✗ INVALID (Geoapify 429/quota error) — discarded, retrying in ${Math.round(limitRetryWaitMs / 1000)}s`);
-      await new Promise(res => setTimeout(res, limitRetryWaitMs));
-    } else {
-      console.log('    ✗ INVALID again — stopping; this run will be redone on resume');
-    }
+    last = r;
+    const maxTries = r.kind === 'limit' ? 2 : 3;
+    if (tryNo >= maxTries) break;
+    const waitMs = r.kind === 'limit' ? limitRetryWaitMs : limitRetryWaitMs * tryNo;
+    console.log(
+      `    ✗ INVALID (${r.kind === 'limit' ? 'Geoapify 429/quota error' : `network/API error: ${r.message.slice(0, 80)}`}) — discarded, retrying in ${Math.round(waitMs / 1000)}s`,
+    );
+    await new Promise(res => setTimeout(res, waitMs));
   }
-  return { kind: 'limit' };
+  console.log('    ✗ INVALID again — stopping; this run will be redone on resume');
+  return last;
 }
 
 const limitEvents = () => {
@@ -403,6 +423,10 @@ async function runCaseWithReruns(
     if (limitEvents() > before) {
       drainMapboxRequestLog();
       return { kind: 'limit' };
+    }
+    if (r.infraError) {
+      drainMapboxRequestLog();
+      return { kind: 'infra', message: r.infraError };
     }
     result = r;
     // Diagnostics only for the attempt we keep, so the log matches the report.
@@ -484,6 +508,10 @@ async function runCaseOnce(
         judge = await judgeItinerary({ userProfile, itinerary }, meteredClient(client, judgeUsage));
       } catch (err: any) {
         judgeError = err.message ?? String(err);
+        if (isInfraError(err)) {
+          console.log(`judge network error: ${judgeError}`);
+          return { trace, result: { ...failedResult(info(), judgeError), infraError: judgeError } };
+        }
       }
     }
     const reward = computeReward({
@@ -505,6 +533,10 @@ async function runCaseOnce(
     };
   } catch (err: any) {
     const message = err.message ?? String(err);
+    if (isInfraError(err)) {
+      console.log(`NETWORK/API ERROR (run discarded): ${message}`);
+      return { trace, result: { ...failedResult(info(), message), infraError: message } };
+    }
     console.log(`FAILED: ${message}`);
     return { trace, result: failedResult(info(), message) };
   }
@@ -566,7 +598,12 @@ function buildMeta(stamp: string) {
     },
   };
 }
-type EvalMeta = ReturnType<typeof buildMeta> & { complete?: boolean; completedRuns?: number; plannedRuns?: number };
+type EvalMeta = ReturnType<typeof buildMeta> & {
+  complete?: boolean;
+  completedRuns?: number;
+  plannedRuns?: number;
+  acceptedCodeChanges?: Array<{ from: string; to: string; at: string; completedRunsBefore: number; note: string }>;
+};
 
 function avg(nums: number[]): number {
   if (nums.length === 0) return 0;
@@ -644,6 +681,9 @@ function renderMarkdown(summary: ReturnType<typeof buildSummary>, results: CaseR
   lines.push(`- Runs: ${summary.failedRunCount} failed to generate, ${summary.degradedRunCount} still provider-degraded after ${summary.rerunCount} rerun(s), ${summary.judgeErrorCount} judge error(s)`);
   lines.push(`- cases.json v${meta.caseSetVersion} sha256 \`${meta.casesSha256}\`, commit \`${meta.gitCommit ?? 'n/a'}\`${meta.gitDirty ? ' (dirty)' : ''}, reward v${meta.rewardVersion}`);
   lines.push(`- Flags: ${Object.entries(meta.flags).map(([k, v]) => `${k}=${v}`).join(', ')}`);
+  for (const ch of meta.acceptedCodeChanges ?? []) {
+    lines.push(`- Code change accepted mid-run at ${ch.at} (${ch.from} -> ${ch.to}, after ${ch.completedRunsBefore} run(s)): ${ch.note || 'no note'}`);
+  }
   lines.push('- Numbers are mean ± sample std across repeats of each repeat\'s case-average. Failed runs count as worst-case (halluc 100%, reward -0.5).');
   lines.push('');
   const groups = [['Overall', summary.aggregate.overall], ['Domestic', summary.aggregate.domestic], ['International', summary.aggregate.international]] as const;

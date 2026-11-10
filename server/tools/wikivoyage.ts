@@ -35,7 +35,7 @@ const USER_AGENT = 'Wayfound-TravelPlanner/1.0 (educational project)';
 // external client in this codebase goes through the same shared
 // throttle/retry wrapper (see ./http) rather than a raw fetch — cheap
 // insurance, and each client gets its own independent spacing state.
-const wikivoyageFetch = createThrottledFetch({ minSpacingMs: 100, maxRetries: 2, retryBaseDelayMs: 500 });
+const wikivoyageFetch = createThrottledFetch({ minSpacingMs: 100, maxRetries: 2, retryBaseDelayMs: 500, timeoutMs: 10_000 });
 
 interface WikivoyageSearchRaw {
   query?: { search?: Array<{ pageid: number; title: string }> };
