@@ -133,11 +133,14 @@ describe('network-failure handling', () => {
       'Request timed out.',
       'Connection error.',
       'fetch failed',
+      '402 Insufficient Balance (request_id: 66095a93-7963-439a-abb8-8c736f08e778)',
     ]) {
       expect(isInfraError(new Error(m)), m).toBe(true);
     }
     expect(isInfraError({ status: 503, message: 'Service Unavailable' })).toBe(true);
     expect(isInfraError({ status: 429, message: 'rate limited' })).toBe(true);
+    expect(isInfraError({ status: 402, message: 'Insufficient Balance' })).toBe(true);
+    expect(isInfraError({ status: 401, message: 'Authentication Fails' })).toBe(true);
     expect(isInfraError(new Error('Unterminated string in JSON at position 24323 (line 1 column 24324)'))).toBe(false);
     expect(isInfraError({ status: 400, message: 'bad request' })).toBe(false);
   });

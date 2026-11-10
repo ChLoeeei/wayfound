@@ -21,14 +21,15 @@ export function createDeepSeekClient(): OpenAI {
 
 /**
  * True when an error is the network / API service failing (timeouts,
- * connection resets, DNS, 5xx, 429), as opposed to the agent producing bad
+ * connection resets, DNS, 5xx, 429) or the account being unusable (401 bad
+ * key, 402 insufficient balance), as opposed to the agent producing bad
  * output. The eval harness uses this to discard a run instead of scoring
  * the agent for an outage.
  */
 export function isInfraError(err: unknown): boolean {
   if (err instanceof OpenAI.APIConnectionError) return true; // includes APIConnectionTimeoutError
   const status = (err as { status?: unknown })?.status;
-  if (typeof status === 'number' && (status === 429 || status >= 500)) return true;
+  if (typeof status === 'number' && (status === 401 || status === 402 || status === 429 || status >= 500)) return true;
   const msg = String((err as { message?: unknown })?.message ?? err);
-  return /ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|EPIPE|socket|timed? ?out|Invalid response body|Connection error|fetch failed|network/i.test(msg);
+  return /ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|EPIPE|socket|timed? ?out|Invalid response body|Connection error|fetch failed|network|Insufficient Balance|^40[12] /i.test(msg);
 }
