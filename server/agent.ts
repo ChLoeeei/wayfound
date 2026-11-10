@@ -24,6 +24,33 @@ import { runTool, toolDefinitions, ToolContext } from './tools';
 const RECOVERY_DISABLED = process.env.DISABLE_ERROR_RECOVERY === 'true';
 
 /**
+ * Output cap for every completion. DeepSeek's default (4k tokens) truncated
+ * long itineraries mid-string ("Unterminated string in JSON") — a 10-day
+ * trip failed in all 6 baseline runs. 8k is deepseek-chat's maximum.
+ */
+export const MAX_OUTPUT_TOKENS = 8192;
+
+/**
+ * Trips longer than this are written in segments: the tool loop ends with a
+ * short outline, then each batch of SEGMENT_DAYS days is its own completion
+ * (see writeSegmentedItinerary). Keeps every single output well under
+ * MAX_OUTPUT_TOKENS regardless of trip length.
+ */
+export const SEGMENT_THRESHOLD_DAYS = 5;
+export const SEGMENT_DAYS = 3;
+
+export function isSegmented(req: Pick<PlanningRequest, 'days'>): boolean {
+  return req.days > SEGMENT_THRESHOLD_DAYS;
+}
+
+/** Day ranges [from, to] (1-indexed, inclusive) for a segmented trip. */
+export function daySegments(totalDays: number, size = SEGMENT_DAYS): Array<[number, number]> {
+  const out: Array<[number, number]> = [];
+  for (let from = 1; from <= totalDays; from += size) out.push([from, Math.min(totalDays, from + size - 1)]);
+  return out;
+}
+
+/**
  * Schema we instruct DeepSeek to emit. Aligned with PRD §3.2 / §5.3:
  * Itinerary -> Day -> TimeSlot(period: morning|afternoon|evening) -> Place.
  */
@@ -60,6 +87,15 @@ const ITINERARY_SCHEMA_HINT = `Return JSON in EXACTLY this shape:
       ]
     }
   ]
+}`;
+
+const OUTLINE_SCHEMA_HINT = `{
+  "title": string,
+  "summary": string,
+  "destination": string,
+  "startDate": string,                 // YYYY-MM-DD
+  "endDate": string,                   // YYYY-MM-DD
+  "dayThemes": [ { "dayNumber": number, "theme": string, "area": string } ]   // one entry per day, area = neighbourhood/zone that day covers
 }`;
 
 export interface PlanningRequest {
@@ -151,6 +187,8 @@ export interface AgentStepRecord {
   toolCalls: Array<{ name: string; args: Record<string, any>; ok: boolean; resultSummary: string }>;
   /** True once this step produced the final itinerary JSON (no further tool calls). */
   isFinal: boolean;
+  /** Set on long-trip writing completions (outline / a day batch), which are not agent reasoning steps. */
+  segment?: string;
 }
 
 export interface RunAgentOptions {
@@ -221,6 +259,7 @@ export async function generateItinerary(
 ): Promise<unknown> {
   const { client, model = 'deepseek-chat', maxSteps = 8, temperature = 0.6 } = opts;
 
+  const segmented = isSegmented(req);
   const userPrompt = buildUserPrompt(req);
   const ctx = new ToolContext(req.destination);
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
@@ -235,6 +274,7 @@ export async function generateItinerary(
       tools: toolDefinitions,
       tool_choice: 'auto',
       temperature,
+      max_tokens: MAX_OUTPUT_TOKENS,
     });
     addUsage(opts.usage, response);
 
@@ -256,6 +296,10 @@ export async function generateItinerary(
       // Final answer expected to be JSON. If the model emitted prose
       // (e.g. "no results found"), retry with an explicit JSON instruction.
       const text = (msg.content || '').trim();
+      if (segmented) {
+        opts.stepTrace?.push(stepRecord);
+        return sanitizeImageUrls(await writeSegmentedItinerary(req, opts, messages, text, step + 1), ctx);
+      }
       stepRecord.isFinal = true;
       opts.stepTrace?.push(stepRecord);
       if (RECOVERY_DISABLED) {
@@ -274,6 +318,7 @@ export async function generateItinerary(
           messages,
           response_format: { type: 'json_object' },
           temperature: 0.3,
+          max_tokens: MAX_OUTPUT_TOKENS,
         });
         addUsage(opts.usage, retry);
         const retryText = retry.choices[0]?.message?.content || '{}';
@@ -327,6 +372,9 @@ export async function generateItinerary(
       `Hit maxSteps (${maxSteps}) without a final answer, and error recovery is disabled (DISABLE_ERROR_RECOVERY=true).`,
     );
   }
+  if (segmented) {
+    return sanitizeImageUrls(await writeSegmentedItinerary(req, opts, messages, '', maxSteps), ctx);
+  }
   // Force a final answer.
   messages.push({
     role: 'user',
@@ -337,6 +385,7 @@ export async function generateItinerary(
     messages,
     response_format: { type: 'json_object' },
     temperature: 0.3,
+    max_tokens: MAX_OUTPUT_TOKENS,
   });
   addUsage(opts.usage, final);
   const text = final.choices[0]?.message?.content || '{}';
@@ -348,6 +397,99 @@ export async function generateItinerary(
     isFinal: true,
   });
   return sanitizeImageUrls(JSON.parse(stripJsonFences(text)), ctx);
+}
+
+function parseJsonObject(text: string): any | null {
+  try {
+    const v = JSON.parse(stripJsonFences(text || ''));
+    return v && typeof v === 'object' && !Array.isArray(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Long-trip writer. `messages` holds the whole research transcript (tool
+ * calls + results); every segment request shares it as a common prefix, so
+ * DeepSeek's context cache serves most of the prompt. Only the place names
+ * already used are carried forward (not earlier segments' JSON), keeping
+ * each request small. Each segment gets one repair retry unless recovery is
+ * disabled; days are renumbered to their slot so a model off-by-one can't
+ * produce duplicate or missing day numbers.
+ */
+async function writeSegmentedItinerary(
+  req: PlanningRequest,
+  opts: RunAgentOptions,
+  messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[],
+  outlineText: string,
+  firstStep: number,
+): Promise<Record<string, any>> {
+  const { client, model = 'deepseek-chat' } = opts;
+  let step = firstStep;
+  const jsonCall = async (msgs: OpenAI.Chat.Completions.ChatCompletionMessageParam[], label: string) => {
+    const r = await client.chat.completions.create({
+      model,
+      messages: msgs,
+      response_format: { type: 'json_object' },
+      temperature: 0.3,
+      max_tokens: MAX_OUTPUT_TOKENS,
+    });
+    addUsage(opts.usage, r);
+    opts.stepTrace?.push({ step: step++, timestamp: new Date().toISOString(), reasoning: label, toolCalls: [], isFinal: false, segment: label });
+    return r.choices[0]?.message?.content || '';
+  };
+
+  // 1. Outline: use the model's own final message if it is one, else ask for it.
+  let outline = parseJsonObject(outlineText);
+  // The model sometimes writes the whole itinerary anyway; if it parsed and is complete, keep it.
+  if (Array.isArray(outline?.days) && outline.days.length === req.days) {
+    if (opts.stepTrace?.length) opts.stepTrace[opts.stepTrace.length - 1].isFinal = true;
+    return outline;
+  }
+  if (!outline || !Array.isArray(outline.dayThemes)) {
+    const ask = `Stop calling tools. Reply with ONLY the trip outline JSON (no places yet), one dayThemes entry per day for all ${req.days} days:\n${OUTLINE_SCHEMA_HINT}`;
+    outline = parseJsonObject(await jsonCall([...messages, { role: 'user', content: ask }], '(segmented: trip outline)'));
+    if (!outline) throw new Error('Segmented generation: model did not return a valid trip outline');
+  }
+  const themes: any[] = Array.isArray(outline.dayThemes) ? outline.dayThemes : [];
+  const prefix: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+    ...messages.filter(m => !(m.role === 'assistant' && !(m as any).tool_calls?.length)),
+    { role: 'assistant', content: JSON.stringify(outline) },
+  ];
+
+  // 2. Days, one segment at a time.
+  const days: any[] = [];
+  const usedNames: string[] = [];
+  for (const [from, to] of daySegments(req.days)) {
+    const want = to - from + 1;
+    const ask = [
+      `Now write days ${from}–${to} of ${req.days} in full, following the outline themes for those days.`,
+      usedNames.length ? `Earlier days already use these places — do not repeat them: ${usedNames.join(', ')}.` : '',
+      `Reply with ONLY {"days": [ ...exactly ${want} day object(s), dayNumber ${from} to ${to}... ]}, each day in this shape:`,
+      ITINERARY_SCHEMA_HINT,
+    ].filter(Boolean).join('\n');
+    const segMessages = [...prefix, { role: 'user' as const, content: ask }];
+    let seg = parseJsonObject(await jsonCall(segMessages, `(segmented: days ${from}-${to})`));
+    if (!RECOVERY_DISABLED && (!Array.isArray(seg?.days) || seg.days.length < want)) {
+      const retryAsk = `${ask}\nYour previous reply was not valid or was missing days. Return all ${want} day(s) as complete JSON.`;
+      seg = parseJsonObject(await jsonCall([...prefix, { role: 'user', content: retryAsk }], `(segmented: days ${from}-${to}, retry)`));
+    }
+    if (!Array.isArray(seg?.days) || seg.days.length === 0) {
+      throw new Error(`Segmented generation: days ${from}-${to} were not returned as valid JSON`);
+    }
+    seg.days.slice(0, want).forEach((d: any, i: number) => {
+      const dayNumber = from + i;
+      const theme = themes.find(t => Number(t?.dayNumber) === dayNumber)?.theme;
+      days.push({ ...d, dayNumber, theme: d?.theme || theme || '' });
+      for (const slot of Array.isArray(d?.slots) ? d.slots : []) {
+        for (const p of Array.isArray(slot?.places) ? slot.places : []) if (p?.name) usedNames.push(String(p.name));
+      }
+    });
+  }
+  if (opts.stepTrace?.length) opts.stepTrace[opts.stepTrace.length - 1].isFinal = true;
+
+  const { dayThemes: _themes, ...meta } = outline;
+  return { ...meta, days };
 }
 
 /**
@@ -393,6 +535,17 @@ function buildUserPrompt(req: PlanningRequest): string {
   }
   if (req.memoryContext) {
     lines.push('', req.memoryContext);
+  }
+  if (isSegmented(req)) {
+    lines.push(
+      '',
+      `This is a long trip (${req.days} days), so the itinerary is written in parts. Use the tools to gather real POI data for ALL ${req.days} days first.`,
+      'When you are done with tools, do NOT write the full itinerary. Reply with ONLY this outline JSON (no places yet):',
+      OUTLINE_SCHEMA_HINT,
+      `You will then be asked for the days in batches of ${SEGMENT_DAYS}, each using this place schema:`,
+      ITINERARY_SCHEMA_HINT,
+    );
+    return lines.join('\n');
   }
   lines.push('', 'Use the tools to gather real POI data, then produce the final itinerary.');
   lines.push(ITINERARY_SCHEMA_HINT);

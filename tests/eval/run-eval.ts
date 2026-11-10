@@ -465,7 +465,7 @@ async function runCaseOnce(
     repeat,
     attempts: attempt,
     degraded: isProviderDegraded(trace),
-    steps: stepTrace.length,
+    steps: stepTrace.filter(s => !s.segment).length, // agent steps only, not long-trip writing segments
     usage,
     judgeUsage,
     geoapifyRequests: geoapifyMeterSnapshot().requests - geoapifyBefore,
