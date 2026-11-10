@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { runTool, toolDefinitions, ToolContext } from './tools';
+import type { Poi } from './tools/provider';
 
 /**
  * Master on/off switch for the agent's 5-layer error-recovery pipeline (see
@@ -298,7 +299,7 @@ export async function generateItinerary(
       const text = (msg.content || '').trim();
       if (segmented) {
         opts.stepTrace?.push(stepRecord);
-        return sanitizeImageUrls(await writeSegmentedItinerary(req, opts, messages, text, step + 1), ctx);
+        return sanitizeImageUrls(await writeSegmentedItinerary(req, opts, ctx, messages, text, step + 1), ctx);
       }
       stepRecord.isFinal = true;
       opts.stepTrace?.push(stepRecord);
@@ -373,7 +374,7 @@ export async function generateItinerary(
     );
   }
   if (segmented) {
-    return sanitizeImageUrls(await writeSegmentedItinerary(req, opts, messages, '', maxSteps), ctx);
+    return sanitizeImageUrls(await writeSegmentedItinerary(req, opts, ctx, messages, '', maxSteps), ctx);
   }
   // Force a final answer.
   messages.push({
@@ -400,32 +401,119 @@ export async function generateItinerary(
 }
 
 function parseJsonObject(text: string): any | null {
+  const v = parseJsonLoose(text);
+  return v && typeof v === 'object' && !Array.isArray(v) ? v : null;
+}
+
+/** JSON.parse after stripping fences; falls back to the outermost {...} or [...] span in the text. */
+export function parseJsonLoose(text: string): unknown {
+  const t = stripJsonFences(text || '');
   try {
-    const v = JSON.parse(stripJsonFences(text || ''));
-    return v && typeof v === 'object' && !Array.isArray(v) ? v : null;
+    return JSON.parse(t);
   } catch {
+    for (const [open, close] of [['{', '}'], ['[', ']']] as const) {
+      const a = t.indexOf(open);
+      const b = t.lastIndexOf(close);
+      if (a >= 0 && b > a) {
+        try {
+          return JSON.parse(t.slice(a, b + 1));
+        } catch {
+          // try the next shape
+        }
+      }
+    }
     return null;
   }
+}
+
+const looksLikeDay = (d: any) => !!d && typeof d === 'object' && !Array.isArray(d) && Array.isArray(d.slots);
+
+/**
+ * Pulls the day objects out of a segment reply, accepting the shapes the
+ * model actually produces besides the requested {"days": [...]}: a bare
+ * array, {"itinerary": {"days": [...]}}, {"days": {"4": {...}, "5": {...}}},
+ * {"day4": {...}, "day_5": {...}}, or a single day object. Returns [] when
+ * nothing day-like is found.
+ */
+export function extractSegmentDays(v: unknown): any[] {
+  const keyNum = (k: string) => Number(k.match(/\d+/)?.[0] ?? NaN);
+  const fromKeyed = (o: Record<string, any>) =>
+    Object.entries(o)
+      .filter(([k, d]) => Number.isFinite(keyNum(k)) && looksLikeDay(d))
+      .sort(([a], [b]) => keyNum(a) - keyNum(b))
+      .map(([, d]) => d);
+  const walk = (x: any, depth: number): any[] => {
+    if (!x || typeof x !== 'object' || depth > 3) return [];
+    if (Array.isArray(x)) {
+      if (x.some(looksLikeDay)) return x.filter(looksLikeDay);
+      return x.length === 1 ? walk(x[0], depth + 1) : [];
+    }
+    if (Array.isArray(x.days)) return x.days.filter(looksLikeDay);
+    if (x.days && typeof x.days === 'object') return fromKeyed(x.days);
+    if (looksLikeDay(x)) return [x];
+    const keyed = fromKeyed(x);
+    if (keyed.length) return keyed;
+    for (const k of ['itinerary', 'data', 'result', 'plan']) if (x[k]) return walk(x[k], depth + 1);
+    return [];
+  };
+  return walk(v, 0);
+}
+
+/** Thrown when segmented writing fails; carries every raw model reply so the failure can be diagnosed. */
+export class SegmentedGenerationError extends Error {
+  constructor(message: string, readonly rawReplies: Array<{ label: string; content: string }>) {
+    super(message);
+    this.name = 'SegmentedGenerationError';
+  }
+}
+
+/** Same matching rule as the eval's hallucination scorer: case-insensitive substring either way. */
+export function nameMatches(a: string, b: string): boolean {
+  const x = a.trim().toLowerCase();
+  const y = b.trim().toLowerCase();
+  return !!x && !!y && (x.includes(y) || y.includes(x));
+}
+
+/** Max re-searches for ungrounded places per run (bounds Geoapify/Amap cost). */
+export const MAX_REGROUND_SEARCHES = 8;
+/** Max searched places listed in each segment prompt. */
+export const MAX_GROUNDING_LIST = 150;
+
+function groundingList(pois: Poi[]): string {
+  return pois
+    .slice(0, MAX_GROUNDING_LIST)
+    .map(p => {
+      const [lng, lat] = (p.location || '').split(',');
+      return `- ${p.name} | ${p.type || '?'} | ${lat ?? '?'},${lng ?? '?'}${p.rating ? ` | ★${p.rating}` : ''}`;
+    })
+    .join('\n');
 }
 
 /**
  * Long-trip writer. `messages` holds the whole research transcript (tool
  * calls + results); every segment request shares it as a common prefix, so
- * DeepSeek's context cache serves most of the prompt. Only the place names
- * already used are carried forward (not earlier segments' JSON), keeping
- * each request small. Each segment gets one repair retry unless recovery is
- * disabled; days are renumbered to their slot so a model off-by-one can't
- * produce duplicate or missing day numbers.
+ * DeepSeek's context cache serves most of the prompt. Each segment is given
+ * the list of places search actually returned (and told to pick from it)
+ * plus the names earlier days already used. Each segment gets one repair
+ * retry unless recovery is disabled; days are renumbered to their slot.
+ *
+ * After writing, every place is checked against the searched set; a place
+ * that isn't in it is re-searched by name (up to MAX_REGROUND_SEARCHES per
+ * run, recorded in the trace like any tool call). A match takes the real
+ * coordinates; otherwise the place is kept but marked `unverified`.
  */
 async function writeSegmentedItinerary(
   req: PlanningRequest,
   opts: RunAgentOptions,
+  ctx: ToolContext,
   messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[],
   outlineText: string,
   firstStep: number,
 ): Promise<Record<string, any>> {
   const { client, model = 'deepseek-chat' } = opts;
   let step = firstStep;
+  const rawReplies: Array<{ label: string; content: string }> = [];
+  const fail = (message: string) => new SegmentedGenerationError(`Segmented generation: ${message}`, rawReplies);
   const jsonCall = async (msgs: OpenAI.Chat.Completions.ChatCompletionMessageParam[], label: string) => {
     const r = await client.chat.completions.create({
       model,
@@ -436,26 +524,30 @@ async function writeSegmentedItinerary(
     });
     addUsage(opts.usage, r);
     opts.stepTrace?.push({ step: step++, timestamp: new Date().toISOString(), reasoning: label, toolCalls: [], isFinal: false, segment: label });
-    return r.choices[0]?.message?.content || '';
+    const content = r.choices[0]?.message?.content || '';
+    rawReplies.push({ label: `${label}${r.choices[0]?.finish_reason === 'length' ? ' [finish_reason=length]' : ''}`, content });
+    return content;
   };
 
   // 1. Outline: use the model's own final message if it is one, else ask for it.
+  if (outlineText) rawReplies.push({ label: '(final tool-loop message)', content: outlineText });
   let outline = parseJsonObject(outlineText);
   // The model sometimes writes the whole itinerary anyway; if it parsed and is complete, keep it.
-  if (Array.isArray(outline?.days) && outline.days.length === req.days) {
+  if (outline && extractSegmentDays(outline).length === req.days) {
     if (opts.stepTrace?.length) opts.stepTrace[opts.stepTrace.length - 1].isFinal = true;
-    return outline;
+    return reground({ ...outline, days: extractSegmentDays(outline) });
   }
   if (!outline || !Array.isArray(outline.dayThemes)) {
     const ask = `Stop calling tools. Reply with ONLY the trip outline JSON (no places yet), one dayThemes entry per day for all ${req.days} days:\n${OUTLINE_SCHEMA_HINT}`;
     outline = parseJsonObject(await jsonCall([...messages, { role: 'user', content: ask }], '(segmented: trip outline)'));
-    if (!outline) throw new Error('Segmented generation: model did not return a valid trip outline');
+    if (!outline) throw fail('model did not return a valid trip outline');
   }
   const themes: any[] = Array.isArray(outline.dayThemes) ? outline.dayThemes : [];
   const prefix: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     ...messages.filter(m => !(m.role === 'assistant' && !(m as any).tool_calls?.length)),
     { role: 'assistant', content: JSON.stringify(outline) },
   ];
+  const searched = groundingList(ctx.allPois());
 
   // 2. Days, one segment at a time.
   const days: any[] = [];
@@ -463,21 +555,23 @@ async function writeSegmentedItinerary(
   for (const [from, to] of daySegments(req.days)) {
     const want = to - from + 1;
     const ask = [
+      // Constant across segments, so it extends the cached prompt prefix.
+      searched
+        ? `Places returned by search_places this run (name | type | lat,lng | rating):\n${searched}\nPick every place from this list and copy its name and coordinates exactly. Only if the list has nothing suitable for a slot may you add another place, and then use its real, well-known name.`
+        : 'No search results are available; use well-known real places with accurate coordinates.',
       `Now write days ${from}–${to} of ${req.days} in full, following the outline themes for those days.`,
       usedNames.length ? `Earlier days already use these places — do not repeat them: ${usedNames.join(', ')}.` : '',
       `Reply with ONLY {"days": [ ...exactly ${want} day object(s), dayNumber ${from} to ${to}... ]}, each day in this shape:`,
       ITINERARY_SCHEMA_HINT,
     ].filter(Boolean).join('\n');
-    const segMessages = [...prefix, { role: 'user' as const, content: ask }];
-    let seg = parseJsonObject(await jsonCall(segMessages, `(segmented: days ${from}-${to})`));
-    if (!RECOVERY_DISABLED && (!Array.isArray(seg?.days) || seg.days.length < want)) {
+    let segDays = extractSegmentDays(parseJsonLoose(await jsonCall([...prefix, { role: 'user', content: ask }], `(segmented: days ${from}-${to})`)));
+    if (!RECOVERY_DISABLED && segDays.length < want) {
       const retryAsk = `${ask}\nYour previous reply was not valid or was missing days. Return all ${want} day(s) as complete JSON.`;
-      seg = parseJsonObject(await jsonCall([...prefix, { role: 'user', content: retryAsk }], `(segmented: days ${from}-${to}, retry)`));
+      const retried = extractSegmentDays(parseJsonLoose(await jsonCall([...prefix, { role: 'user', content: retryAsk }], `(segmented: days ${from}-${to}, retry)`)));
+      if (retried.length > segDays.length) segDays = retried;
     }
-    if (!Array.isArray(seg?.days) || seg.days.length === 0) {
-      throw new Error(`Segmented generation: days ${from}-${to} were not returned as valid JSON`);
-    }
-    seg.days.slice(0, want).forEach((d: any, i: number) => {
+    if (segDays.length === 0) throw fail(`days ${from}-${to} were not returned as valid JSON`);
+    segDays.slice(0, want).forEach((d: any, i: number) => {
       const dayNumber = from + i;
       const theme = themes.find(t => Number(t?.dayNumber) === dayNumber)?.theme;
       days.push({ ...d, dayNumber, theme: d?.theme || theme || '' });
@@ -489,7 +583,44 @@ async function writeSegmentedItinerary(
   if (opts.stepTrace?.length) opts.stepTrace[opts.stepTrace.length - 1].isFinal = true;
 
   const { dayThemes: _themes, ...meta } = outline;
-  return { ...meta, days };
+  return reground({ ...meta, days });
+
+  // 3. Grounding check + re-search.
+  async function reground(itinerary: Record<string, any>): Promise<Record<string, any>> {
+    const places: any[] = (itinerary.days ?? []).flatMap((d: any) => (d?.slots ?? []).flatMap((s: any) => s?.places ?? []));
+    let searches = 0;
+    const record: AgentStepRecord = { step: step++, timestamp: new Date().toISOString(), reasoning: '(segmented: re-search ungrounded places)', toolCalls: [], isFinal: false, segment: 'reground' };
+    for (const p of places) {
+      if (!p?.name) continue;
+      const known = () => ctx.allPois().find(poi => nameMatches(poi.name, String(p.name)));
+      if (known()) continue;
+      if (searches >= MAX_REGROUND_SEARCHES) {
+        p.unverified = true;
+        continue;
+      }
+      searches++;
+      const args = { keywords: String(p.name), region: req.destination, limit: 5 };
+      let result: unknown;
+      try {
+        result = await runTool(ctx, 'search_places', args);
+      } catch (err: any) {
+        result = { error: err?.message ?? String(err) };
+      }
+      const ok = !(result && typeof result === 'object' && 'error' in (result as any));
+      const resultSummary = summariseToolResult('search_places', args, result);
+      opts.trace?.push({ step: record.step, name: 'search_places', args, ok, resultSummary });
+      record.toolCalls.push({ name: 'search_places', args, ok, resultSummary });
+      const hit = known();
+      const [lng, lat] = (hit?.location || '').split(',').map(Number);
+      if (hit && Number.isFinite(lat) && Number.isFinite(lng)) {
+        p.coordinates = { lat, lng };
+      } else {
+        p.unverified = true;
+      }
+    }
+    if (record.toolCalls.length) opts.stepTrace?.push(record);
+    return itinerary;
+  }
 }
 
 /**

@@ -177,6 +177,11 @@ export class ToolContext {
     return this.poiCache.get(id);
   }
 
+  /** Every POI a tool returned this run, in first-seen order (the grounding set for segmented writing). */
+  allPois(): Poi[] {
+    return [...this.poiCache.values()];
+  }
+
   /** Serializes POIs for the model and records any photoUrl it is shown. */
   serialize(pois: Poi[]): SerializablePoi[] {
     const out: SerializablePoi[] = [];

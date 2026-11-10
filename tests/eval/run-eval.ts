@@ -127,6 +127,8 @@ interface CaseResult {
   judge?: RubricResult;
   /** Set when the judge call itself failed; the run's other scores still count, the reward omits the judge term. */
   judgeError?: string;
+  /** For a failed segmented run: where its raw model replies were saved (under reports/). */
+  rawRepliesFile?: string;
   /** Set when the run failed because of the network/API service (see isInfraError); such a run is never checkpointed. */
   infraError?: string;
   /**
@@ -538,7 +540,17 @@ async function runCaseOnce(
       return { trace, result: { ...failedResult(info(), message), infraError: message } };
     }
     console.log(`FAILED: ${message}`);
-    return { trace, result: failedResult(info(), message) };
+    const failed = failedResult(info(), message);
+    // Segmented-generation failures carry the model's raw replies: keep them for diagnosis.
+    if (Array.isArray(err?.rawReplies)) {
+      const dir = path.join(REPORTS_DIR, 'raw-failures');
+      fs.mkdirSync(dir, { recursive: true });
+      const file = `${stamp}-${c.id}-r${repeat}-a${attempt}.json`;
+      fs.writeFileSync(path.join(dir, file), JSON.stringify({ caseId: c.id, repeat, attempt, error: message, rawReplies: err.rawReplies }, null, 2));
+      console.log(`    raw model replies saved to tests/eval/reports/raw-failures/${file}`);
+      return { trace, result: { ...failed, rawRepliesFile: `raw-failures/${file}` } };
+    }
+    return { trace, result: failed };
   }
 }
 

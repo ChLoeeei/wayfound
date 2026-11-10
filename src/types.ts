@@ -82,6 +82,8 @@ export interface Place {
   externalUrl?: string;
   /** Used to look up the place via Amap PlaceSearch (especially for AI-generated entries) */
   searchQuery?: string;
+  /** Set by the agent when the place matched no map-search result, even after a re-search: treat coordinates as approximate. */
+  unverified?: boolean;
 }
 
 export interface TimeSlot {
