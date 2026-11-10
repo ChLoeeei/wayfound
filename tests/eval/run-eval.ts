@@ -75,7 +75,7 @@ import {
   type DestinationContextScore,
 } from './scoring';
 import type { Itinerary } from '../../src/types';
-import { allCases, caseSetVersion, parseSplit, selectCases } from './cases';
+import { allCases, caseHash, caseSetVersion, isHardCase, parseSplit, selectCases, type TaggedCase } from './cases';
 import { summarizeRuns, fmtSpread, type RunMetrics, type GroupSummary } from './aggregate';
 import { toolCacheDir, toolCacheStats } from '../../server/tools/cache';
 import { geoapifyMeterSnapshot } from '../../server/tools/geoapify';
@@ -99,10 +99,13 @@ const limitRetryWaitMs = Math.max(0, Number(process.env.EVAL_LIMIT_RETRY_WAIT_MS
 const REPORTS_DIR = path.join(process.cwd(), 'tests', 'eval', 'reports');
 const USAGE_FILE = path.join(REPORTS_DIR, 'geoapify-usage.json');
 /** Files whose changes would change scores; resuming across a change is refused (see progress.ts). */
-const SCORING_SOURCES = ['server/agent.ts', 'server/tools', 'tests/eval/scoring.ts', 'tests/fuzzy/judge.ts', 'tests/eval/cases.json'];
+// cases.json is NOT here: each run stores its own caseHash instead, so adding cases doesn't invalidate a checkpoint and editing one case invalidates only that case's runs.
+const SCORING_SOURCES = ['server/agent.ts', 'server/tools', 'tests/eval/scoring.ts', 'tests/fuzzy/judge.ts'];
 
 interface CaseResult {
   id: string;
+  /** caseHash() of the case as run; a mismatch with the current cases.json invalidates the run. Absent on runs saved before v3. */
+  caseHash?: string;
   destination: string;
   region: 'domestic' | 'international';
   /** 1-based repeat index. */
@@ -195,7 +198,7 @@ function collectMapboxDiagnostics(c: EvalCase, trace: ToolCallRecord[]): MapboxD
   return entries;
 }
 
-type RunInfo = Pick<CaseResult, 'id' | 'destination' | 'region' | 'repeat' | 'attempts' | 'degraded' | 'steps' | 'usage' | 'judgeUsage' | 'geoapifyRequests' | 'durationMs'>;
+type RunInfo = Pick<CaseResult, 'id' | 'caseHash' | 'destination' | 'region' | 'repeat' | 'attempts' | 'degraded' | 'steps' | 'usage' | 'judgeUsage' | 'geoapifyRequests' | 'durationMs'>;
 
 const emptyUsage = (): AgentUsage => ({ promptTokens: 0, cachedPromptTokens: 0, completionTokens: 0, completions: 0 });
 
@@ -242,7 +245,7 @@ function regionOf(c: EvalCase): 'domestic' | 'international' {
 }
 
 async function main() {
-  if (!process.env.DEEPSEEK_API_KEY) {
+  if (!process.env.DEEPSEEK_API_KEY && process.env.EVAL_PRINT_CHECKPOINT !== '1') {
     console.error('DEEPSEEK_API_KEY is not set — the eval harness calls the live agent, so it needs a real key.');
     process.exit(1);
   }
@@ -265,8 +268,15 @@ async function main() {
 
   // ---- Checkpoint: same command = same directory = resume ----
   const meta = buildMeta(stamp);
-  const { stamp: _s, gitCommit: _g, gitDirty: _d, repeats: _r, ...resultAffecting } = meta;
+  // The case set is not part of the key: runs are per case (with a per-run caseHash), so adding
+  // cases to a split just adds runs to the same checkpoint, like raising EVAL_REPEATS does.
+  const { stamp: _s, gitCommit: _g, gitDirty: _d, repeats: _r, caseSetVersion: _v, casesSha256: _h, caseIds: _ids, ...resultAffecting } = meta;
   const ckptDir = path.join(REPORTS_DIR, 'checkpoints', `${meta.setup}-${meta.split}-${configKey(resultAffecting)}`);
+  if (process.env.EVAL_PRINT_CHECKPOINT === '1') {
+    // Prints where this exact configuration checkpoints, without running anything.
+    console.log(path.relative(process.cwd(), ckptDir));
+    return;
+  }
   const store = new CheckpointStore<CaseResult>(ckptDir);
   if (freshStart) {
     const archived = store.archive();
@@ -279,6 +289,10 @@ async function main() {
   }
   // Runs saved as failures that were really network/API outages (recorded
   // before infra errors were classified) get redone, not scored.
+  // A case whose content changed since its runs were saved: redo those runs only.
+  const byId = new Map(cases.map(c => [c.id, c]));
+  const changedCases = store.invalidate(r => !!r.caseHash && byId.has(r.id) && r.caseHash !== caseHash(byId.get(r.id)!));
+  if (changedCases.length) console.log(`Moved ${changedCases.length} run(s) of edited case(s) to invalidated/ to be redone: ${changedCases.join(', ')}`);
   const reclassified = store.invalidate(r => !!r.infraError || (!!r.error && isInfraError({ message: r.error })) || (!!r.judgeError && isInfraError({ message: r.judgeError })));
   if (reclassified.length) console.log(`Moved ${reclassified.length} network-failure run(s) to invalidated/ to be redone: ${reclassified.join(', ')}`);
   const total = cases.length * repeats;
@@ -462,6 +476,7 @@ async function runCaseOnce(
   process.stdout.write(`  ${c.id}${tag} — ${c.destination} ${c.days}d ${c.people}p ... `);
   const info = (): RunInfo => ({
     id: c.id,
+    caseHash: caseHash(c),
     destination: c.destination,
     region,
     repeat,
@@ -500,7 +515,7 @@ async function runCaseOnce(
     const hallucination = scoreHallucinationRate(trace, itinerary, c.destination);
     const destinationContext = scoreDestinationContextUsage(trace, itinerary);
     // Only the trip request goes to the judge, not eval bookkeeping (id/split/region).
-    const { id: _id, split: _split, region: _region, ...userProfile } = c;
+    const { id: _id, split: _split, region: _region, tags: _tags, addedIn: _added, ...userProfile } = c as TaggedCase;
     // A judge failure is the harness's problem, not the agent's: keep the
     // itinerary's other scores rather than scoring the run as a failed generation.
     let judge: RubricResult | undefined;
@@ -622,6 +637,8 @@ function avg(nums: number[]): number {
   return nums.reduce((a, b) => a + b, 0) / nums.length;
 }
 
+const hardIds = new Set(allCases.filter(isHardCase).map(c => c.id));
+
 function buildSummary(results: CaseResult[]) {
   const ok = results.filter(r => !r.error);
   const called = ok.filter(r => r.destinationContext.called);
@@ -635,6 +652,9 @@ function buildSummary(results: CaseResult[]) {
     judgeErrorCount: results.filter(r => r.judgeError).length,
     /** Mean ± spread across repeats of each repeat's case-average; failed runs count as worst-case. */
     aggregate: summarizeRuns(results.map(toRunMetrics)),
+    /** Same, restricted to the original v2 cases (no "hard" tag); null when no hard case ran. Keeps numbers comparable with pre-v3 reports. */
+    aggregateCore: results.some(r => hardIds.has(r.id)) ? summarizeRuns(results.filter(r => !hardIds.has(r.id)).map(toRunMetrics)) : null,
+    coreCaseCount: new Set(results.filter(r => !hardIds.has(r.id)).map(r => r.id)).size,
     // Informational, not graded — see scoring.ts's scoreDestinationContextUsage docstring.
     destinationContextUsageRate: ok.length > 0 ? called.length / ok.length : 0,
     destinationContextSuccessRate: called.length > 0 ? avg(called.map(r => (r.destinationContext.successCount > 0 ? 1 : 0))) : null,
@@ -666,10 +686,16 @@ function printSummary(results: CaseResult[]) {
     `  ${s.caseCount} case(s), ${s.runCount} run(s): ${s.failedRunCount} failed, ${s.degradedRunCount} still provider-degraded, ${s.rerunCount} rerun(s), ${s.judgeErrorCount} judge error(s)`,
   );
   console.log(`  (mean ± sample std across ${repeats} repeat(s))`);
-  for (const [label, g] of [['overall', s.aggregate.overall], ['domestic', s.aggregate.domestic], ['international', s.aggregate.international]] as const) {
-    if (g.runCount === 0) continue;
-    console.log(`  [${label}]`);
-    for (const [k, v] of headlineRows(g)) console.log(`    ${k.padEnd(50)} ${v}`);
+  const blocks: Array<[string, ReturnType<typeof summarizeRuns>]> = s.aggregateCore
+    ? [[`full test set, ${s.caseCount} cases`, s.aggregate], [`original ${s.coreCaseCount} cases (no hard cases)`, s.aggregateCore]]
+    : [['', s.aggregate]];
+  for (const [title, agg] of blocks) {
+    if (title) console.log(`  ## ${title}`);
+    for (const [label, g] of [['overall', agg.overall], ['domestic', agg.domestic], ['international', agg.international]] as const) {
+      if (g.runCount === 0) continue;
+      console.log(`  [${label}]`);
+      for (const [k, v] of headlineRows(g)) console.log(`    ${k.padEnd(50)} ${v}`);
+    }
   }
   console.log(
     `  get_destination_context usage: ${(s.destinationContextUsageRate * 100).toFixed(0)}% of runs; attribution wiring OK in ${(s.destinationContextAttributionWiringOkRate * 100).toFixed(0)}%`,
@@ -698,15 +724,21 @@ function renderMarkdown(summary: ReturnType<typeof buildSummary>, results: CaseR
   }
   lines.push('- Numbers are mean ± sample std across repeats of each repeat\'s case-average. Failed runs count as worst-case (halluc 100%, reward -0.5).');
   lines.push('');
-  const groups = [['Overall', summary.aggregate.overall], ['Domestic', summary.aggregate.domestic], ['International', summary.aggregate.international]] as const;
-  const shown = groups.filter(([, g]) => g.runCount > 0);
-  lines.push(`| Metric | ${shown.map(([l]) => l).join(' | ')} |`);
-  lines.push(`|---|${shown.map(() => '---:').join('|')}|`);
-  const rowsByGroup = shown.map(([, g]) => headlineRows(g));
-  for (let i = 0; i < rowsByGroup[0].length; i++) {
-    lines.push(`| ${rowsByGroup[0][i][0]} | ${rowsByGroup.map(r => r[i][1]).join(' | ')} |`);
+  const tables: Array<[string, ReturnType<typeof summarizeRuns>]> = summary.aggregateCore
+    ? [[`Full test set (${summary.caseCount} cases, incl. hard cases)`, summary.aggregate], [`Original ${summary.coreCaseCount} cases (comparable with pre-v3 reports)`, summary.aggregateCore]]
+    : [['', summary.aggregate]];
+  for (const [title, agg] of tables) {
+    if (title) lines.push(`### ${title}`, '');
+    const groups = [['Overall', agg.overall], ['Domestic', agg.domestic], ['International', agg.international]] as const;
+    const shown = groups.filter(([, g]) => g.runCount > 0);
+    lines.push(`| Metric | ${shown.map(([l]) => l).join(' | ')} |`);
+    lines.push(`|---|${shown.map(() => '---:').join('|')}|`);
+    const rowsByGroup = shown.map(([, g]) => headlineRows(g));
+    for (let i = 0; i < rowsByGroup[0].length; i++) {
+      lines.push(`| ${rowsByGroup[0][i][0]} | ${rowsByGroup.map(r => r[i][1]).join(' | ')} |`);
+    }
+    lines.push('');
   }
-  lines.push('');
   lines.push(
     `get_destination_context (Wikivoyage) usage: ${(summary.destinationContextUsageRate * 100).toFixed(0)}% of runs; CC BY-SA attribution wiring OK in ${(summary.destinationContextAttributionWiringOkRate * 100).toFixed(0)}%.`,
   );
@@ -772,7 +804,7 @@ function writeCommittedResult(results: CaseResult[], stamp: string, meta: EvalMe
   const file = path.join(dir, `${meta.setup}-${meta.split}-${stamp}.json`);
   fs.writeFileSync(
     file,
-    JSON.stringify({ meta, aggregate: summary.aggregate, runs: results.map(r => ({ ...toRunMetrics(r), attempts: r.attempts, error: r.error, judgeError: r.judgeError })) }, null, 2) + '\n',
+    JSON.stringify({ meta, aggregate: summary.aggregate, aggregateCore: summary.aggregateCore, runs: results.map(r => ({ ...toRunMetrics(r), attempts: r.attempts, error: r.error, judgeError: r.judgeError })) }, null, 2) + '\n',
   );
   console.log(`Committable result summary: ${path.relative(process.cwd(), file)}`);
 }

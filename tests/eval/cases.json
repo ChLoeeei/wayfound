@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "comment": "Eval case set v2: 60 queries, a frozen train/test split stratified by region (15 domestic + 15 international per split), each destination in exactly one split. `train` is for the experience-library learning loop only; every headline number comes from `test`. Do not move cases between splits: that invalidates every number already reported. Add new cases instead.",
+  "version": 3,
+  "comment": "Eval case set v3: the 60 v2 cases (a frozen train/test split stratified by region, 15 domestic + 15 international per split, each destination in one split) plus 10 hard cases tagged \"hard\" (addedIn 3): multi-city, ultra-long, tight budget, obscure destination, conflicting constraints, 5 per split (2 domestic + 3 international), added because the v2 baseline left little headroom. `train` is for the experience-library learning loop only; every headline number comes from `test`, reported both with and without the hard cases. Do not move or edit existing cases: that invalidates every number already reported. Add new cases instead.",
   "cases": [
     {
       "id": "xian-family-culture",
@@ -1119,6 +1119,271 @@
         "max": 2200
       },
       "specialNeeds": []
+    },
+    {
+      "id": "shanghai-hangzhou-couple-multicity-tight",
+      "split": "test",
+      "region": "domestic",
+      "destination": "上海、杭州",
+      "days": 5,
+      "people": 2,
+      "preferences": [
+        "food",
+        "culture"
+      ],
+      "groupType": "couple",
+      "budget": {
+        "min": 120,
+        "max": 250
+      },
+      "specialNeeds": [],
+      "tags": [
+        "hard",
+        "multi-city",
+        "tight-budget"
+      ],
+      "addedIn": 3
+    },
+    {
+      "id": "urumqi-family-14d-vegetarian-baby",
+      "split": "test",
+      "region": "domestic",
+      "destination": "乌鲁木齐",
+      "days": 14,
+      "people": 4,
+      "preferences": [
+        "adventure",
+        "nature",
+        "food"
+      ],
+      "groupType": "family",
+      "budget": {
+        "min": 150,
+        "max": 400
+      },
+      "specialNeeds": [
+        "vegetarian",
+        "baby"
+      ],
+      "tags": [
+        "hard",
+        "ultra-long",
+        "conflicting-constraints",
+        "tight-budget"
+      ],
+      "addedIn": 3
+    },
+    {
+      "id": "japan-friends-multicity-tight",
+      "split": "test",
+      "region": "international",
+      "destination": "Tokyo, Kyoto and Osaka",
+      "days": 8,
+      "people": 3,
+      "preferences": [
+        "food",
+        "shopping",
+        "culture"
+      ],
+      "groupType": "friends",
+      "budget": {
+        "min": 250,
+        "max": 600
+      },
+      "specialNeeds": [],
+      "tags": [
+        "hard",
+        "multi-city",
+        "tight-budget",
+        "long"
+      ],
+      "addedIn": 3
+    },
+    {
+      "id": "luangprabang-solo-vegetarian-tight",
+      "split": "test",
+      "region": "international",
+      "destination": "Luang Prabang",
+      "days": 4,
+      "people": 1,
+      "preferences": [
+        "culture",
+        "nature"
+      ],
+      "groupType": "solo",
+      "budget": {
+        "min": 100,
+        "max": 250
+      },
+      "specialNeeds": [
+        "vegetarian"
+      ],
+      "tags": [
+        "hard",
+        "obscure-destination",
+        "tight-budget"
+      ],
+      "addedIn": 3
+    },
+    {
+      "id": "faroe-family-accessibility-adventure",
+      "split": "test",
+      "region": "international",
+      "destination": "Faroe Islands",
+      "days": 5,
+      "people": 4,
+      "preferences": [
+        "adventure",
+        "nature"
+      ],
+      "groupType": "family",
+      "budget": {
+        "min": 400,
+        "max": 900
+      },
+      "specialNeeds": [
+        "accessibility",
+        "baby"
+      ],
+      "tags": [
+        "hard",
+        "obscure-destination",
+        "conflicting-constraints"
+      ],
+      "addedIn": 3
+    },
+    {
+      "id": "nanjing-suzhou-friends-multicity-tight",
+      "split": "train",
+      "region": "domestic",
+      "destination": "南京、苏州",
+      "days": 5,
+      "people": 3,
+      "preferences": [
+        "food",
+        "culture",
+        "shopping"
+      ],
+      "groupType": "friends",
+      "budget": {
+        "min": 100,
+        "max": 220
+      },
+      "specialNeeds": [],
+      "tags": [
+        "hard",
+        "multi-city",
+        "tight-budget"
+      ],
+      "addedIn": 3
+    },
+    {
+      "id": "lhasa-family-12d-accessibility-adventure",
+      "split": "train",
+      "region": "domestic",
+      "destination": "拉萨",
+      "days": 12,
+      "people": 4,
+      "preferences": [
+        "adventure",
+        "culture"
+      ],
+      "groupType": "family",
+      "budget": {
+        "min": 200,
+        "max": 500
+      },
+      "specialNeeds": [
+        "accessibility",
+        "baby"
+      ],
+      "tags": [
+        "hard",
+        "ultra-long",
+        "conflicting-constraints"
+      ],
+      "addedIn": 3
+    },
+    {
+      "id": "berlin-prague-couple-multicity-tight",
+      "split": "train",
+      "region": "international",
+      "destination": "Berlin and Prague",
+      "days": 7,
+      "people": 2,
+      "preferences": [
+        "culture",
+        "food"
+      ],
+      "groupType": "couple",
+      "budget": {
+        "min": 250,
+        "max": 600
+      },
+      "specialNeeds": [],
+      "tags": [
+        "hard",
+        "multi-city",
+        "tight-budget",
+        "long"
+      ],
+      "addedIn": 3
+    },
+    {
+      "id": "tbilisi-solo-vegetarian-tight",
+      "split": "train",
+      "region": "international",
+      "destination": "Tbilisi",
+      "days": 4,
+      "people": 1,
+      "preferences": [
+        "food",
+        "culture",
+        "adventure"
+      ],
+      "groupType": "solo",
+      "budget": {
+        "min": 120,
+        "max": 300
+      },
+      "specialNeeds": [
+        "vegetarian"
+      ],
+      "tags": [
+        "hard",
+        "obscure-destination",
+        "tight-budget"
+      ],
+      "addedIn": 3
+    },
+    {
+      "id": "vietnam-family-14d-baby-vegetarian",
+      "split": "train",
+      "region": "international",
+      "destination": "Hanoi, Hoi An and Ho Chi Minh City",
+      "days": 14,
+      "people": 4,
+      "preferences": [
+        "adventure",
+        "food",
+        "nature"
+      ],
+      "groupType": "family",
+      "budget": {
+        "min": 150,
+        "max": 400
+      },
+      "specialNeeds": [
+        "baby",
+        "vegetarian"
+      ],
+      "tags": [
+        "hard",
+        "multi-city",
+        "ultra-long",
+        "conflicting-constraints"
+      ],
+      "addedIn": 3
     }
   ]
 }

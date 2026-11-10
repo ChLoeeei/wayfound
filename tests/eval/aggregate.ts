@@ -79,7 +79,7 @@ export interface GroupSummary {
   runCount: number;
   failedRuns: number;
   degradedRuns: number;
-  /** False if any run's reward left out the judge term; then `reward` is the no-judge variant. */
+  /** False if any non-failed run's reward left out the judge term; then `reward` is the no-judge variant. */
   rewardIncludesJudge: boolean;
   metrics: Record<MetricKey, Spread | null>;
 }
@@ -93,7 +93,8 @@ export function summarizeGroup(runs: RunMetrics[]): GroupSummary {
     runCount: runs.length,
     failedRuns: runs.filter(r => r.failed).length,
     degradedRuns: runs.filter(r => r.degraded).length,
-    rewardIncludesJudge: runs.length > 0 && runs.every(r => r.rewardIncludesJudge),
+    // Failed runs never have a judge score (their reward is the fixed worst case), so they don't make the label "no judge term".
+    rewardIncludesJudge: runs.some(r => !r.failed) && runs.filter(r => !r.failed).every(r => r.rewardIncludesJudge),
     metrics,
   };
 }

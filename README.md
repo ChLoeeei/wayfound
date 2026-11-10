@@ -119,15 +119,19 @@ npm run test:e2e       # Playwright
 **Agent eval harness** (tool-call correctness, constraint satisfaction, hallucination rate, Wikivoyage grounding consistency, optional LLM-as-judge quality) — calls the live agent and real external APIs, so it costs real tokens/requests:
 
 ```bash
-npm run eval                                          # held-out test split (30 cases), 1 repeat
+npm run eval                                          # held-out test split (35 cases), 1 repeat
 npm run eval:test                                     # test split × 3 repeats, mean ± std (headline numbers)
 EVAL_SPLIT=train npm run eval                          # train | test | all
 EVAL_FILTER=tokyo-family-food-culture npm run eval     # specific case ids
 EVAL_SKIP_JUDGE=1 npm run eval                         # skip the judge call
 TOOL_CACHE_DIR=tests/eval/.tool-cache npm run eval     # replay tool responses across runs
+npm run eval:compare -- A.json B.json --subset core    # paired comparison of two results (core | hard | all)
+npx tsx tests/eval/analyze-failures.ts <checkpoint-dir> # classify where each run lost reward
 ```
 
-`tests/eval/cases.json` holds 60 cases with a frozen train/test split: 15 domestic + 15 international on each side, and each destination appears in only one split. `train` is reserved for the experience-library learning loop; reported numbers come from `test`. Each run gets a scalar reward, `0.3·tool + 0.3·constraint + 0.2·judge/5 − 0.5·hallucination`, with frozen weights (`tests/eval/scoring.ts`). Runs hit by provider errors are rerun once and flagged if they stay degraded.
+`tests/eval/cases.json` (v3) holds 70 cases with a frozen train/test split, and each destination appears in only one split. The 60 v2 cases are 15 domestic + 15 international per side (pinned by a hash in `tests/unit/eval-cases.test.ts`). The 10 v3 **hard cases** (tagged `hard`: multi-city, ultra-long, tight budget, obscure destination, conflicting constraints) are 2 domestic + 3 international per side; they were added because the v2 baseline left the learning loop little headroom. `train` is reserved for the experience-library learning loop; reported numbers come from `test`, always shown twice: the full test set, and the original 30 cases (comparable with pre-v3 numbers). Each run gets a scalar reward, `0.3·tool + 0.3·constraint + 0.2·judge/5 − 0.5·hallucination`, with frozen weights (`tests/eval/scoring.ts`). Runs hit by provider errors are rerun once and flagged if they stay degraded.
+
+Setups are compared **paired by case** (`tests/eval/paired.ts`): for each case in both results, the mean over repeats under B minus under A; the headline is the mean of those differences with a 95% t-interval over cases. Pairing removes case difficulty, which varies far more than any setup effect. Checkpoints are keyed by setup and flags, not by the case set: each run stores its case's hash, so adding cases adds runs to the same checkpoint and editing a case redoes only that case.
 
 Reports land in `tests/eval/reports/latest.{json,md}`, with each run's full generated itinerary saved alongside under `tests/eval/reports/itineraries/` for manual review. A full-split run also writes a compact summary (case ids, `cases.json` hash, commit, flags) to `tests/eval/results/`, which is meant to be committed.
 
