@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "libraryVersion": 19,
+  "method": "group",
+  "epoch": 1,
+  "nextId": 9,
+  "updatedAt": "2026-11-11T06:14:13.586Z",
+  "lessons": [
+    {
+      "id": "L01",
+      "scope": "final_answer",
+      "lesson": "Before finalizing, tally each day's per-person cost from grounded prices and swap or drop stops until every day stays under the budget cap.",
+      "helpful": 8,
+      "harmful": 6,
+      "created_epoch": 1,
+      "source_case": "chongqing-friends-food-adventure",
+      "updated_epoch": 1
+    },
+    {
+      "id": "L02",
+      "scope": "search_places",
+      "lesson": "Order searches broad-to-specific: major landmarks first, then food/lodging/accessibility needs, then outlying sites, so later queries refine grounded candidates.",
+      "helpful": 2,
+      "harmful": 4,
+      "created_epoch": 1,
+      "source_case": "chongqing-friends-food-adventure",
+      "updated_epoch": 1
+    },
+    {
+      "id": "L03",
+      "scope": "search_places",
+      "lesson": "When a named-place query returns 0 results, retry a few broader or alternate forms (drop the qualifier, local-language name, transliteration), then stop and pivot to grounded substitutes the tool does return instead of re-running the same empty query.",
+      "helpful": 9,
+      "harmful": 8,
+      "created_epoch": 1,
+      "source_case": "marrakech-friends-culture-shopping",
+      "updated_epoch": 1
+    },
+    {
+      "id": "L04",
+      "scope": "final_answer",
+      "lesson": "Before writing the itinerary, verify each stop's exact name matches a returned POI record, not just a name in a results list, and replace unverified stops with grounded alternatives.",
+      "helpful": 7,
+      "harmful": 3,
+      "created_epoch": 1,
+      "source_case": "marrakech-friends-culture-shopping",
+      "updated_epoch": 1
+    },
+    {
+      "id": "L05",
+      "scope": "calculate_distance",
+      "lesson": "Only call calculate_distance with POI ids a prior search returned; if a call fails with an unknown POI id, re-search that place and retry the distance before moving on.",
+      "helpful": 2,
+      "harmful": 3,
+      "created_epoch": 1,
+      "source_case": "berlin-friends-culture-adventure",
+      "updated_epoch": 1
+    },
+    {
+      "id": "L06",
+      "scope": "calculate_distance",
+      "lesson": "After selecting grounded stops, call calculate_distance on the chosen pairs to validate and order each day's route before writing the final itinerary.",
+      "helpful": 1,
+      "harmful": 3,
+      "created_epoch": 1,
+      "source_case": "berlin-prague-couple-multicity-tight"
+    },
+    {
+      "id": "L07",
+      "scope": "search_places",
+      "lesson": "When a special need (pet, accessibility) is requested, run a dedicated query for it and only include places that query returned; if it returns nothing, retry with alternate wording before finalizing.",
+      "helpful": 1,
+      "harmful": 3,
+      "created_epoch": 1,
+      "source_case": "vancouver-family-nature-leisure"
+    },
+    {
+      "id": "L08",
+      "scope": "search_places",
+      "lesson": "When a category query returns off-target name-matched venues, retry with a more specific compound phrase before trusting those results as grounded.",
+      "helpful": 0,
+      "harmful": 0,
+      "created_epoch": 1,
+      "source_case": "tbilisi-solo-vegetarian-tight"
+    }
+  ]
+}
