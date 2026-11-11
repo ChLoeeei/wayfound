@@ -97,6 +97,8 @@ interface Progress {
   rollouts: number;
   temperature: number;
   minGap: number;
+  /** Deliberate mid-run changes to rollouts / minGap (LEARN_ALLOW_CONFIG_CHANGE=1). */
+  configChanges?: Array<{ at: string; from: { rollouts: number; minGap: number }; to: { rollouts: number; minGap: number }; caseEpochsDoneBefore: number; note: string }>;
   /** epoch -> case ids whose learning step is done. */
   done: Record<string, string[]>;
 }
@@ -246,8 +248,20 @@ async function main() {
   fs.mkdirSync(rolloutDir, { recursive: true });
 
   const progress = readJson<Progress>(progressFile, { method, rewardVersion: REWARD_VERSION, rollouts, temperature, minGap, done: {} });
+  // Rollout count and min gap may change mid-run only on purpose (LEARN_ALLOW_CONFIG_CHANGE=1); the change is recorded.
+  // Method, reward version and temperature never change within one library: those would make its lessons incomparable.
+  const softChanged = progress.rollouts !== rollouts || progress.minGap !== minGap;
+  if (softChanged && process.env.LEARN_ALLOW_CONFIG_CHANGE === '1') {
+    progress.configChanges = [
+      ...(progress.configChanges ?? []),
+      { at: new Date().toISOString(), from: { rollouts: progress.rollouts, minGap: progress.minGap }, to: { rollouts, minGap }, caseEpochsDoneBefore: Object.values(progress.done).flat().length, note: process.env.LEARN_CHANGE_NOTE ?? '' },
+    ];
+    progress.rollouts = rollouts;
+    progress.minGap = minGap;
+    writeJsonAtomic(progressFile, progress);
+  }
   if (progress.method !== method || progress.rewardVersion !== REWARD_VERSION || progress.rollouts !== rollouts || progress.temperature !== temperature || progress.minGap !== minGap) {
-    console.error(`Refusing to resume ${learnDir}: it was started with method=${progress.method} reward v${progress.rewardVersion} rollouts=${progress.rollouts} temperature=${progress.temperature} minGap=${progress.minGap}. Use a different LEARN_LIBRARY to start a separate run.`);
+    console.error(`Refusing to resume ${learnDir}: it was started with method=${progress.method} reward v${progress.rewardVersion} rollouts=${progress.rollouts} temperature=${progress.temperature} minGap=${progress.minGap}. Use a different LEARN_LIBRARY to start a separate run (rollouts / min gap can change with LEARN_ALLOW_CONFIG_CHANGE=1).`);
     process.exit(1);
   }
   let lib = loadLibrary(libraryFile, method);
