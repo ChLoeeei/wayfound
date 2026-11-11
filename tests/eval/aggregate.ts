@@ -115,3 +115,47 @@ export function fmtSpread(s: Spread | null, opts: { percent?: boolean; digits?: 
   const body = `${(s.mean * scale).toFixed(d)}${opts.percent ? '%' : ''}`;
   return s.n > 1 ? `${body} ± ${(s.std * scale).toFixed(d)}` : body;
 }
+
+/** The fields of a checkpointed run (run-eval.ts CaseResult) that aggregation needs. */
+export interface CaseResultLike {
+  id: string;
+  region: RunMetrics['region'];
+  repeat: number;
+  error?: string;
+  degraded: boolean;
+  toolCalls: { score: number };
+  constraints: { score: number };
+  hallucination: { rate: number };
+  judge?: { weighted_total: number };
+  reward: { value: number; includesJudge: boolean };
+  steps: number;
+  usage: { promptTokens: number; cachedPromptTokens?: number; completionTokens: number };
+  judgeUsage: { promptTokens: number; cachedPromptTokens?: number; completionTokens: number };
+  geoapifyRequests?: number;
+  durationMs: number;
+}
+
+export function toRunMetrics(r: CaseResultLike): RunMetrics {
+  return {
+    caseId: r.id,
+    region: r.region,
+    repeat: r.repeat,
+    failed: !!r.error,
+    degraded: r.degraded,
+    toolCorrect: r.toolCalls.score,
+    constraint: r.constraints.score,
+    hallucinationRate: r.hallucination.rate,
+    judge: r.judge ? r.judge.weighted_total : null,
+    reward: r.reward.value,
+    rewardIncludesJudge: r.reward.includesJudge,
+    steps: r.steps,
+    promptTokens: r.usage.promptTokens + r.judgeUsage.promptTokens,
+    cachedPromptTokens: (r.usage.cachedPromptTokens ?? 0) + (r.judgeUsage.cachedPromptTokens ?? 0),
+    completionTokens: r.usage.completionTokens + r.judgeUsage.completionTokens,
+    judgePromptTokens: r.judgeUsage.promptTokens,
+    judgeCompletionTokens: r.judgeUsage.completionTokens,
+    geoapifyRequests: r.geoapifyRequests ?? 0,
+    durationMs: r.durationMs,
+  };
+}
+

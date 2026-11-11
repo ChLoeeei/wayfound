@@ -150,6 +150,23 @@ describe('scoreConstraintSatisfaction', () => {
     expect(result.budgetAdherence).toBeLessThan(1);
   });
 
+  it('reward v2: checks each day total against the daily cap + 10%, not single places', () => {
+    const day = (n: number, costs: number[]) => ({
+      dayNumber: n,
+      slots: [
+        { period: 'morning' as const, places: costs.map((c, i) => place({ id: `d${n}p${i}`, estimatedCost: c })) },
+        { period: 'afternoon' as const, places: [] },
+        { period: 'evening' as const, places: [] },
+      ],
+    });
+    // budget max 800 -> cap 880. Day 1: 500 + 500 = 1000 (over, though each place passes v1's 1.5x band). Day 2: 850 (within tolerance).
+    const result = scoreConstraintSatisfaction(itinerary([day(1, [500, 500]), day(2, [850])]), baseCase);
+    expect(result.budgetAdherence).toBe(0.5);
+    expect(result.placeBudgetAdherence).toBe(1);
+    expect(result.issues.some(i => i.includes('1/2 day(s) cost more than the daily budget cap'))).toBe(true);
+    expect(result.score).toBeCloseTo(0.5 + 0.3 * 0.5 + 0.2, 6);
+  });
+
   it('credits special needs mentioned in a place aiNote', () => {
     const vegCase: EvalCase = { ...baseCase, specialNeeds: ['vegetarian'] };
     const it = itinerary([

@@ -54,16 +54,12 @@ import path from 'path';
 import OpenAI from 'openai';
 import { createHash } from 'crypto';
 import { execSync } from 'child_process';
-import { generateItinerary, addUsage, type ToolCallRecord, type AgentStepRecord, type AgentUsage } from '../../server/agent';
-import { judgeItinerary, type RubricResult } from '../fuzzy/judge';
+import { generateItinerary, type ToolCallRecord, type AgentStepRecord, type AgentUsage } from '../../server/agent';
+import type { RubricResult } from '../fuzzy/judge';
 import { getMapProvider } from '../../server/tools/provider';
-import { computeSourceAttributions, computeGroundingWarning } from '../../server/tools/attributions';
+import { computeGroundingWarning } from '../../server/tools/attributions';
 import { drainMapboxRequestLog, type MapboxRequestLogEntry } from '../../server/tools/mapbox';
 import {
-  scoreToolCallCorrectness,
-  scoreConstraintSatisfaction,
-  scoreHallucinationRate,
-  scoreDestinationContextUsage,
   computeReward,
   REWARD_VERSION,
   REWARD_WEIGHTS,
@@ -75,8 +71,9 @@ import {
   type DestinationContextScore,
 } from './scoring';
 import type { Itinerary } from '../../src/types';
-import { allCases, caseHash, caseSetVersion, isHardCase, parseSplit, selectCases, type TaggedCase } from './cases';
-import { summarizeRuns, fmtSpread, type RunMetrics, type GroupSummary } from './aggregate';
+import { SCORING_SOURCES, scoreRun } from './score-run';
+import { allCases, caseHash, caseSetVersion, isHardCase, parseSplit, selectCases } from './cases';
+import { summarizeRuns, fmtSpread, toRunMetrics, type GroupSummary } from './aggregate';
 import { toolCacheDir, toolCacheStats } from '../../server/tools/cache';
 import { geoapifyMeterSnapshot } from '../../server/tools/geoapify';
 import { createDeepSeekClient, isInfraError } from '../../server/llm';
@@ -98,9 +95,6 @@ const limitRetryWaitMs = Math.max(0, Number(process.env.EVAL_LIMIT_RETRY_WAIT_MS
 
 const REPORTS_DIR = path.join(process.cwd(), 'tests', 'eval', 'reports');
 const USAGE_FILE = path.join(REPORTS_DIR, 'geoapify-usage.json');
-/** Files whose changes would change scores; resuming across a change is refused (see progress.ts). */
-// cases.json is NOT here: each run stores its own caseHash instead, so adding cases doesn't invalidate a checkpoint and editing one case invalidates only that case's runs.
-const SCORING_SOURCES = ['server/agent.ts', 'server/tools', 'tests/eval/scoring.ts', 'tests/fuzzy/judge.ts'];
 
 interface CaseResult {
   id: string;
@@ -201,21 +195,6 @@ function collectMapboxDiagnostics(c: EvalCase, trace: ToolCallRecord[]): MapboxD
 type RunInfo = Pick<CaseResult, 'id' | 'caseHash' | 'destination' | 'region' | 'repeat' | 'attempts' | 'degraded' | 'steps' | 'usage' | 'judgeUsage' | 'geoapifyRequests' | 'durationMs'>;
 
 const emptyUsage = (): AgentUsage => ({ promptTokens: 0, cachedPromptTokens: 0, completionTokens: 0, completions: 0 });
-
-/** Wraps the client so every chat completion made through it is added to `acc` (used to meter the judge). */
-function meteredClient(client: OpenAI, acc: AgentUsage): OpenAI {
-  return {
-    chat: {
-      completions: {
-        create: async (...args: Parameters<OpenAI['chat']['completions']['create']>) => {
-          const r = (await (client.chat.completions.create as any)(...args)) as OpenAI.Chat.Completions.ChatCompletion;
-          addUsage(acc, r);
-          return r;
-        },
-      },
-    },
-  } as unknown as OpenAI;
-}
 
 /** A failed generation scores as the worst case on every term (halluc 1, reward -0.5), never skipped. */
 function failedResult(info: RunInfo, message: string): CaseResult {
@@ -506,40 +485,18 @@ async function runCaseOnce(
     )) as Itinerary;
     const base = info();
 
-    // server.ts's /api/generate-itinerary computes these from the trace
-    // after generateItinerary() returns; replicated via the same shared
-    // functions so the saved itinerary reads exactly like a real API
-    // response and scoreDestinationContextUsage checks real wiring.
-    itinerary.sourceAttributions = computeSourceAttributions(trace, c.destination);
-    itinerary.groundingWarning = computeGroundingWarning(trace) || undefined;
-
-    const toolCalls = scoreToolCallCorrectness(trace, c.destination);
-    const constraints = scoreConstraintSatisfaction(itinerary, c);
-    const hallucination = scoreHallucinationRate(trace, itinerary, c.destination);
-    const destinationContext = scoreDestinationContextUsage(trace, itinerary);
-    // Only the trip request goes to the judge, not eval bookkeeping (id/split/region).
-    const { id: _id, split: _split, region: _region, tags: _tags, addedIn: _added, ...userProfile } = c as TaggedCase;
-    // A judge failure is the harness's problem, not the agent's: keep the
-    // itinerary's other scores rather than scoring the run as a failed generation.
-    let judge: RubricResult | undefined;
-    let judgeError: string | undefined;
-    if (!skipJudge) {
-      try {
-        judge = await judgeItinerary({ userProfile, itinerary }, meteredClient(client, judgeUsage));
-      } catch (err: any) {
-        judgeError = err.message ?? String(err);
-        if (isInfraError(err)) {
-          console.log(`judge network error: ${judgeError}`);
-          return { trace, result: { ...failedResult(info(), judgeError), infraError: judgeError } };
-        }
-      }
-    }
-    const reward = computeReward({
-      toolCorrect: toolCalls.score,
-      constraint: constraints.score,
-      judgeOutOf5: judge ? judge.weighted_total : null,
-      hallucinationRate: hallucination.rate,
+    const { toolCalls, constraints, hallucination, destinationContext, judge, judgeError, judgeInfraError, reward } = await scoreRun({
+      c,
+      trace,
+      itinerary,
+      client,
+      judgeUsage,
+      skipJudge,
     });
+    if (judgeInfraError) {
+      console.log(`judge network error: ${judgeInfraError}`);
+      return { trace, result: { ...failedResult(info(), judgeInfraError), infraError: judgeInfraError } };
+    }
 
     const itineraryFileName = `${stamp}-${c.id}-r${repeat}.json`;
     fs.writeFileSync(path.join(itinerariesDir, itineraryFileName), JSON.stringify(itinerary, null, 2));
@@ -570,30 +527,6 @@ async function runCaseOnce(
     }
     return { trace, result: failed };
   }
-}
-
-function toRunMetrics(r: CaseResult): RunMetrics {
-  return {
-    caseId: r.id,
-    region: r.region,
-    repeat: r.repeat,
-    failed: !!r.error,
-    degraded: r.degraded,
-    toolCorrect: r.toolCalls.score,
-    constraint: r.constraints.score,
-    hallucinationRate: r.hallucination.rate,
-    judge: r.judge ? r.judge.weighted_total : null,
-    reward: r.reward.value,
-    rewardIncludesJudge: r.reward.includesJudge,
-    steps: r.steps,
-    promptTokens: r.usage.promptTokens + r.judgeUsage.promptTokens,
-    cachedPromptTokens: (r.usage.cachedPromptTokens ?? 0) + (r.judgeUsage.cachedPromptTokens ?? 0),
-    completionTokens: r.usage.completionTokens + r.judgeUsage.completionTokens,
-    judgePromptTokens: r.judgeUsage.promptTokens,
-    judgeCompletionTokens: r.judgeUsage.completionTokens,
-    geoapifyRequests: r.geoapifyRequests ?? 0,
-    durationMs: r.durationMs,
-  };
 }
 
 function buildMeta(stamp: string) {

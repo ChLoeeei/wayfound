@@ -82,13 +82,18 @@ const SPECIAL_NEED_KEYWORDS: Record<string, string[]> = {
   pet: ['pet-friendly', 'dog-friendly', '宠物'],
 };
 
+/** Tolerance over the per-day budget cap before a day counts as over budget (reward v2). */
+export const DAILY_BUDGET_TOLERANCE = 0.1;
+
 export interface ConstraintScore {
   /** 0-1, higher is better. */
   score: number;
   schemaValid: boolean;
   dayCountMatches: boolean;
-  /** Fraction of priced places whose cost fits within a generous budget band. */
+  /** Reward v2: share of days whose summed per-person place costs stay within the daily cap + DAILY_BUDGET_TOLERANCE. */
   budgetAdherence: number;
+  /** Reward v1's measure (share of priced places at most 1.5x the daily cap). Informational; not in the score. */
+  placeBudgetAdherence?: number;
   /** Fraction of stated special needs with any textual signal found in the itinerary. */
   specialNeedsAddressed: number;
   issues: string[];
@@ -107,17 +112,24 @@ export function scoreConstraintSatisfaction(itinerary: Itinerary, req: EvalCase)
 
   const places = (itinerary.days ?? []).flatMap(d => (d.slots ?? []).flatMap(s => s.places ?? []));
 
-  const priced = places.filter(p => typeof p.estimatedCost === 'number' && p.estimatedCost > 0);
-  // Per-place cost vs. a per-person-per-day budget isn't a strict
-  // apples-to-apples comparison (one day has several places), so the upper
-  // bound is deliberately generous — this flags places that are wildly out
-  // of range, not every place above the daily average.
-  const hi = req.budget.max * 1.5;
-  const withinBudget = priced.filter(p => p.estimatedCost <= hi);
-  const budgetAdherence = priced.length > 0 ? withinBudget.length / priced.length : 1;
-  if (budgetAdherence < 0.7) {
-    issues.push(`only ${(budgetAdherence * 100).toFixed(0)}% of priced places fit the stated budget`);
+  // Reward v2: budget is checked per DAY. Each day's per-person place costs
+  // are summed and compared with the per-person-per-day cap plus a 10%
+  // tolerance. budgetAdherence = share of days within it. (Reward v1 only
+  // capped each single place at 1.5x the daily cap, so a day of several
+  // mid-priced places could exceed the budget and still score 1.00: the v2
+  // baseline had 13 of 42 days over budget on one case at 1.00 adherence.)
+  const dayTotals = (itinerary.days ?? []).map(d =>
+    (d.slots ?? []).flatMap(s => s.places ?? []).reduce((sum, p) => sum + (typeof p.estimatedCost === 'number' && p.estimatedCost > 0 ? p.estimatedCost : 0), 0),
+  );
+  const dayCap = req.budget.max * (1 + DAILY_BUDGET_TOLERANCE);
+  const daysOver = dayTotals.filter(t => t > dayCap).length;
+  const budgetAdherence = dayTotals.length > 0 ? (dayTotals.length - daysOver) / dayTotals.length : 1;
+  if (daysOver > 0) {
+    issues.push(`${daysOver}/${dayTotals.length} day(s) cost more than the daily budget cap (¥${req.budget.max} + ${DAILY_BUDGET_TOLERANCE * 100}%)`);
   }
+  // v1's per-place check, kept as an informational field only.
+  const priced = places.filter(p => typeof p.estimatedCost === 'number' && p.estimatedCost > 0);
+  const placeBudgetAdherence = priced.length > 0 ? priced.filter(p => p.estimatedCost <= req.budget.max * 1.5).length / priced.length : 1;
 
   const needsAddressed = req.specialNeeds.map(need => {
     const keywords = SPECIAL_NEED_KEYWORDS[need] ?? [need];
@@ -142,6 +154,7 @@ export function scoreConstraintSatisfaction(itinerary: Itinerary, req: EvalCase)
     schemaValid,
     dayCountMatches,
     budgetAdherence,
+    placeBudgetAdherence,
     specialNeedsAddressed,
     issues,
   };
@@ -263,7 +276,13 @@ export function scoreDestinationContextUsage(
  * comparable across learning epochs and ablation rows. Changing them
  * invalidates every reward already reported; bump REWARD_VERSION if you must.
  */
-export const REWARD_VERSION = 1;
+/**
+ * v1: per-place budget band (1.5x daily cap).
+ * v2 (2026-11-11): per-day budget check, day total <= cap + 10%. Same weights.
+ * v1 numbers were rescored offline to v2 from the saved itineraries
+ * (tests/eval/rescore.ts); never compare a v1 reward with a v2 one.
+ */
+export const REWARD_VERSION = 2;
 export const REWARD_WEIGHTS = { toolCorrect: 0.3, constraint: 0.3, judge: 0.2, hallucination: 0.5 } as const;
 
 export interface RewardInput {
