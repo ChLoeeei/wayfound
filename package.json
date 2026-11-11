@@ -21,7 +21,11 @@
     "eval:baseline:retry": "EVAL_SETUP=geoapify-retry TOOL_CACHE_DIR=tests/eval/.tool-cache npm run eval:test",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "eval:compare": "tsx tests/eval/compare.ts"
+    "eval:compare": "tsx tests/eval/compare.ts",
+    "learn": "DISABLE_GEOAPIFY_SIMPLIFIED_RETRY=true TOOL_CACHE_DIR=tests/eval/.tool-cache tsx tests/eval/learn.ts",
+    "learn:single": "LEARN_METHOD=single npm run learn",
+    "eval:library": "EVAL_SETUP=group-lessons EVAL_LIBRARY=server/experience/data/library.group.json DISABLE_GEOAPIFY_SIMPLIFIED_RETRY=true TOOL_CACHE_DIR=tests/eval/.tool-cache npm run eval:test",
+    "eval:library:single": "EVAL_SETUP=single-lessons EVAL_LIBRARY=server/experience/data/library.single.json DISABLE_GEOAPIFY_SIMPLIFIED_RETRY=true TOOL_CACHE_DIR=tests/eval/.tool-cache npm run eval:test"
   },
   "dependencies": {
     "@amap/amap-jsapi-loader": "^1.0.1",

@@ -72,6 +72,8 @@ import {
 } from './scoring';
 import type { Itinerary } from '../../src/types';
 import { SCORING_SOURCES, scoreRun } from './score-run';
+import { loadLibrary } from '../../server/experience/library';
+import { lessonsForDestination } from '../../server/experience/retrieve';
 import { allCases, caseHash, caseSetVersion, isHardCase, parseSplit, selectCases } from './cases';
 import { summarizeRuns, fmtSpread, toRunMetrics, type GroupSummary } from './aggregate';
 import { toolCacheDir, toolCacheStats } from '../../server/tools/cache';
@@ -92,6 +94,18 @@ const freshStart = process.env.EVAL_FRESH === '1';
 const allowCodeChange = process.env.EVAL_ALLOW_CODE_CHANGE === '1';
 /** How long to wait before retrying a run invalidated by a Geoapify 429/quota error. */
 const limitRetryWaitMs = Math.max(0, Number(process.env.EVAL_LIMIT_RETRY_WAIT_MS ?? 60000));
+
+/**
+ * EVAL_LIBRARY=<library.json>: plan every case with experience-library
+ * lessons (v2 Core 1). The library's content hash is part of the
+ * checkpoint key, so a changed library is a new setup, never a resume.
+ */
+const libraryPath = process.env.EVAL_LIBRARY?.trim() || null;
+const library = libraryPath ? loadLibrary(path.resolve(libraryPath)) : null;
+if (libraryPath && !fs.existsSync(path.resolve(libraryPath))) {
+  console.error(`EVAL_LIBRARY=${libraryPath} does not exist.`);
+  process.exit(1);
+}
 
 const REPORTS_DIR = path.join(process.cwd(), 'tests', 'eval', 'reports');
 const USAGE_FILE = path.join(REPORTS_DIR, 'geoapify-usage.json');
@@ -124,6 +138,8 @@ interface CaseResult {
   judge?: RubricResult;
   /** Set when the judge call itself failed; the run's other scores still count, the reward omits the judge term. */
   judgeError?: string;
+  /** Experience-library lesson ids injected into this run's system prompt (EVAL_LIBRARY). */
+  usedLessonIds?: string[];
   /** For a failed segmented run: where its raw model replies were saved (under reports/). */
   rawRepliesFile?: string;
   /** Set when the run failed because of the network/API service (see isInfraError); such a run is never checkpointed. */
@@ -192,7 +208,7 @@ function collectMapboxDiagnostics(c: EvalCase, trace: ToolCallRecord[]): MapboxD
   return entries;
 }
 
-type RunInfo = Pick<CaseResult, 'id' | 'caseHash' | 'destination' | 'region' | 'repeat' | 'attempts' | 'degraded' | 'steps' | 'usage' | 'judgeUsage' | 'geoapifyRequests' | 'durationMs'>;
+type RunInfo = Pick<CaseResult, 'id' | 'caseHash' | 'usedLessonIds' | 'destination' | 'region' | 'repeat' | 'attempts' | 'degraded' | 'steps' | 'usage' | 'judgeUsage' | 'geoapifyRequests' | 'durationMs'>;
 
 const emptyUsage = (): AgentUsage => ({ promptTokens: 0, cachedPromptTokens: 0, completionTokens: 0, completions: 0 });
 
@@ -456,9 +472,11 @@ async function runCaseOnce(
   const region = regionOf(c);
   const tag = repeats > 1 ? ` r${repeat}` : '';
   process.stdout.write(`  ${c.id}${tag} — ${c.destination} ${c.days}d ${c.people}p ... `);
+  const lessons = library ? lessonsForDestination(library, c.destination) : undefined;
   const info = (): RunInfo => ({
     id: c.id,
     caseHash: caseHash(c),
+    usedLessonIds: lessons?.ids,
     destination: c.destination,
     region,
     repeat,
@@ -481,7 +499,7 @@ async function runCaseOnce(
         budget: c.budget,
         specialNeeds: c.specialNeeds,
       },
-      { client, trace, stepTrace, usage, temperature },
+      { client, trace, stepTrace, usage, temperature, lessons },
     )) as Itinerary;
     const base = info();
 
@@ -552,6 +570,19 @@ function buildMeta(stamp: string) {
     degradedReruns,
     rewardVersion: REWARD_VERSION,
     rewardWeights: REWARD_WEIGHTS,
+    // Only present with EVAL_LIBRARY, so library-off checkpoint keys are unchanged.
+    ...(library
+      ? {
+          library: {
+            path: libraryPath,
+            sha256: createHash('sha256').update(fs.readFileSync(path.resolve(libraryPath!))).digest('hex').slice(0, 16),
+            libraryVersion: library.libraryVersion,
+            method: library.method,
+            epoch: library.epoch,
+            lessons: library.lessons.length,
+          },
+        }
+      : {}),
     gitCommit,
     gitDirty,
     flags: {

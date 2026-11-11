@@ -216,6 +216,14 @@ export interface RunAgentOptions {
    * here (side-channel for eval cost reporting; does not affect planning).
    */
   usage?: AgentUsage;
+  /**
+   * Experience-library lessons for this plan (v2 Core 1), already selected
+   * and rendered by server/experience/retrieve.ts. Appended to the system
+   * prompt; the injected ids are recorded as the first stepTrace entry.
+   * Omitted or empty: the system prompt is byte-identical to a plan without
+   * a library, so library-off runs stay comparable with the baselines.
+   */
+  lessons?: { block: string; ids: string[] };
 }
 
 export interface AgentUsage {
@@ -263,10 +271,22 @@ export async function generateItinerary(
   const segmented = isSegmented(req);
   const userPrompt = buildUserPrompt(req);
   const ctx = new ToolContext(req.destination);
+  const lessonBlock = opts.lessons?.block?.trim() ? opts.lessons.block.trim() : '';
+  const systemPrompt = buildSystemPrompt(RECOVERY_DISABLED) + (lessonBlock ? `\n\n${lessonBlock}` : '');
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-    { role: 'system', content: buildSystemPrompt(RECOVERY_DISABLED) },
+    { role: 'system', content: systemPrompt },
     { role: 'user', content: userPrompt },
   ];
+  if (lessonBlock) {
+    opts.stepTrace?.push({
+      step: -1,
+      timestamp: new Date().toISOString(),
+      reasoning: `Lessons injected from the experience library: ${opts.lessons!.ids.join(', ')}`,
+      toolCalls: [],
+      isFinal: false,
+      segment: 'lessons',
+    });
+  }
 
   for (let step = 0; step < maxSteps; step++) {
     const response = await client.chat.completions.create({

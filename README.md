@@ -127,6 +127,8 @@ EVAL_SKIP_JUDGE=1 npm run eval                         # skip the judge call
 TOOL_CACHE_DIR=tests/eval/.tool-cache npm run eval     # replay tool responses across runs
 npm run eval:compare -- A.json B.json --subset core    # paired comparison of two results (core | hard | all)
 npx tsx tests/eval/analyze-failures.ts <checkpoint-dir> # classify where each run lost reward
+npm run learn                                         # experience-library learning loop (train split only)
+npm run eval:library                                  # test split with the learned library injected
 ```
 
 `tests/eval/cases.json` (v3) holds 70 cases with a frozen train/test split, and each destination appears in only one split. The 60 v2 cases are 15 domestic + 15 international per side (pinned by a hash in `tests/unit/eval-cases.test.ts`). The 10 v3 **hard cases** (tagged `hard`: multi-city, ultra-long, tight budget, obscure destination, conflicting constraints) are 2 domestic + 3 international per side; they were added because the v2 baseline left the learning loop little headroom. `train` is reserved for the experience-library learning loop; reported numbers come from `test`, always shown twice: the full test set, and the original 30 cases (comparable with pre-v3 numbers). Each run gets a scalar reward, `0.3·tool + 0.3·constraint + 0.2·judge/5 − 0.5·hallucination`, with frozen weights (`tests/eval/scoring.ts`). Reward v2 checks the budget per day (the day's summed per-person costs must stay within the daily cap + 10%); earlier v1 results were rescored offline from their saved itineraries (`tests/eval/rescore.ts`). Runs hit by provider errors are rerun once and flagged if they stay degraded.

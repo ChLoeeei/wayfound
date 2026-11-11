@@ -79,3 +79,15 @@ export function renderLessonsBlock(lessons: Lesson[]): string {
   if (lessons.length === 0) return '';
   return [HEADER, ...lessons.map(renderLine)].join('\n');
 }
+
+export interface InjectedLessons {
+  block: string;
+  ids: string[];
+  libraryVersion: number;
+}
+
+/** Selects and renders the lessons for one plan; empty when the library has nothing that applies. */
+export function lessonsForDestination(lib: Library, destination: string, opts: Partial<RetrieveOptions> = {}): InjectedLessons {
+  const lessons = selectLessons(lib, { region: regionOfDestination(destination), ...opts });
+  return { block: renderLessonsBlock(lessons), ids: lessons.map(l => l.id), libraryVersion: lib.libraryVersion };
+}
