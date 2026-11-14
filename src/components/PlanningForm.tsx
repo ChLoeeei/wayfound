@@ -6,45 +6,20 @@ import {
   SpecialNeed,
   Vibe,
 } from '../types';
-import {
-  Calendar,
-  Loader2,
-  Navigation,
-  Users,
-  X,
-} from 'lucide-react';
-import { emptyMemory, summariseMemory, type TravelMemory } from '../lib/memory';
+import { Calendar, Loader2, Navigation, Users } from 'lucide-react';
+import { emptyMemory, type TravelMemory } from '../lib/memory';
+import { useT } from '../i18n';
 
 interface PlanningFormProps {
   loading: boolean;
   onSubmit: (input: PlanningInput) => void;
-  /** Cross-session memory used to prefill defaults and show a "remembered" banner. */
+  /** Cross-session memory used to prefill defaults. */
   memory?: TravelMemory;
-  onClearMemory?: () => void;
 }
 
-const VIBES: { value: Vibe; label: string }[] = [
-  { value: 'nature', label: 'Nature' },
-  { value: 'culture', label: 'Culture' },
-  { value: 'food', label: 'Food' },
-  { value: 'shopping', label: 'Shopping' },
-  { value: 'leisure', label: 'Leisure' },
-  { value: 'adventure', label: 'Adventure' },
-];
-
-const GROUP_TYPES: { value: GroupType; label: string }[] = [
-  { value: 'solo', label: 'Solo' },
-  { value: 'couple', label: 'Couple' },
-  { value: 'family', label: 'Family' },
-  { value: 'friends', label: 'Friends' },
-];
-
-const SPECIAL_NEEDS: { value: SpecialNeed; label: string }[] = [
-  { value: 'accessibility', label: 'Accessibility' },
-  { value: 'vegetarian', label: 'Vegetarian' },
-  { value: 'baby', label: 'Traveling with baby' },
-  { value: 'pet', label: 'Pet friendly' },
-];
+export const VIBES: Vibe[] = ['nature', 'culture', 'food', 'shopping', 'leisure', 'adventure'];
+export const GROUP_TYPES: GroupType[] = ['solo', 'couple', 'family', 'friends'];
+export const SPECIAL_NEEDS: SpecialNeed[] = ['accessibility', 'vegetarian', 'baby', 'pet'];
 
 const BUDGET_MIN = 100;
 const BUDGET_MAX = 5000;
@@ -83,7 +58,29 @@ export function isPlanningInputValid(input: PlanningInput): boolean {
   return true;
 }
 
-export default function PlanningForm({ loading, onSubmit, memory = emptyMemory(), onClearMemory }: PlanningFormProps) {
+const LABEL = 'text-[13px] text-text-muted mb-2 block';
+const FIELD =
+  'w-full bg-surface border border-border-strong rounded-lg py-2.5 pl-10 pr-3 text-text-main placeholder-text-muted/60 focus:outline-none focus:border-accent transition-colors text-sm';
+const ICON = 'absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted';
+
+function Chip({ active, onClick, testId, children }: { active: boolean; onClick: () => void; testId: string; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      data-testid={testId}
+      className={`min-h-[34px] px-3.5 rounded-full text-[13px] border transition-colors ${
+        active ? 'bg-text-main text-white border-text-main font-medium' : 'bg-surface text-text-main border-border-strong hover:bg-bg-base'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+export default function PlanningForm({ loading, onSubmit, memory = emptyMemory() }: PlanningFormProps) {
+  const t = useT();
   const [destination, setDestination] = useState('');
   const [startDate, setStartDate] = useState(todayISO());
   const [endDate, setEndDate] = useState(addDaysISO(todayISO(), 4));
@@ -96,8 +93,6 @@ export default function PlanningForm({ loading, onSubmit, memory = emptyMemory()
   );
   const [budget, setBudget] = useState<BudgetRange>(() => memory.lastBudget ?? { min: 300, max: 1500 });
   const [specialNeeds, setSpecialNeeds] = useState<SpecialNeed[]>(() => [...memory.specialNeeds]);
-
-  const memorySummary = useMemo(() => summariseMemory(memory), [memory]);
 
   const days = useMemo(() => diffDays(startDate, endDate), [startDate, endDate]);
 
@@ -129,217 +124,164 @@ export default function PlanningForm({ loading, onSubmit, memory = emptyMemory()
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-8" data-testid="planning-form">
-      {memorySummary && (
-        <div
-          className="flex items-start justify-between gap-3 bg-accent/5 border border-accent/20 rounded-xl px-4 py-3 text-xs text-text-muted"
-          data-testid="memory-banner"
-        >
-          <span>{memorySummary}</span>
-          {onClearMemory && (
-            <button
-              type="button"
-              onClick={onClearMemory}
-              data-testid="memory-clear"
-              aria-label="Forget remembered preferences"
-              className="shrink-0 text-text-muted hover:text-text-main"
-            >
-              <X size={14} />
-            </button>
-          )}
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5" data-testid="planning-form">
+      {/* Destination */}
+      <div>
+        <label className={LABEL} htmlFor="destination">
+          {t('form.destination')}
+        </label>
+        <div className="relative">
+          <Navigation className={ICON} />
+          <input
+            id="destination"
+            type="text"
+            required
+            placeholder={t('form.destinationPlaceholder')}
+            value={destination}
+            onChange={e => setDestination(e.target.value)}
+            data-testid="field-destination"
+            className={FIELD}
+          />
         </div>
-      )}
-      <div className="space-y-6">
-        {/* Destination */}
+      </div>
+
+      {/* Dates */}
+      <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3 block">
-            Destination
+          <label className={LABEL} htmlFor="start-date">
+            {t('form.start')}
           </label>
           <div className="relative">
-            <Navigation className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+            <Calendar className={ICON} />
             <input
-              type="text"
+              id="start-date"
+              type="date"
               required
-              placeholder="e.g. 北京 / Kyoto"
-              value={destination}
-              onChange={e => setDestination(e.target.value)}
-              data-testid="field-destination"
-              className="w-full bg-bg-base border border-border rounded-lg py-3 pl-12 pr-4 text-text-main placeholder-text-muted/50 focus:outline-none focus:border-accent transition-colors font-sans text-sm"
+              value={startDate}
+              onChange={e => {
+                setStartDate(e.target.value);
+                if (e.target.value && endDate && e.target.value > endDate) {
+                  setEndDate(e.target.value);
+                }
+              }}
+              data-testid="field-start-date"
+              className={FIELD}
             />
           </div>
         </div>
-
-        {/* Dates */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3 block">
-              Start
-            </label>
-            <div className="relative">
-              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-              <input
-                type="date"
-                required
-                value={startDate}
-                onChange={e => {
-                  setStartDate(e.target.value);
-                  if (e.target.value && endDate && e.target.value > endDate) {
-                    setEndDate(e.target.value);
-                  }
-                }}
-                data-testid="field-start-date"
-                className="w-full bg-bg-base border border-border rounded-lg py-3 pl-12 pr-3 text-text-main focus:outline-none focus:border-accent transition-colors font-sans text-sm"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3 block">
-              End
-            </label>
-            <div className="relative">
-              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-              <input
-                type="date"
-                required
-                min={startDate}
-                value={endDate}
-                onChange={e => setEndDate(e.target.value)}
-                data-testid="field-end-date"
-                className="w-full bg-bg-base border border-border rounded-lg py-3 pl-12 pr-3 text-text-main focus:outline-none focus:border-accent transition-colors font-sans text-sm"
-              />
-            </div>
-          </div>
-        </div>
-        {days > 0 && (
-          <p className="text-xs text-text-muted -mt-4" data-testid="days-summary">
-            {days} day{days === 1 ? '' : 's'} total
-          </p>
-        )}
-
-        {/* People + Group Type */}
-        <div className="grid grid-cols-5 gap-4">
-          <div className="col-span-2">
-            <label className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3 block">
-              Travelers
-            </label>
-            <div className="relative">
-              <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-              <input
-                type="number"
-                min={1}
-                max={20}
-                value={people}
-                onChange={e => setPeople(Math.max(1, parseInt(e.target.value) || 1))}
-                data-testid="field-people"
-                className="w-full bg-bg-base border border-border rounded-lg py-3 pl-12 pr-3 text-text-main focus:outline-none focus:border-accent transition-colors font-sans text-sm"
-              />
-            </div>
-          </div>
-          <div className="col-span-3">
-            <label className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3 block">
-              Trip type
-            </label>
-            <div className="flex gap-2 flex-wrap">
-              {GROUP_TYPES.map(g => (
-                <button
-                  key={g.value}
-                  type="button"
-                  onClick={() => setGroupType(g.value)}
-                  data-testid={`group-${g.value}`}
-                  className={`px-3 py-2 rounded-full text-xs tracking-wide border transition-all ${
-                    groupType === g.value
-                      ? 'bg-text-main text-bg-base border-text-main font-medium'
-                      : 'bg-transparent text-text-muted border-border hover:border-accent'
-                  }`}
-                >
-                  {g.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Vibes */}
         <div>
-          <label className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3 block">
-            Trip vibe
+          <label className={LABEL} htmlFor="end-date">
+            {t('form.end')}
           </label>
-          <div className="flex flex-wrap gap-2">
-            {VIBES.map(v => (
-              <button
-                key={v.value}
-                type="button"
-                onClick={() => toggleVibe(v.value)}
-                data-testid={`vibe-${v.value}`}
-                className={`px-4 py-2 rounded-full text-xs tracking-wide transition-all border ${
-                  vibes.includes(v.value)
-                    ? 'bg-text-main text-bg-base border-text-main font-medium'
-                    : 'bg-transparent text-text-muted border-border hover:border-accent'
-                }`}
-              >
-                {v.label}
-              </button>
+          <div className="relative">
+            <Calendar className={ICON} />
+            <input
+              id="end-date"
+              type="date"
+              required
+              min={startDate}
+              value={endDate}
+              onChange={e => setEndDate(e.target.value)}
+              data-testid="field-end-date"
+              className={FIELD}
+            />
+          </div>
+        </div>
+      </div>
+      {days > 0 && (
+        <p className="text-xs text-text-muted -mt-3" data-testid="days-summary">
+          {t('form.daysTotal', { count: days })}
+        </p>
+      )}
+
+      {/* People + Group Type */}
+      <div className="grid grid-cols-5 gap-3">
+        <div className="col-span-2">
+          <label className={LABEL} htmlFor="people">
+            {t('form.travelers')}
+          </label>
+          <div className="relative">
+            <Users className={ICON} />
+            <input
+              id="people"
+              type="number"
+              min={1}
+              max={20}
+              value={people}
+              onChange={e => setPeople(Math.max(1, parseInt(e.target.value) || 1))}
+              data-testid="field-people"
+              className={FIELD}
+            />
+          </div>
+        </div>
+        <div className="col-span-3">
+          <span className={LABEL}>{t('form.tripType')}</span>
+          <div className="flex gap-1.5 flex-wrap">
+            {GROUP_TYPES.map(g => (
+              <Chip key={g} active={groupType === g} onClick={() => setGroupType(g)} testId={`group-${g}`}>
+                {t(`form.groups.${g}`)}
+              </Chip>
             ))}
           </div>
         </div>
+      </div>
 
-        {/* Budget */}
-        <div>
-          <label className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3 block">
-            Budget ¥{budget.min} – ¥{budget.max} / person · day
-          </label>
-          <div className="space-y-3 px-1">
-            <input
-              type="range"
-              min={BUDGET_MIN}
-              max={BUDGET_MAX}
-              step={BUDGET_STEP}
-              value={budget.min}
-              onChange={e => {
-                const v = parseInt(e.target.value);
-                setBudget(b => ({ min: v, max: Math.max(v, b.max) }));
-              }}
-              data-testid="field-budget-min"
-              className="w-full accent-accent"
-            />
-            <input
-              type="range"
-              min={BUDGET_MIN}
-              max={BUDGET_MAX}
-              step={BUDGET_STEP}
-              value={budget.max}
-              onChange={e => {
-                const v = parseInt(e.target.value);
-                setBudget(b => ({ min: Math.min(b.min, v), max: v }));
-              }}
-              data-testid="field-budget-max"
-              className="w-full accent-accent"
-            />
-          </div>
+      {/* Vibes */}
+      <div>
+        <span className={LABEL}>{t('form.vibe')}</span>
+        <div className="flex flex-wrap gap-1.5">
+          {VIBES.map(v => (
+            <Chip key={v} active={vibes.includes(v)} onClick={() => toggleVibe(v)} testId={`vibe-${v}`}>
+              {t(`form.vibes.${v}`)}
+            </Chip>
+          ))}
         </div>
+      </div>
 
-        {/* Special needs */}
-        <div>
-          <label className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3 block">
-            Special needs <span className="text-text-muted/70 normal-case">(optional)</span>
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {SPECIAL_NEEDS.map(n => (
-              <button
-                key={n.value}
-                type="button"
-                onClick={() => toggleNeed(n.value)}
-                data-testid={`need-${n.value}`}
-                className={`px-3 py-2 rounded-full text-xs tracking-wide border transition-all ${
-                  specialNeeds.includes(n.value)
-                    ? 'bg-text-main text-bg-base border-text-main font-medium'
-                    : 'bg-transparent text-text-muted border-border hover:border-accent'
-                }`}
-              >
-                {n.label}
-              </button>
-            ))}
-          </div>
+      {/* Budget */}
+      <div>
+        <span className={LABEL}>{t('form.budget', { min: budget.min, max: budget.max })}</span>
+        <div className="space-y-2 px-1">
+          <input
+            type="range"
+            min={BUDGET_MIN}
+            max={BUDGET_MAX}
+            step={BUDGET_STEP}
+            value={budget.min}
+            onChange={e => {
+              const v = parseInt(e.target.value);
+              setBudget(b => ({ min: v, max: Math.max(v, b.max) }));
+            }}
+            data-testid="field-budget-min"
+            className="w-full accent-accent"
+          />
+          <input
+            type="range"
+            min={BUDGET_MIN}
+            max={BUDGET_MAX}
+            step={BUDGET_STEP}
+            value={budget.max}
+            onChange={e => {
+              const v = parseInt(e.target.value);
+              setBudget(b => ({ min: Math.min(b.min, v), max: v }));
+            }}
+            data-testid="field-budget-max"
+            className="w-full accent-accent"
+          />
+        </div>
+      </div>
+
+      {/* Special needs */}
+      <div>
+        <span className={LABEL}>
+          {t('form.specialNeeds')} <span className="text-text-muted/70">{t('form.optional')}</span>
+        </span>
+        <div className="flex flex-wrap gap-1.5">
+          {SPECIAL_NEEDS.map(n => (
+            <Chip key={n} active={specialNeeds.includes(n)} onClick={() => toggleNeed(n)} testId={`need-${n}`}>
+              {t(`form.needs.${n}`)}
+            </Chip>
+          ))}
         </div>
       </div>
 
@@ -347,14 +289,14 @@ export default function PlanningForm({ loading, onSubmit, memory = emptyMemory()
         type="submit"
         disabled={loading || !valid}
         data-testid="submit-plan"
-        className="mt-2 w-full bg-accent hover:opacity-90 text-white rounded-lg py-4 flex items-center justify-center gap-2 transition-all disabled:opacity-50 tracking-widest text-sm uppercase font-medium"
+        className="min-h-[40px] w-full bg-accent hover:bg-accent-deep text-white rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 font-medium"
       >
         {loading ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin" /> Generating
+            <Loader2 className="w-4 h-4 animate-spin" /> {t('form.generating')}
           </>
         ) : (
-          <>Generate itinerary</>
+          t('form.generate')
         )}
       </button>
     </form>

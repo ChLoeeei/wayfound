@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Search, X, Star, MapPin, Loader2 } from 'lucide-react';
 import type { Place, SlotPeriod } from '../types';
-import { PERIOD_LABEL, PERIOD_ORDER } from '../lib/itineraryOps';
+import { PERIOD_ORDER } from '../lib/itineraryOps';
+import { useT } from '../i18n';
 
 interface SearchResult {
   id: string;
@@ -46,6 +47,7 @@ export default function PlaceSearchModal({
   onClose,
   onAdd,
 }: PlaceSearchModalProps) {
+  const t = useT();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -72,7 +74,7 @@ export default function PlaceSearchModal({
         const params = new URLSearchParams({ q: query, region: destination, limit: '10' });
         const res = await fetch(`${process.env.API_BASE_URL}/api/search-places?${params.toString()}`);
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Search failed');
+        if (!res.ok) throw new Error(data.error || t('search.failed'));
         setResults(data.results ?? []);
       } catch (e: any) {
         setError(e.message);
@@ -84,6 +86,7 @@ export default function PlaceSearchModal({
     return () => {
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, destination]);
 
   const handlePick = (r: SearchResult) => {
@@ -104,25 +107,27 @@ export default function PlaceSearchModal({
     onClose();
   };
 
+  const select = 'bg-surface border border-border-strong rounded-md px-2 py-1 text-text-main focus:outline-none focus:border-accent';
+
   return (
     <div
-      className="fixed inset-0 z-40 flex items-start justify-center bg-black/40 backdrop-blur-sm p-4 sm:pt-20"
+      className="fixed inset-0 z-40 flex items-start justify-center bg-black/40 p-4 sm:pt-20"
       onClick={onClose}
       data-testid="place-search-modal"
     >
       <div
-        className="bg-surface w-full max-w-xl rounded-2xl border border-border shadow-2xl flex flex-col overflow-hidden"
+        className="bg-surface w-full max-w-xl rounded-[14px] border border-border shadow-2xl flex flex-col overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <h3 className="font-medium">Add a place</h3>
+          <h3 className="m-0 font-display font-semibold">{t('search.title')}</h3>
           <button
             type="button"
             onClick={onClose}
-            className="text-text-muted hover:text-text-main"
-            aria-label="Close"
+            className="w-9 h-9 rounded-lg bg-bg-base flex items-center justify-center text-text-main"
+            aria-label={t('search.close')}
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
@@ -132,38 +137,28 @@ export default function PlaceSearchModal({
             <input
               ref={inputRef}
               type="text"
-              placeholder={`Search places / restaurants in ${destination}...`}
+              placeholder={t('search.placeholder', { destination })}
               value={query}
               onChange={e => setQuery(e.target.value)}
               data-testid="search-input"
-              className="w-full bg-bg-base border border-border rounded-lg py-2 pl-9 pr-3 text-sm focus:outline-none focus:border-accent"
+              className="w-full bg-surface border border-border-strong rounded-lg py-2 pl-9 pr-3 text-sm focus:outline-none focus:border-accent"
             />
           </div>
           <div className="flex items-center gap-3 text-xs">
             <label className="flex items-center gap-2 text-text-muted">
-              Add to
-              <select
-                value={dayNumber}
-                onChange={e => setDayNumber(parseInt(e.target.value, 10))}
-                data-testid="search-day"
-                className="bg-bg-base border border-border rounded-md px-2 py-1 text-text-main focus:outline-none focus:border-accent"
-              >
+              {t('search.addTo')}
+              <select value={dayNumber} onChange={e => setDayNumber(parseInt(e.target.value, 10))} data-testid="search-day" className={select}>
                 {availableDays.map(d => (
                   <option key={d} value={d}>
-                    Day {d}
+                    {t('itinerary.day', { n: d })}
                   </option>
                 ))}
               </select>
               ·
-              <select
-                value={period}
-                onChange={e => setPeriod(e.target.value as SlotPeriod)}
-                data-testid="search-period"
-                className="bg-bg-base border border-border rounded-md px-2 py-1 text-text-main focus:outline-none focus:border-accent"
-              >
+              <select value={period} onChange={e => setPeriod(e.target.value as SlotPeriod)} data-testid="search-period" className={select}>
                 {PERIOD_ORDER.map(p => (
                   <option key={p} value={p}>
-                    {PERIOD_LABEL[p]}
+                    {t(`period.${p}`)}
                   </option>
                 ))}
               </select>
@@ -175,17 +170,15 @@ export default function PlaceSearchModal({
           {loading && (
             <div className="p-6 flex items-center justify-center text-text-muted text-sm">
               <Loader2 size={16} className="animate-spin mr-2" />
-              Searching...
+              {t('search.searching')}
             </div>
           )}
-          {error && (
-            <div className="p-6 text-center text-delete text-sm">{error}</div>
-          )}
+          {error && <div className="p-6 text-center text-delete text-sm">{error}</div>}
           {!loading && !error && results.length === 0 && query.trim() && (
-            <div className="p-6 text-center text-text-muted text-sm">No results</div>
+            <div className="p-6 text-center text-text-muted text-sm">{t('search.noResults')}</div>
           )}
           {!loading && !error && !query.trim() && (
-            <div className="p-6 text-center text-text-muted/70 text-sm">Type to search</div>
+            <div className="p-6 text-center text-text-muted/70 text-sm">{t('search.typeToSearch')}</div>
           )}
           {results.map(r => (
             <button
@@ -199,7 +192,7 @@ export default function PlaceSearchModal({
                 {r.photoUrl ? (
                   <img src={r.photoUrl} alt={r.name} className="w-full h-full object-cover" />
                 ) : (
-                  <MapPin size={16} className="text-border" />
+                  <MapPin size={16} className="text-border-strong" />
                 )}
               </div>
               <div className="flex-1 min-w-0">

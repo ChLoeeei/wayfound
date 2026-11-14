@@ -8,7 +8,6 @@ import {
   recordPlanningSession,
   recordPlaceDeleted,
   buildMemoryPromptContext,
-  summariseMemory,
 } from '../../src/lib/memory';
 import type { PlanningInput } from '../../src/types';
 
@@ -180,18 +179,5 @@ describe('buildMemoryPromptContext', () => {
     expect(buildMemoryPromptContext(mem)).not.toContain('removed');
     mem = recordPlaceDeleted(mem, 'shopping');
     expect(buildMemoryPromptContext(mem)).toContain('shopping');
-  });
-});
-
-describe('summariseMemory', () => {
-  it('returns null for empty memory', () => {
-    expect(summariseMemory(emptyMemory())).toBeNull();
-  });
-
-  it('returns a short human-readable summary otherwise', () => {
-    const mem = recordPlanningSession(emptyMemory(), baseInput());
-    const summary = summariseMemory(mem);
-    expect(summary).toContain('food');
-    expect(summary).toContain('couple');
   });
 });

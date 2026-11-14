@@ -4,12 +4,16 @@ import { getMapProvider } from '../../server/tools/provider';
 import AmapMapPane from './AmapMapPane';
 import LeafletMapPane from './LeafletMapPane';
 
-interface MapPaneProps {
+export interface MapPaneProps {
   itinerary: Itinerary | null;
+  /** Day whose stops and route are drawn (numbered within the day); null draws every day. */
+  activeDay: number | null;
   selectedPlaceId: string | null;
   onSelectPlace: (id: string) => void;
-  darkMode: boolean;
 }
+
+/** Marker colours, from the design reference: ink for a stop, accent for the selected one. */
+export const MARKER_COLORS = { stop: '#16181D', selected: '#0F6E66', route: '#0F6E66' } as const;
 
 /**
  * Routes to the right map engine for the itinerary's destination — the
@@ -28,28 +32,12 @@ interface MapPaneProps {
  * libraries, which is simpler and safer than migrating one map instance
  * from one engine to the other in place.
  */
-export default function MapPane({ itinerary, selectedPlaceId, onSelectPlace, darkMode }: MapPaneProps) {
-  const provider = itinerary ? getMapProvider(itinerary.destination) : 'amap';
+export default function MapPane(props: MapPaneProps) {
+  const provider = props.itinerary ? getMapProvider(props.itinerary.destination) : 'amap';
 
   if (provider === 'amap') {
-    return (
-      <AmapMapPane
-        key="amap"
-        itinerary={itinerary}
-        selectedPlaceId={selectedPlaceId}
-        onSelectPlace={onSelectPlace}
-        darkMode={darkMode}
-      />
-    );
+    return <AmapMapPane key="amap" {...props} />;
   }
 
-  return (
-    <LeafletMapPane
-      key="leaflet"
-      itinerary={itinerary}
-      selectedPlaceId={selectedPlaceId}
-      onSelectPlace={onSelectPlace}
-      darkMode={darkMode}
-    />
-  );
+  return <LeafletMapPane key="leaflet" {...props} />;
 }

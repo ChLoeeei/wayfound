@@ -1,0 +1,267 @@
+{
+  "app": {
+    "name": "Wayfound",
+    "loadingMaps": "正在加载地图...",
+    "amapKey": {
+      "title": "需要高德 API Key",
+      "step1": "第 1 步：",
+      "getKey": "到高德开放平台申请 API Key",
+      "step2": "第 2 步：",
+      "addSecret": "在 AI Studio 的 Secrets 中加入 Key 和安全密钥：",
+      "openSettings": "打开右上角的设置（齿轮图标）",
+      "selectSecrets": "选择 Secrets",
+      "addKey": "添加 AMAP_API_KEY = Web 端 JS API Key",
+      "addCode": "添加 AMAP_SECURITY_CODE = Web 端安全密钥",
+      "rebuild": "添加后应用会自动重新构建。"
+    }
+  },
+  "topbar": {
+    "tripTitle": "{destination} · {days} · {month}",
+    "days_one": "{count} 天",
+    "days_other": "{count} 天",
+    "language": "语言",
+    "libraryOn": "经验库：开",
+    "libraryOff": "经验库：关",
+    "compare": "对比模式",
+    "exitCompare": "退出对比",
+    "agentPanel": "Agent 面板"
+  },
+  "conversation": {
+    "title": "对话",
+    "planFirst": "告诉我这次旅行的情况，我会根据真实搜索结果来安排。",
+    "editForm": "修改需求",
+    "hideForm": "收起表单",
+    "requestSummary": "去{destination}，{days}，{people}，{group}。偏好：{vibes}。预算每人每天约 ¥{min}–{max}。",
+    "requestNeeds": "特殊需求：{needs}。",
+    "people_one": "{count} 人",
+    "people_other": "{count} 人",
+    "clarifying": "先确认两个小问题。",
+    "generating": "正在搜索地点并编写行程，大约需要一分钟。",
+    "ready": "行程已生成：{title}。",
+    "readyGrounded": "每个地点都来自搜索结果。",
+    "readyWarning": "部分内容来自通用知识，出行前请核实地址和开放时间。",
+    "failed": "生成失败：{error}",
+    "inputPlaceholder": "用消息修改行程会在后续版本提供",
+    "inputDisabledHint": "按时段修改行程将在后续版本提供",
+    "photoDisabledHint": "通过照片添加地点将在后续版本提供",
+    "send": "发送",
+    "addPhoto": "添加照片或截图"
+  },
+  "form": {
+    "destination": "目的地",
+    "destinationPlaceholder": "例如 北京 / Kyoto",
+    "start": "开始",
+    "end": "结束",
+    "daysTotal_one": "共 {count} 天",
+    "daysTotal_other": "共 {count} 天",
+    "travelers": "人数",
+    "tripType": "出行类型",
+    "vibe": "旅行偏好",
+    "budget": "预算 ¥{min} – ¥{max} / 人 · 天",
+    "specialNeeds": "特殊需求",
+    "optional": "（可选）",
+    "generate": "生成行程",
+    "generating": "生成中",
+    "vibes": {
+      "nature": "自然",
+      "culture": "文化",
+      "food": "美食",
+      "shopping": "购物",
+      "leisure": "休闲",
+      "adventure": "冒险"
+    },
+    "groups": {
+      "solo": "独自",
+      "couple": "情侣",
+      "family": "家庭",
+      "friends": "朋友"
+    },
+    "needs": {
+      "accessibility": "无障碍",
+      "vegetarian": "素食",
+      "baby": "带婴儿",
+      "pet": "携带宠物"
+    }
+  },
+  "clarify": {
+    "intro": "先确认两个小问题",
+    "ownAnswer": "或者直接输入你的回答",
+    "skip": "跳过，直接生成",
+    "continue": "继续",
+    "primaryVibe": {
+      "question": "你选了好几个偏好，哪一个最重要？我会给它更高的权重。"
+    },
+    "kidsOnBoard": {
+      "question": "有小朋友同行吗？这会影响行程节奏。",
+      "options": {
+        "kids": "有小朋友",
+        "adults": "都是成人"
+      }
+    },
+    "budgetLean": {
+      "question": "你的预算 ¥{min}–¥{max} 跨度比较大，偏省钱一些，还是偏享受一些？",
+      "options": {
+        "budget": "偏省钱",
+        "balanced": "折中",
+        "splurge": "偏享受"
+      }
+    },
+    "multiCity": {
+      "question": "{days} 天时间不短，要不要安排多个城市？",
+      "options": {
+        "one": "只待一个城市",
+        "multi": "加一两个附近的城市"
+      }
+    },
+    "destinationFocus": {
+      "question": "你好像列了好几个地方，以哪一个为主？"
+    }
+  },
+  "map": {
+    "title": "地图",
+    "tiles": "地图底图：中国大陆用高德，其他地区用 OpenStreetMap",
+    "legendUnchanged": "地点",
+    "legendSelected": "选中的地点",
+    "empty": "生成行程后，路线会显示在这里"
+  },
+  "itinerary": {
+    "title": "行程",
+    "days": "天数",
+    "day": "第 {n} 天",
+    "dayHeading": "第 {n} 天 · {theme}",
+    "empty": "旅程即将开始。",
+    "emptyHint": "填写旅行信息后开始",
+    "emptySlot": "这个时段还没有安排",
+    "addPlace": "添加地点",
+    "more": "更多操作",
+    "aiCheck": "AI 检查行程",
+    "issuesFound_one": "AI 发现 {count} 个问题",
+    "issuesFound_other": "AI 发现 {count} 个问题",
+    "unverified": "未核实",
+    "unverifiedHint": "这个地点没有匹配到地图搜索结果，坐标只是估计值。",
+    "groundingWarning": "部分内容由通用知识生成，出行前请核实地址和开放时间。",
+    "dayTotalUnder": "当天人均 ¥{total} · 在 ¥{cap} 预算内",
+    "dayTotalOver": "当天人均 ¥{total} · 超出 ¥{cap} 预算",
+    "exportNote": "导出和打印只包含当前显示的这一天"
+  },
+  "period": {
+    "morning": "上午",
+    "afternoon": "下午",
+    "evening": "晚上"
+  },
+  "place": {
+    "drag": "拖动",
+    "delete": "删除",
+    "expand": "展开",
+    "moveTo": "移到",
+    "viewDetails": "查看详情",
+    "openInAmap": "在高德地图打开",
+    "hours": "{hours} 小时",
+    "free": "免费",
+    "types": {
+      "attraction": "景点",
+      "restaurant": "餐厅",
+      "hotel": "酒店",
+      "shopping": "购物",
+      "cafe": "咖啡馆",
+      "nightlife": "夜生活",
+      "leisure": "休闲"
+    }
+  },
+  "search": {
+    "title": "添加地点",
+    "close": "关闭",
+    "placeholder": "搜索{destination}的地点 / 餐厅...",
+    "addTo": "加入",
+    "searching": "搜索中...",
+    "noResults": "没有结果",
+    "typeToSearch": "输入关键词开始搜索",
+    "failed": "搜索失败"
+  },
+  "actions": {
+    "saveToCloud": "保存到云端",
+    "loginToSave": "登录后保存到云端",
+    "saved": "已保存！",
+    "saveFailed": "保存到云端失败。",
+    "exportImage": "导出图片",
+    "exportPdf": "导出 PDF",
+    "exportFailed": "导出失败",
+    "exportNotMounted": "导出失败：行程区域尚未渲染",
+    "share": "创建分享链接",
+    "shareCopied": "分享链接已复制",
+    "shareFailed": "创建分享链接失败",
+    "logout": "退出登录 {email}",
+    "generateFailed": "生成失败"
+  },
+  "undo": {
+    "deleted": "已删除“{name}”",
+    "undo": "撤销"
+  },
+  "panel": {
+    "title": "Agent 面板",
+    "close": "关闭 Agent 面板",
+    "sections": "Agent 面板分区",
+    "tabs": {
+      "lessons": "学到的经验",
+      "preferences": "我的偏好",
+      "trace": "运行记录"
+    },
+    "lessons": {
+      "intro": "Agent 从自己被打分的运行中总结出的策略。没有微调任何模型，经验里也不会出现具体地点。",
+      "comingSoon": "经验列表会在下一步接入经验库。"
+    },
+    "preferences": {
+      "intro": "根据你说过的话保存在这个浏览器里。只有你能看到，它们不会变成共享经验。",
+      "empty": "还没有记住任何偏好。生成第一份行程后会显示在这里。",
+      "clearAll": "清空全部偏好",
+      "signedOut": "未登录？偏好会保存在这个浏览器里，登录后迁移到你的账户。",
+      "interests": "兴趣",
+      "tripType": "出行类型",
+      "dailyBudget": "每日预算",
+      "budgetValue": "每人约 ¥{min}–{max}",
+      "budgetLean": "预算倾向",
+      "lean": {
+        "budget": "偏省钱",
+        "balanced": "折中",
+        "splurge": "偏享受"
+      },
+      "specialNeeds": "特殊需求",
+      "pastTrips": "去过的目的地",
+      "avoids": "经常删掉",
+      "notes": "备注"
+    },
+    "trace": {
+      "intro": "Agent 为这份行程走过的每一步。",
+      "debugOnly": "仅在调试模式下可见",
+      "enableHint": "在地址里加上 ?debug=1 打开应用，即可记录并显示运行记录。",
+      "noPlan": "生成行程后可以查看运行记录。",
+      "loading": "正在加载运行记录…",
+      "failed": "运行记录加载失败。",
+      "requestFailed": "请求失败：{error}",
+      "noSteps": "没有记录到任何步骤。",
+      "step": "第 {n} 步",
+      "finalAnswer": "最终答案",
+      "lessonsStep": "注入的经验"
+    }
+  },
+  "compare": {
+    "title": "对比模式",
+    "intro": "同一个需求、同样的工具结果，分别在经验库关闭和开启时各跑一次。",
+    "comingSoon": "对比模式会和经验面板一起在下一步完成。"
+  },
+  "shared": {
+    "loading": "正在加载分享的行程...",
+    "notFound": "没有找到这份行程",
+    "notPublic": "这份行程不存在或未公开",
+    "loadFailed": "加载失败",
+    "readOnly": "分享视图 · 只读",
+    "createOwn": "创建你自己的行程",
+    "backHome": "返回首页"
+  },
+  "error": {
+    "title": "出了点问题",
+    "unknown": "渲染时抛出了未知错误",
+    "retry": "重试",
+    "reload": "重新加载页面"
+  }
+}

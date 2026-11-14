@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldAlert, Loader2, RefreshCw, Plus, Info } from 'lucide-react';
+import { ShieldAlert, Loader2, RefreshCw, Plus, Info, Check, AlertTriangle } from 'lucide-react';
 import {
   DndContext,
   PointerSensor,
@@ -15,18 +15,22 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Itinerary, Place, SlotPeriod } from '../types';
 import {
   orderedSlots,
-  PERIOD_LABEL,
   PERIOD_TIME_HINT,
   findPlace,
   movePlace,
   changeSlot,
   deletePlace,
+  dayCostPerPerson,
+  isWithinDailyBudget,
 } from '../lib/itineraryOps';
 import PlaceCard from './PlaceCard';
-import TraceViewer, { isDebugMode } from './TraceViewer';
+import { useT } from '../i18n';
 
 interface ItineraryPaneProps {
   itinerary: Itinerary;
+  /** Day shown; the pane renders one day at a time (day tabs). */
+  activeDay: number;
+  onChangeDay: (dayNumber: number) => void;
   selectedPlaceId: string | null;
   onSelectPlace: (id: string) => void;
   onUpdateItinerary: (next: Itinerary) => void;
@@ -36,6 +40,10 @@ interface ItineraryPaneProps {
   readOnly?: boolean;
   /** Optional ref so parents (export) can capture the rendered list as DOM. */
   rootRef?: React.Ref<HTMLDivElement>;
+  /** Per-person daily budget cap from the request, for the day summary row. */
+  budgetCap?: number;
+  /** Extra controls for the day header row (the "more" menu). */
+  headerActions?: React.ReactNode;
 }
 
 interface VerifyIssue {
@@ -60,9 +68,7 @@ function DroppableSlot({ dayNumber, period, placeIds, children }: DroppableSlotP
     <div
       ref={setNodeRef}
       data-testid={`slot-${dayNumber}-${period}`}
-      className={`space-y-3 rounded-xl px-1 py-1 transition-colors ${
-        isOver ? 'bg-accent/5 ring-1 ring-accent/40' : ''
-      }`}
+      className={`flex flex-col gap-2.5 rounded-xl transition-colors ${isOver ? 'bg-accent-soft ring-1 ring-accent-line' : ''}`}
     >
       <SortableContext items={placeIds} strategy={verticalListSortingStrategy}>
         {children}
@@ -71,8 +77,16 @@ function DroppableSlot({ dayNumber, period, placeIds, children }: DroppableSlotP
   );
 }
 
+/**
+ * The itinerary section of the plan view: day tabs, one day's stops as
+ * cards grouped by period, and the day summary. Drag-and-drop moves stops
+ * between periods of the shown day; moving a stop to another day goes
+ * through the card's expand menu (slot picker) or the search modal.
+ */
 export default function ItineraryPane({
   itinerary,
+  activeDay,
+  onChangeDay,
   selectedPlaceId,
   onSelectPlace,
   onUpdateItinerary,
@@ -80,11 +94,13 @@ export default function ItineraryPane({
   onAddPlaceToSlot,
   readOnly,
   rootRef,
+  budgetCap,
+  headerActions,
 }: ItineraryPaneProps) {
+  const t = useT();
   const [verifying, setVerifying] = useState(false);
   const [issues, setIssues] = useState<VerifyIssue[]>([]);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
-  const [showTrace, setShowTrace] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -109,7 +125,6 @@ export default function ItineraryPane({
       const overFound = findPlace(itinerary, String(over.id));
       const fromFound = findPlace(itinerary, placeId);
       if (overFound && fromFound) {
-        // If both in same slot, just splice in at over's position
         const sameSlot =
           overFound.day.dayNumber === fromFound.day.dayNumber &&
           overFound.slot.period === fromFound.slot.period;
@@ -163,176 +178,167 @@ export default function ItineraryPane({
   };
 
   const activePlace = activeDragId ? findPlace(itinerary, activeDragId)?.place : null;
+  const day = itinerary.days.find(d => d.dayNumber === activeDay) ?? itinerary.days[0];
+  const dayTotal = day ? Math.round(dayCostPerPerson(day)) : 0;
+  const withinBudget = budgetCap != null ? isWithinDailyBudget(dayTotal, budgetCap) : null;
+  let runningIndex = 0;
 
   return (
-    <div ref={rootRef} className="w-full max-w-2xl mx-auto pb-24" data-testid="itinerary-pane">
-      <div className="mb-12 text-center md:text-left">
-        <h1 className="text-4xl md:text-5xl font-display font-medium tracking-tight mb-4">
-          {itinerary.title}
+    <div ref={rootRef} className="flex flex-col gap-3.5" data-testid="itinerary-pane">
+      <nav aria-label={t('itinerary.days')} className="flex flex-wrap gap-1.5 print:hidden" data-testid="day-tabs">
+        {itinerary.days.map(d => {
+          const active = d.dayNumber === day?.dayNumber;
+          return (
+            <button
+              key={d.dayNumber}
+              type="button"
+              aria-current={active ? 'true' : undefined}
+              onClick={() => onChangeDay(d.dayNumber)}
+              data-testid={`day-tab-${d.dayNumber}`}
+              className={`min-h-[36px] px-3.5 rounded-full border transition-colors ${
+                active ? 'bg-text-main text-white border-text-main font-medium' : 'bg-surface text-text-main border-border hover:bg-bg-base'
+              }`}
+            >
+              {t('itinerary.day', { n: d.dayNumber })}
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="flex flex-wrap items-center gap-2.5">
+        <h1 className="m-0 font-display text-2xl font-semibold min-w-0">
+          {day
+            ? day.theme
+              ? t('itinerary.dayHeading', { n: day.dayNumber, theme: day.theme })
+              : t('itinerary.day', { n: day.dayNumber })
+            : itinerary.title}
         </h1>
-        {itinerary.summary && (
-          <p className="text-text-muted text-lg font-light leading-relaxed">{itinerary.summary}</p>
-        )}
-
-        {itinerary.groundingWarning && (
-          <p
-            className="mt-3 flex items-start gap-1.5 text-[12px] text-amber-700 dark:text-amber-500"
-            data-testid="grounding-warning"
-          >
-            <Info size={14} className="mt-[1px] shrink-0" />
-            Some details were generated from general knowledge — please verify addresses/hours before traveling.
-          </p>
-        )}
-
-        {itinerary.sourceAttributions && itinerary.sourceAttributions.length > 0 && (
-          <p className="mt-3 text-[11px] text-text-muted/70" data-testid="source-attributions">
-            {itinerary.sourceAttributions.join(' · ')}
-          </p>
-        )}
-
-        {itinerary.requestId && isDebugMode() && (
+        <div className="flex-1" />
+        {!readOnly && (
           <button
-            onClick={() => setShowTrace(true)}
-            className="mt-2 text-[11px] text-text-muted/70 underline hover:text-accent transition-colors"
-            data-testid="open-trace-viewer"
+            type="button"
+            onClick={verifyItinerary}
+            disabled={verifying}
+            className="flex items-center gap-1.5 min-h-[34px] px-3 border border-border-strong rounded-full bg-surface text-[13px] hover:bg-bg-base disabled:opacity-50 print:hidden"
+            data-testid="ai-check"
           >
-            View agent trace
+            {verifying ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+            {t('itinerary.aiCheck')}
           </button>
         )}
+        {headerActions}
+      </div>
 
-        {showTrace && itinerary.requestId && (
-          <TraceViewer requestId={itinerary.requestId} onClose={() => setShowTrace(false)} />
-        )}
+      {itinerary.summary && <p className="m-0 text-text-muted text-[13px]">{itinerary.summary}</p>}
 
-        {!readOnly && (
-          <div className="mt-6">
-            <button
-              onClick={verifyItinerary}
-              disabled={verifying}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-surface border border-border rounded-full hover:border-accent hover:text-accent transition-colors text-sm uppercase tracking-wide font-medium disabled:opacity-50"
-            >
-              {verifying ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-              AI check itinerary
-            </button>
+      {itinerary.groundingWarning && (
+        <p className="m-0 flex items-start gap-1.5 text-[12px] text-updated-text" data-testid="grounding-warning">
+          <Info size={14} className="mt-[1px] shrink-0" />
+          {t('itinerary.groundingWarning')}
+        </p>
+      )}
+
+      {issues.length > 0 && (
+        <div className="p-3.5 border border-delete-line bg-delete-tint rounded-xl" data-testid="ai-issues">
+          <h4 className="m-0 mb-2 flex items-center gap-2 text-delete font-medium">
+            <ShieldAlert size={16} />
+            {t('itinerary.issuesFound', { count: issues.length })}
+          </h4>
+          <ul className="m-0 p-0 list-none flex flex-col gap-2">
+            {issues.map((iss, i) => (
+              <li key={i} className="text-sm">
+                <div className="font-semibold text-text-main">{iss.message}</div>
+                <div className="text-text-muted mt-0.5">{iss.suggestion}</div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {day && (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <section className="flex flex-col gap-4" data-testid={`day-${day.dayNumber}`}>
+            {orderedSlots(day).map(slot => (
+              <div key={slot.period} className="flex flex-col gap-2">
+                <div className="flex items-baseline justify-between">
+                  <h4 className="m-0 text-[13px] font-medium text-text-muted">{t(`period.${slot.period}`)}</h4>
+                  <span className="text-[12px] text-text-muted tabular-nums">{PERIOD_TIME_HINT[slot.period]}</span>
+                </div>
+
+                <DroppableSlot dayNumber={day.dayNumber} period={slot.period} placeIds={slot.places.map(p => p.id)}>
+                  {slot.places.length === 0 && (
+                    <p className="m-0 text-xs text-text-muted px-3 py-2">{t('itinerary.emptySlot')}</p>
+                  )}
+
+                  {slot.places.map((place, placeIdx) => {
+                    const idx = runningIndex++;
+                    return (
+                      <PlaceCard
+                        key={place.id}
+                        place={place}
+                        index={idx}
+                        period={slot.period}
+                        isSelected={selectedPlaceId === place.id}
+                        onSelect={() => onSelectPlace(place.id)}
+                        onDelete={readOnly ? undefined : () => handleDelete(place, day.dayNumber, slot.period, placeIdx)}
+                        onChangeSlot={readOnly ? undefined : next => handleChangeSlot(place.id, next)}
+                        disableDrag={readOnly}
+                      />
+                    );
+                  })}
+
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      onClick={e => {
+                        e.stopPropagation();
+                        onAddPlaceToSlot(day.dayNumber, slot.period);
+                      }}
+                      className="w-full min-h-[40px] border border-dashed border-border-strong rounded-xl flex items-center justify-center gap-2 text-text-muted hover:text-accent hover:border-accent-line transition-colors text-[13px] print:hidden"
+                      data-testid={`add-place-${day.dayNumber}-${slot.period}`}
+                    >
+                      <Plus size={14} />
+                      {t('itinerary.addPlace')}
+                    </button>
+                  )}
+                </DroppableSlot>
+              </div>
+            ))}
+          </section>
+
+          <DragOverlay>
+            {activePlace ? (
+              <div className="opacity-90 rotate-1 scale-[1.02] shadow-xl rounded-xl border border-accent bg-surface px-4 py-3 text-sm">
+                {activePlace.name}
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      )}
+
+      <div className="flex flex-wrap gap-2.5 pt-2 border-t border-border text-[13px]" data-testid="day-summary">
+        {withinBudget != null && budgetCap != null && (
+          <div className="flex items-center gap-1.5" data-testid="day-budget">
+            {withinBudget ? (
+              <Check size={16} className="text-accent shrink-0" strokeWidth={2.2} />
+            ) : (
+              <AlertTriangle size={16} className="text-updated shrink-0" strokeWidth={2.2} />
+            )}
+            {t(withinBudget ? 'itinerary.dayTotalUnder' : 'itinerary.dayTotalOver', { total: dayTotal, cap: budgetCap })}
           </div>
         )}
-
-        {issues.length > 0 && (
-          <div className="mt-4 p-4 border border-delete/30 bg-delete/5 rounded-xl text-left">
-            <h4 className="flex items-center gap-2 text-delete font-medium mb-3">
-              <ShieldAlert size={18} />
-              AI found {issues.length} issue{issues.length === 1 ? '' : 's'}
-            </h4>
-            <ul className="space-y-3">
-              {issues.map((iss, i) => (
-                <li key={i} className="text-sm">
-                  <div className="font-semibold text-text-main">{iss.message}</div>
-                  <div className="text-text-muted mt-1">{iss.suggestion}</div>
-                </li>
-              ))}
-            </ul>
+        {itinerary.sourceAttributions && itinerary.sourceAttributions.length > 0 && (
+          <div className="text-[12px] text-text-muted w-full" data-testid="source-attributions">
+            {itinerary.sourceAttributions.join(' · ')}
           </div>
         )}
       </div>
-
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onDragCancel={handleDragCancel}
-      >
-        <div className="space-y-12">
-          {itinerary.days.map(day => {
-            let runningIndex = 0;
-            return (
-              <section key={day.dayNumber} className="relative" data-testid={`day-${day.dayNumber}`}>
-                <header className="sticky top-0 z-20 bg-bg-base/90 backdrop-blur pb-4 pt-6 border-b border-border/50 mb-6 flex items-baseline gap-4">
-                  <span className="font-display text-3xl text-accent italic">Day {day.dayNumber}</span>
-                  {day.theme && (
-                    <h3 className="text-xl font-medium tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
-                      {day.theme}
-                    </h3>
-                  )}
-                </header>
-
-                <div className="space-y-8">
-                  {orderedSlots(day).map(slot => (
-                    <div key={slot.period}>
-                      <div className="flex items-baseline justify-between mb-3">
-                        <h4 className="font-mono text-xs uppercase tracking-widest text-text-muted">
-                          {PERIOD_LABEL[slot.period]}
-                        </h4>
-                        <span className="font-mono text-[10px] tracking-widest text-text-muted/70">
-                          {PERIOD_TIME_HINT[slot.period]}
-                        </span>
-                      </div>
-
-                      <DroppableSlot
-                        dayNumber={day.dayNumber}
-                        period={slot.period}
-                        placeIds={slot.places.map(p => p.id)}
-                      >
-                        {slot.places.length === 0 && (
-                          <p className="text-xs text-text-muted/70 italic px-3 py-2">
-                            Nothing planned for this slot yet
-                          </p>
-                        )}
-
-                        {slot.places.map((place, placeIdx) => {
-                          const idx = runningIndex++;
-                          return (
-                            <PlaceCard
-                              key={place.id}
-                              place={place}
-                              index={idx}
-                              period={slot.period}
-                              isSelected={selectedPlaceId === place.id}
-                              onSelect={() => onSelectPlace(place.id)}
-                              onDelete={
-                                readOnly
-                                  ? undefined
-                                  : () => handleDelete(place, day.dayNumber, slot.period, placeIdx)
-                              }
-                              onChangeSlot={
-                                readOnly ? undefined : next => handleChangeSlot(place.id, next)
-                              }
-                              disableDrag={readOnly}
-                            />
-                          );
-                        })}
-
-                        {!readOnly && (
-                          <button
-                            type="button"
-                            onClick={e => {
-                              e.stopPropagation();
-                              onAddPlaceToSlot(day.dayNumber, slot.period);
-                            }}
-                            className="w-full py-3 border border-dashed border-border rounded-xl flex items-center justify-center gap-2 text-text-muted hover:text-accent hover:border-accent/50 transition-colors text-xs tracking-widest uppercase font-mono"
-                            data-testid={`add-place-${day.dayNumber}-${slot.period}`}
-                          >
-                            <Plus size={14} />
-                            Add place
-                          </button>
-                        )}
-                      </DroppableSlot>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
-        </div>
-
-        <DragOverlay>
-          {activePlace ? (
-            <div className="opacity-90 rotate-1 scale-[1.02] shadow-xl rounded-2xl border border-accent bg-surface px-4 py-3 text-sm">
-              {activePlace.name}
-            </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import React from 'react';
+import { loadLang, translate } from '../i18n';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -26,28 +27,27 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
 
   render() {
     if (this.state.error) {
+      // A class component cannot use the i18n hook; it may also sit above
+      // the provider, so read the stored language directly.
+      const lang = loadLang();
+      const t = (key: string) => translate(lang, key);
       return (
-        <div className="h-screen w-full flex flex-col items-center justify-center bg-bg-base text-text-main font-sans p-6">
-          <div className="max-w-lg w-full bg-surface border border-border rounded-2xl p-6 shadow-md">
-            <h2 className="text-xl font-display font-medium mb-3">Something went wrong</h2>
-            <p className="text-text-muted text-sm mb-4">
-              {this.state.error.message || 'An unknown error was thrown while rendering'}
-            </p>
-            <pre className="text-[11px] text-text-muted/70 bg-bg-base border border-border rounded-md p-3 overflow-auto max-h-60 mb-4 whitespace-pre-wrap">
+        <div className="min-h-screen w-full flex flex-col items-center justify-center bg-bg-base text-text-main p-6">
+          <div className="max-w-lg w-full bg-surface border border-border rounded-[14px] p-6">
+            <h2 className="m-0 mb-3 text-xl font-display font-semibold">{t('error.title')}</h2>
+            <p className="text-text-muted text-sm mb-4">{this.state.error.message || t('error.unknown')}</p>
+            <pre className="text-[11px] text-text-muted bg-bg-base border border-border rounded-md p-3 overflow-auto max-h-60 mb-4 whitespace-pre-wrap">
               {this.state.error.stack ?? ''}
             </pre>
             <div className="flex gap-2">
-              <button
-                onClick={this.reset}
-                className="px-4 py-2 text-sm bg-accent text-white rounded-full hover:opacity-90"
-              >
-                Retry
+              <button onClick={this.reset} className="min-h-[40px] px-4 text-sm bg-accent text-white rounded-lg hover:bg-accent-deep">
+                {t('error.retry')}
               </button>
               <button
                 onClick={() => window.location.reload()}
-                className="px-4 py-2 text-sm border border-border rounded-full hover:border-accent"
+                className="min-h-[40px] px-4 text-sm border border-border-strong rounded-lg hover:bg-bg-base"
               >
-                Reload page
+                {t('error.reload')}
               </button>
             </div>
           </div>

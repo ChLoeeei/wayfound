@@ -30,7 +30,7 @@ function itinerary(destination: string): Itinerary {
 describe('MapPane routing', () => {
   it('routes a mainland China destination to AmapMapPane', () => {
     render(
-      <MapPane itinerary={itinerary('北京')} selectedPlaceId={null} onSelectPlace={() => {}} darkMode={false} />,
+      <MapPane itinerary={itinerary('北京')} selectedPlaceId={null} onSelectPlace={() => {}} activeDay={null} />,
     );
     expect(screen.getByTestId('amap-map-pane')).toBeTruthy();
     expect(screen.queryByTestId('leaflet-map-pane')).toBeNull();
@@ -38,21 +38,21 @@ describe('MapPane routing', () => {
 
   it('routes an English-name mainland China destination to AmapMapPane too', () => {
     render(
-      <MapPane itinerary={itinerary('Shanghai')} selectedPlaceId={null} onSelectPlace={() => {}} darkMode={false} />,
+      <MapPane itinerary={itinerary('Shanghai')} selectedPlaceId={null} onSelectPlace={() => {}} activeDay={null} />,
     );
     expect(screen.getByTestId('amap-map-pane')).toBeTruthy();
   });
 
   it('routes an international destination to LeafletMapPane', () => {
     render(
-      <MapPane itinerary={itinerary('Tokyo')} selectedPlaceId={null} onSelectPlace={() => {}} darkMode={false} />,
+      <MapPane itinerary={itinerary('Tokyo')} selectedPlaceId={null} onSelectPlace={() => {}} activeDay={null} />,
     );
     expect(screen.getByTestId('leaflet-map-pane')).toBeTruthy();
     expect(screen.queryByTestId('amap-map-pane')).toBeNull();
   });
 
   it('defaults to AmapMapPane when there is no itinerary yet', () => {
-    render(<MapPane itinerary={null} selectedPlaceId={null} onSelectPlace={() => {}} darkMode={false} />);
+    render(<MapPane itinerary={null} selectedPlaceId={null} onSelectPlace={() => {}} activeDay={null} />);
     expect(screen.getByTestId('amap-map-pane')).toBeTruthy();
   });
 });

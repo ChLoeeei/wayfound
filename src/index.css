@@ -1,35 +1,46 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
 @import "tailwindcss";
 
+/* Design tokens, taken from the v2 design reference (Main.dc.html / Drawer.dc.html / Compare.dc.html). */
 @theme {
-  --color-bg-base: #F5F2ED;
+  --color-bg-base: #F4F4F1;
   --color-surface: #FFFFFF;
-  --color-border: #E5E0D5;
-  --color-accent: #8E7A5D;
-  --color-text-main: #2A2825;
-  --color-text-muted: #7A756D;
-  --color-delete: #C4554E;
+  --color-border: #E3E4E8;
+  --color-border-strong: #D4D6DC;
+  --color-accent: #0F6E66;
+  --color-accent-deep: #0A4F49;
+  --color-accent-tint: #EAF4F2;
+  --color-accent-line: #CFE3E0;
+  --color-accent-soft: #F3F9F8;
+  --color-text-main: #16181D;
+  --color-text-muted: #5B616E;
+  --color-delete: #8F2A1E;
+  --color-delete-line: #E8B4AE;
+  --color-delete-tint: #FDF1EF;
+  --color-updated: #B4570F;
+  --color-updated-tint: #FFF7EB;
+  --color-updated-line: #F2C98F;
+  --color-updated-chip: #FCE3C2;
+  --color-updated-text: #8A3B0B;
 
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
 }
 
 body {
   background-color: var(--color-bg-base);
   color: var(--color-text-main);
   font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Dark mode overrides (User request: 深夜白天模式) */
-body.dark {
-  --color-bg-base: #141311;
-  --color-surface: #1E1C1A;
-  --color-border: #332F2A;
-  --color-accent: #B09C7D;
-  --color-text-main: #EAE6DF;
-  --color-text-muted: #A39D94;
+a {
+  color: var(--color-accent);
+}
+a:hover {
+  color: var(--color-accent-deep);
 }
 
 ::-webkit-scrollbar {
@@ -50,31 +61,16 @@ body.dark {
   html, body {
     height: auto !important;
     overflow: visible !important;
-    background-color: var(--color-bg-base) !important;
+    background-color: #FFFFFF !important;
   }
 
   [data-testid="itinerary-pane"] {
     width: 100% !important;
     max-width: 100% !important;
     padding: 0 8mm !important;
-    padding-bottom: 0 !important;
     box-sizing: border-box;
   }
 
-  /* Compress title block top margin */
-  [data-testid="itinerary-pane"] > div:first-child {
-    margin-bottom: 6mm !important;
-  }
-
-  /* Fix sticky day headers — sticky causes blank gaps in print */
-  [data-testid="itinerary-pane"] header {
-    position: relative !important;
-    top: auto !important;
-    background: transparent !important;
-    backdrop-filter: none !important;
-  }
-
-  /* Only avoid breaks inside individual place cards, not entire day sections */
   [data-testid^="day-"] {
     break-inside: auto;
   }
@@ -83,4 +79,3 @@ body.dark {
     break-inside: avoid;
   }
 }
-

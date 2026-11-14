@@ -76,7 +76,14 @@ describe('buildClarifications', () => {
     expect(out.some(q => q.id === 'destinationFocus')).toBe(true);
   });
 
-  it('every returned question has a non-empty question string and id', () => {
+  it('carries the budget bounds as params and the lean keys as options', () => {
+    const out = buildClarifications(baseInput({ budget: { min: 200, max: 2000 } }));
+    const q = out.find(x => x.id === 'budgetLean');
+    expect(q?.params).toEqual({ min: 200, max: 2000 });
+    expect(q?.options).toEqual(['budget', 'balanced', 'splurge']);
+  });
+
+  it('every returned question has an id and only option keys, never text', () => {
     const out = buildClarifications(
       baseInput({
         vibes: ['food', 'culture', 'nature', 'shopping'],
@@ -85,7 +92,8 @@ describe('buildClarifications', () => {
     );
     for (const q of out) {
       expect(q.id.length).toBeGreaterThan(0);
-      expect(q.question.length).toBeGreaterThan(0);
+      expect((q as any).question).toBeUndefined();
+      for (const opt of q.options ?? []) expect(opt).toMatch(/^[a-z]+$/i);
     }
   });
 });

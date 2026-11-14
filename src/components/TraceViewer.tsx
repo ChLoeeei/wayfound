@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { X, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { useT } from '../i18n';
 
 /**
- * Debug-only panel that fetches the persisted reasoning/tool-call trace for
+ * Debug-only trace list: fetches the persisted reasoning/tool-call trace for
  * a generation request (GET /api/trace/:requestId, written by server.ts's
  * writeTraceFile / server/agent.ts's opts.stepTrace) and renders it as a
  * step-by-step list: the agent's reasoning at each loop iteration, followed
- * by the tool calls it made and whether each succeeded.
+ * by the tool calls it made and whether each succeeded. Lives in the agent
+ * panel's Trace tab (src/components/AgentPanel.tsx).
  *
  * Gated behind isDebugMode() — see the export below — so it never shows for
- * normal users. Not wired into any always-mounted layout; ItineraryPane
- * only renders its trigger button when isDebugMode() is true.
+ * normal users.
  */
 
 interface AgentStepRecord {
@@ -19,6 +20,8 @@ interface AgentStepRecord {
   reasoning: string;
   toolCalls: Array<{ name: string; args: Record<string, any>; ok: boolean; resultSummary: string }>;
   isFinal: boolean;
+  /** Set on segment completions and on the lessons-injection entry (server/agent.ts). */
+  segment?: string;
 }
 
 /** Matches the payload shape server.ts's writeTraceFile actually writes. */
@@ -44,12 +47,12 @@ export function isDebugMode(): boolean {
   }
 }
 
-interface TraceViewerProps {
+interface TraceListProps {
   requestId: string;
-  onClose: () => void;
 }
 
-export default function TraceViewer({ requestId, onClose }: TraceViewerProps) {
+export default function TraceList({ requestId }: TraceListProps) {
+  const t = useT();
   const [trace, setTrace] = useState<TracePayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,18 +62,18 @@ export default function TraceViewer({ requestId, onClose }: TraceViewerProps) {
     setLoading(true);
     setError(null);
     fetch(`${process.env.API_BASE_URL}/api/trace/${requestId}`)
-      .then(async (res) => {
+      .then(async res => {
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(body.error || `HTTP ${res.status}`);
         }
         return res.json();
       })
-      .then((data) => {
+      .then(data => {
         if (!cancelled) setTrace(data);
       })
-      .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load trace.');
+      .catch(e => {
+        if (!cancelled) setError(e instanceof Error ? e.message : t('panel.trace.failed'));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -78,86 +81,77 @@ export default function TraceViewer({ requestId, onClose }: TraceViewerProps) {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestId]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" data-testid="trace-viewer">
-      <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl bg-surface border border-border shadow-xl p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium">Agent trace</h3>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-full hover:bg-border/40 transition-colors"
-            aria-label="Close"
-          >
-            <X size={18} />
-          </button>
+    <div className="flex flex-col gap-2" data-testid="trace-viewer">
+      <p className="m-0 text-[11px] text-text-muted break-all">{requestId}</p>
+
+      {loading && (
+        <div className="flex items-center gap-2 text-text-muted py-6 justify-center text-sm">
+          <Loader2 size={16} className="animate-spin" />
+          {t('panel.trace.loading')}
         </div>
+      )}
 
-        <p className="text-[11px] text-text-muted/70 mb-4 break-all">{requestId}</p>
+      {error && !loading && <p className="m-0 text-delete text-sm py-2">{error}</p>}
 
-        {loading && (
-          <div className="flex items-center gap-2 text-text-muted py-8 justify-center">
-            <Loader2 size={18} className="animate-spin" />
-            Loading trace…
-          </div>
-        )}
-
-        {error && !loading && (
-          <p className="text-delete text-sm py-4">{error}</p>
-        )}
-
-        {trace && !loading && (
-          <div className="space-y-4">
-            <p className="text-[11px] text-text-muted/70 -mt-2">
-              {trace.destination ? `${trace.destination} · ` : ''}
-              {trace.durationMs}ms
+      {trace && !loading && (
+        <>
+          <p className="m-0 text-[12px] text-text-muted">
+            {trace.destination ? `${trace.destination} · ` : ''}
+            {trace.durationMs}ms
+          </p>
+          {trace.error && (
+            <p className="m-0 text-delete text-sm p-3 rounded-lg bg-delete-tint border border-delete-line">
+              {t('panel.trace.requestFailed', { error: trace.error })}
             </p>
-            {trace.error && (
-              <p className="text-delete text-sm p-3 rounded-lg bg-delete/5 border border-delete/30">
-                Request failed: {trace.error}
-              </p>
-            )}
-            {trace.steps.length === 0 && (
-              <p className="text-text-muted text-sm">No steps recorded.</p>
-            )}
-            {trace.steps.map((step) => (
-              <div key={step.step} className="rounded-xl border border-border p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs uppercase tracking-wide font-medium text-text-muted">
-                    Step {step.step}
-                    {step.isFinal ? ' · final answer' : ''}
-                  </span>
-                  <span className="text-[11px] text-text-muted/60">{step.timestamp}</span>
-                </div>
-                {step.reasoning && (
-                  <p className="text-sm whitespace-pre-wrap mb-2">{step.reasoning}</p>
-                )}
-                {step.toolCalls.length > 0 && (
-                  <div className="space-y-2 mt-2">
-                    {step.toolCalls.map((call, i) => (
-                      <div key={i} className="text-xs bg-bg rounded-lg p-2 border border-border/60">
-                        <div className="flex items-center gap-1.5 font-medium">
-                          {call.ok ? (
-                            <CheckCircle2 size={14} className="text-accent shrink-0" />
-                          ) : (
-                            <XCircle size={14} className="text-delete shrink-0" />
-                          )}
-                          {call.name}
-                        </div>
-                        <pre className="mt-1 overflow-x-auto text-[11px] text-text-muted">
-                          {JSON.stringify(call.args)}
-                        </pre>
-                        <p className="mt-1 text-text-muted">{call.resultSummary}</p>
+          )}
+          {trace.steps.length === 0 && <p className="m-0 text-text-muted text-sm">{t('panel.trace.noSteps')}</p>}
+          <ol className="m-0 p-0 list-none flex flex-col gap-2">
+            {trace.steps.map((step, i) => {
+              const lessons = step.segment === 'lessons';
+              return (
+                <li
+                  key={`${step.step}-${i}`}
+                  className={`flex gap-2.5 px-3 py-2.5 rounded-[10px] border ${lessons ? 'border-accent-line bg-accent-soft' : 'border-border'}`}
+                >
+                  <span className={`flex-none w-[22px] font-semibold ${lessons ? 'text-accent-deep' : 'text-text-muted'}`}>{i + 1}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium">
+                      {lessons
+                        ? t('panel.trace.lessonsStep')
+                        : step.segment
+                          ? step.segment
+                          : `${t('panel.trace.step', { n: step.step })}${step.isFinal ? ` · ${t('panel.trace.finalAnswer')}` : ''}`}
+                    </div>
+                    {step.reasoning && <p className="m-0 mt-1 text-xs text-text-muted whitespace-pre-wrap">{step.reasoning}</p>}
+                    {step.toolCalls.length > 0 && (
+                      <div className="mt-2 flex flex-col gap-1.5">
+                        {step.toolCalls.map((call, j) => (
+                          <div key={j} className="text-xs bg-bg-base rounded-lg p-2 border border-border">
+                            <div className="flex items-center gap-1.5 font-medium">
+                              {call.ok ? (
+                                <CheckCircle2 size={14} className="text-accent shrink-0" />
+                              ) : (
+                                <XCircle size={14} className="text-delete shrink-0" />
+                              )}
+                              {call.name}
+                            </div>
+                            <pre className="m-0 mt-1 overflow-x-auto text-[11px] text-text-muted">{JSON.stringify(call.args)}</pre>
+                            <p className="m-0 mt-1 text-text-muted">{call.resultSummary}</p>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                </li>
+              );
+            })}
+          </ol>
+        </>
+      )}
     </div>
   );
 }

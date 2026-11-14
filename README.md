@@ -85,6 +85,7 @@ The same investigation-and-fix pattern was applied to the Wikivoyage grounding f
 - **Returning-user memory.** A localStorage-backed profile (preferred vibes, budget lean, past destinations, disliked place types) is folded into the next generation's prompt as a soft preference, never overriding the current form.
 - **Request tracing.** Every generation gets a `requestId`, a full reasoning/tool-call trace persisted server-side, and a debug-gated in-app viewer (`?debug=1`) to inspect exactly what the agent did and why.
 - **Honesty by default.** When a run's place searches mostly failed, the UI shows a small disclaimer that some details came from general knowledge rather than pretending everything was verified.
+- **English / Chinese UI** (`src/locales/*.json`, `src/i18n/`): every interface string lives in the locale files, the EN / 中文 switch in the top bar applies at once and is remembered per browser, and the agent writes the itinerary's prose in the interface language.
 
 ## Run locally
 
@@ -132,6 +133,8 @@ npm run eval:library                                  # test split with the lear
 ```
 
 `tests/eval/cases.json` (v3) holds 70 cases with a frozen train/test split, and each destination appears in only one split. The 60 v2 cases are 15 domestic + 15 international per side (pinned by a hash in `tests/unit/eval-cases.test.ts`). The 10 v3 **hard cases** (tagged `hard`: multi-city, ultra-long, tight budget, obscure destination, conflicting constraints) are 2 domestic + 3 international per side; they were added because the v2 baseline left the learning loop little headroom. `train` is reserved for the experience-library learning loop; reported numbers come from `test`, always shown twice: the full test set, and the original 30 cases (comparable with pre-v3 numbers). Each run gets a scalar reward, `0.3·tool + 0.3·constraint + 0.2·judge/5 − 0.5·hallucination`, with frozen weights (`tests/eval/scoring.ts`). Reward v2 checks the budget per day (the day's summed per-person costs must stay within the daily cap + 10%); earlier v1 results were rescored offline from their saved itineraries (`tests/eval/rescore.ts`). Runs hit by provider errors are rerun once and flagged if they stay degraded.
+
+**Eval numbers and the UI language.** Every committed result (`tests/eval/results/`) was produced without the `language` request field. The web UI sends `language: 'en' | 'zh'` so the itinerary's prose follows the interface language, which adds one line to the agent's user prompt; the eval harness and the learning loop never set it, so their prompt is byte-identical to the baselines (pinned by `tests/unit/agent-prompt-language.test.ts`). A result produced with `language` set is a different setup and is not comparable with those numbers.
 
 Setups are compared **paired by case** (`tests/eval/paired.ts`): for each case in both results, the mean over repeats under B minus under A; the headline is the mean of those differences with a 95% t-interval over cases. Pairing removes case difficulty, which varies far more than any setup effect. Checkpoints are keyed by setup and flags, not by the case set: each run stores its case's hash, so adding cases adds runs to the same checkpoint and editing a case redoes only that case.
 

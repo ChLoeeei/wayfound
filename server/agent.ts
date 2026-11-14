@@ -112,7 +112,19 @@ export interface PlanningRequest {
   clarifications?: Record<string, string>;
   /** Optional rendered summary of the user's cross-session memory (see src/lib/memory.ts). */
   memoryContext?: string;
+  /**
+   * UI language of the requesting client. When set, the user prompt gains
+   * one line asking for the itinerary's prose in that language. Absent in
+   * the eval harness and the learning loop, which keeps their prompts
+   * byte-identical to the committed baselines.
+   */
+  language?: 'en' | 'zh';
 }
+
+const LANGUAGE_LINE: Record<'en' | 'zh', string> = {
+  en: 'Write the title, summary, day themes and every aiNote in English. Keep place names as the search tools returned them.',
+  zh: 'Write the title, summary, day themes and every aiNote in Simplified Chinese (简体中文). Keep place names as the search tools returned them.',
+};
 
 /**
  * Recovery layer 4: the "never give up" guidance is conditionally
@@ -664,7 +676,7 @@ export function sanitizeImageUrls<T>(itinerary: T, ctx: Pick<ToolContext, 'serve
   return itinerary;
 }
 
-function buildUserPrompt(req: PlanningRequest): string {
+export function buildUserPrompt(req: PlanningRequest): string {
   const lines: string[] = [
     `Plan a trip with the following parameters:`,
     `- Destination: ${req.destination}`,
@@ -672,6 +684,9 @@ function buildUserPrompt(req: PlanningRequest): string {
     `- Group: ${req.people} people${req.groupType ? ` (${req.groupType})` : ''}`,
     `- Vibes / Preferences: ${(req.preferences ?? []).join(', ') || 'none specified'}`,
   ];
+  if (req.language && LANGUAGE_LINE[req.language]) {
+    lines.push(`- Language: ${LANGUAGE_LINE[req.language]}`);
+  }
   if (req.budget) {
     lines.push(`- Budget: ¥${req.budget.min}–${req.budget.max} per person per day`);
   }

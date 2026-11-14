@@ -1,35 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { Itinerary } from '../types';
-import { allPlaces, placesOfDay, findPlace, sanitiseMapCoord, pickActiveMapDay } from '../lib/itineraryOps';
+import { allPlaces, placesOfDay, findPlace, sanitiseMapCoord } from '../lib/itineraryOps';
+import { MARKER_COLORS, type MapPaneProps } from './MapPane';
 
-interface LeafletMapPaneProps {
-  itinerary: Itinerary | null;
-  selectedPlaceId: string | null;
-  onSelectPlace: (id: string) => void;
-  darkMode: boolean;
-}
-
-const ACCENT_COLOR = '#8E7A5D';
 // Standard public OSM tile server — free, no key. Its usage policy asks
 // for reasonable (non-bulk) load and visible attribution; a single
 // interactive map with a permanent attribution control satisfies both.
 const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors';
-// OSM's free tiles only come in one (light) style, unlike Amap's
-// dark/normal style toggle — this CSS filter fakes a dark map instead of
-// pulling in a second, keyed or rate-limited tile provider just for that.
-const DARK_TILE_FILTER = 'invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.85)';
 const DEFAULT_CENTER: [number, number] = [20, 0]; // world view until real places arrive
 const DEFAULT_ZOOM = 2;
 
 function numberedDivIcon(label: string, selected: boolean): L.DivIcon {
-  const size = selected ? 36 : 28;
+  const size = selected ? 34 : 28;
   return L.divIcon({
-    html: `<div style="background:${selected ? ACCENT_COLOR : 'var(--color-surface)'};color:${
-      selected ? '#FFF' : 'var(--color-text-main)'
-    };border:1px solid var(--color-border);border-radius:50%;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,0.2);">${label}</div>`,
+    html: `<div style="background:${selected ? MARKER_COLORS.selected : MARKER_COLORS.stop};color:#FFFFFF;border:2px solid #FFFFFF;border-radius:50%;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,0.25);">${label}</div>`,
     className: '',
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
@@ -41,12 +27,12 @@ function numberedDivIcon(label: string, selected: boolean): L.DivIcon {
  * and keyless. Routed to by MapPane.tsx for any destination that isn't
  * mainland China; see AmapMapPane.tsx for the China counterpart and
  * MapPane.tsx's module docstring for why the app has two of these instead
- * of one. Mirrors AmapMapPane's behavior (numbered markers, selected-day
- * route line, fit-to-bounds / zoom-to-selection) as closely as the two
- * libraries' APIs allow, sharing sanitiseMapCoord/pickActiveMapDay with it
- * so both engines agree on what counts as a plottable point.
+ * of one. Mirrors AmapMapPane's behavior (numbered markers for the active
+ * day, dashed route line, fit-to-bounds / zoom-to-selection) as closely as
+ * the two libraries' APIs allow, sharing sanitiseMapCoord with it so both
+ * engines agree on what counts as a plottable point.
  */
-export default function LeafletMapPane({ itinerary, selectedPlaceId, onSelectPlace, darkMode }: LeafletMapPaneProps) {
+export default function LeafletMapPane({ itinerary, activeDay, selectedPlaceId, onSelectPlace }: MapPaneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
   const markersRef = useRef<Record<string, L.Marker>>({});
@@ -79,12 +65,6 @@ export default function LeafletMapPane({ itinerary, selectedPlaceId, onSelectPla
 
   useEffect(() => {
     if (!mapInstance) return;
-    const pane = mapInstance.getPane('tilePane');
-    if (pane) pane.style.filter = darkMode ? DARK_TILE_FILTER : '';
-  }, [darkMode, mapInstance]);
-
-  useEffect(() => {
-    if (!mapInstance) return;
 
     Object.values(markersRef.current).forEach(m => mapInstance.removeLayer(m));
     markersRef.current = {};
@@ -94,7 +74,8 @@ export default function LeafletMapPane({ itinerary, selectedPlaceId, onSelectPla
     }
 
     if (!itinerary) return;
-    const places = allPlaces(itinerary);
+    const day = activeDay == null ? undefined : itinerary.days.find(d => d.dayNumber === activeDay);
+    const places = day ? placesOfDay(day) : allPlaces(itinerary);
     if (places.length === 0) return;
 
     try {
@@ -115,33 +96,30 @@ export default function LeafletMapPane({ itinerary, selectedPlaceId, onSelectPla
         validMarkers.push(marker);
       });
 
-      const selectedDay = pickActiveMapDay(itinerary, selectedPlaceId);
-      if (selectedDay) {
-        const dayPath = placesOfDay(selectedDay)
+      if (day) {
+        const dayPath = places
           .map(p => sanitiseMapCoord(p.coordinates))
           .filter((c): c is { lat: number; lng: number } => c !== null);
         if (dayPath.length >= 2) {
           polylineRef.current = L.polyline(
             dayPath.map(c => [c.lat, c.lng] as [number, number]),
-            { color: ACCENT_COLOR, opacity: 0.85, weight: 3, dashArray: '6 6', lineJoin: 'round' },
+            { color: MARKER_COLORS.route, opacity: 0.9, weight: 3, dashArray: '6 5', lineJoin: 'round' },
           ).addTo(mapInstance);
         }
       }
 
-      if (selectedPlaceId) {
-        const focus = findPlace(itinerary, selectedPlaceId)?.place;
-        const focusCoord = focus ? sanitiseMapCoord(focus.coordinates) : null;
-        if (focusCoord) {
-          mapInstance.setView([focusCoord.lat, focusCoord.lng], 15);
-        }
+      const focus = selectedPlaceId ? findPlace(itinerary, selectedPlaceId)?.place : undefined;
+      const focusCoord = focus && markersRef.current[focus.id] ? sanitiseMapCoord(focus.coordinates) : null;
+      if (focusCoord) {
+        mapInstance.setView([focusCoord.lat, focusCoord.lng], 15);
       } else if (validMarkers.length > 0) {
         const bounds = L.latLngBounds(validMarkers.map(m => m.getLatLng()));
-        mapInstance.fitBounds(bounds, { padding: [50, 50] });
+        mapInstance.fitBounds(bounds, { padding: [40, 40] });
       }
     } catch (err) {
       console.error('[LeafletMapPane] failed to render markers:', err);
     }
-  }, [itinerary, selectedPlaceId, mapInstance, onSelectPlace]);
+  }, [itinerary, activeDay, selectedPlaceId, mapInstance, onSelectPlace]);
 
   return <div ref={containerRef} className="w-full h-full relative" />;
 }

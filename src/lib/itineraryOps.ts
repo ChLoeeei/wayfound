@@ -2,12 +2,6 @@ import type { Itinerary, Day, Place, SlotPeriod, TimeSlot } from '../types';
 
 export const PERIOD_ORDER: SlotPeriod[] = ['morning', 'afternoon', 'evening'];
 
-export const PERIOD_LABEL: Record<SlotPeriod, string> = {
-  morning: 'Morning',
-  afternoon: 'Afternoon',
-  evening: 'Evening',
-};
-
 export const PERIOD_TIME_HINT: Record<SlotPeriod, string> = {
   morning: '09:00 – 12:00',
   afternoon: '12:00 – 18:00',
@@ -206,4 +200,17 @@ export function proxyImageUrl(url: string | undefined): string | undefined {
     return url;
   }
   return url;
+}
+
+/** Tolerance of the per-day budget check, the same 10% reward v2 uses (tests/eval/scoring.ts). */
+export const DAILY_BUDGET_TOLERANCE = 0.1;
+
+/** Sum of per-person estimated costs across a day, in RMB. */
+export function dayCostPerPerson(day: Day): number {
+  return placesOfDay(day).reduce((sum, p) => sum + (Number.isFinite(p.estimatedCost) ? p.estimatedCost : 0), 0);
+}
+
+/** True when a day's per-person total is within the budget cap plus tolerance. */
+export function isWithinDailyBudget(total: number, cap: number): boolean {
+  return total <= cap * (1 + DAILY_BUDGET_TOLERANCE) + 1e-9;
 }

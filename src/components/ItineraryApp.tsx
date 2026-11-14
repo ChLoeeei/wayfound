@@ -1,17 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Plane, Moon, Sun, SlidersHorizontal } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { MoreHorizontal, Loader2, Share2, Download, FileImage, Cloud, LogOut } from 'lucide-react';
 import { PlanningInput, ClarificationQuestion, Itinerary, Place, SlotPeriod } from '../types';
 import MapPane from './MapPane';
 import ItineraryPane from './ItineraryPane';
-import PlanningForm, { diffDays } from './PlanningForm';
-import AIClarification from './AIClarification';
+import TopBar from './TopBar';
+import ConversationPane, { type Stage } from './ConversationPane';
+import AgentPanel, { loadPanelOpen, savePanelOpen } from './AgentPanel';
 import UndoSnack from './UndoSnack';
 import PlaceSearchModal from './PlaceSearchModal';
-import SidePanel from './SidePanel';
-import BottomSheet from './BottomSheet';
-import { useDrawerSnap } from '../hooks/useDrawerSnap';
+import { diffDays } from './PlanningForm';
 import { insertPlace } from '../lib/itineraryOps';
-import { downloadAsPng, downloadAsPdf } from '../lib/export';
+import { downloadAsPng } from '../lib/export';
 import { loginWithGoogle, logout, saveItinerary, shareItinerary, onAuthStateChanged } from '../supabase';
 import type { User } from '@supabase/supabase-js';
 import {
@@ -21,23 +20,25 @@ import {
   recordPlanningSession,
   recordPlaceDeleted,
   buildMemoryPromptContext,
-  summariseMemory,
   type TravelMemory,
 } from '../lib/memory';
+import { useLang, useT } from '../i18n';
 
-interface ItineraryAppProps {
-  darkMode: boolean;
-  setDarkMode: (val: boolean) => void;
-}
-
-type Stage = 'idle' | 'clarifying' | 'generating' | 'ready';
-
-export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProps) {
+/**
+ * The plan view: top bar, conversation (left), map + itinerary (middle),
+ * agent panel (right, collapsed by default). Columns are flex items with a
+ * basis, so at phone width they wrap into one stacked column.
+ */
+export default function ItineraryApp() {
+  const t = useT();
+  const [lang] = useLang();
   const [stage, setStage] = useState<Stage>('idle');
   const [pendingInput, setPendingInput] = useState<PlanningInput | null>(null);
   const [clarifyQuestions, setClarifyQuestions] = useState<ClarificationQuestion[]>([]);
+  const [formOpen, setFormOpen] = useState(true);
 
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
+  const [activeDay, setActiveDay] = useState(1);
   const [error, setError] = useState('');
 
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
@@ -45,6 +46,10 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
   const [user, setUser] = useState<User | null>(null);
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  const [panelOpen, setPanelOpen] = useState<boolean>(() => loadPanelOpen());
+  // Local state only until the Lessons panel wires it to the request (v2 step 2).
+  const [libraryOn, setLibraryOn] = useState(true);
 
   const [undo, setUndo] = useState<
     | { place: Place; dayNumber: number; period: SlotPeriod; atIndex: number }
@@ -54,19 +59,23 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
     { dayNumber: number; period: SlotPeriod } | null
   >(null);
 
-  // Mobile drawers (visible only at < md). Itinerary drawer is always-on after a plan exists.
-  const itineraryDrawer = useDrawerSnap('half');
-  const [planFormOpen, setPlanFormOpen] = useState(false);
-
   const [exporting, setExporting] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const itineraryPaneRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(u => setUser(u));
     return unsub;
   }, []);
+
+  const togglePanel = () => {
+    setPanelOpen(open => {
+      savePanelOpen(!open);
+      return !open;
+    });
+  };
 
   const runGeneration = async (input: PlanningInput) => {
     setStage('generating');
@@ -93,18 +102,20 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
           endDate: input.endDate,
           clarifications: input.clarifications,
           memoryContext: memoryContext || undefined,
+          language: lang,
         }),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to generate');
+      if (!res.ok) throw new Error(data.error || t('actions.generateFailed'));
 
       const it = data as Itinerary;
       ensurePlaceIds(it);
       sanitiseItinerary(it);
       setItinerary(it);
+      setActiveDay(it.days[0]?.dayNumber ?? 1);
       setStage('ready');
-      itineraryDrawer.setSnap('half');
+      setFormOpen(false);
 
       const updatedMemory = recordPlanningSession(memory, input);
       saveMemory(updatedMemory);
@@ -119,7 +130,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
     setPendingInput(input);
     setStage('clarifying');
     setClarifyQuestions([]);
-    setPlanFormOpen(false);
+    setFormOpen(false);
 
     try {
       const res = await fetch(`${process.env.API_BASE_URL}/api/clarify-input`, {
@@ -146,6 +157,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
       ? pendingInput
       : { ...pendingInput, clarifications: { ...(pendingInput.clarifications ?? {}), ...answers } };
     setClarifyQuestions([]);
+    setPendingInput(merged);
     await runGeneration(merged);
   };
 
@@ -173,7 +185,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
     } catch {
-      setError('Failed to save to cloud.');
+      setError(t('actions.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -182,7 +194,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
   const handleExportPng = async () => {
     if (!itinerary) return;
     if (!itineraryPaneRef.current) {
-      setError('Export failed: itinerary container not mounted');
+      setError(t('actions.exportNotMounted'));
       console.error('[export] itineraryPaneRef.current is null');
       return;
     }
@@ -191,7 +203,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
     try {
       await downloadAsPng(itineraryPaneRef.current, itinerary.title);
     } catch (e: any) {
-      setError(e.message ?? 'Export failed');
+      setError(e.message ?? t('actions.exportFailed'));
       console.error('[export] PNG failed:', e);
     } finally {
       setExporting(false);
@@ -209,7 +221,7 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
     setShareUrl(null);
     try {
       const id = await shareItinerary(itinerary);
-      if (!id) throw new Error('Failed to create share link');
+      if (!id) throw new Error(t('actions.shareFailed'));
       const url = `${window.location.origin}${window.location.pathname}#/share/${id}`;
       setShareUrl(url);
       try {
@@ -219,147 +231,148 @@ export default function ItineraryApp({ darkMode, setDarkMode }: ItineraryAppProp
       }
       setTimeout(() => setShareUrl(null), 8000);
     } catch (e: any) {
-      setError(e.message ?? 'Failed to create share link');
+      setError(e.message ?? t('actions.shareFailed'));
     } finally {
       setSharing(false);
     }
   };
 
-  const generating = stage === 'generating' || stage === 'clarifying';
-  const sidePanelProps = {
-    generating,
-    hasItinerary: !!itinerary,
-    user,
-    saving,
-    savedSuccess,
-    exporting,
-    sharing,
-    shareUrl,
-    error,
-    darkMode,
-    memory,
-    onClearMemory: handleClearMemory,
-    onSubmit: handleFormSubmit,
-    onSaveToCloud: handleSaveToCloud,
-    onLogout: logout,
-    onExportPng: handleExportPng,
-    onExportPdf: handleExportPdf,
-    onShare: handleShare,
-    onToggleDark: () => setDarkMode(!darkMode),
-  };
+  const onSelectPlace = useCallback((id: string) => setSelectedPlaceId(id), []);
 
-  const itineraryContent = (
-    <>
-      {clarifyQuestions.length > 0 && (
-        <AIClarification questions={clarifyQuestions} onResolve={handleClarifyResolve} />
+  const menuItem = 'flex items-center gap-2.5 w-full min-h-[40px] px-3 text-left text-sm hover:bg-bg-base disabled:opacity-50 rounded-lg';
+  const moreMenu = itinerary ? (
+    <div className="relative print:hidden">
+      <button
+        type="button"
+        aria-label={t('itinerary.more')}
+        aria-expanded={menuOpen}
+        onClick={() => setMenuOpen(v => !v)}
+        data-testid="more-menu"
+        className="w-9 h-9 rounded-lg border border-border-strong bg-surface flex items-center justify-center hover:bg-bg-base"
+      >
+        <MoreHorizontal size={16} />
+      </button>
+      {menuOpen && (
+        <div
+          className="absolute right-0 top-full mt-1 z-30 w-60 bg-surface border border-border rounded-xl shadow-lg p-1.5 flex flex-col"
+          onClick={() => setMenuOpen(false)}
+        >
+          <button type="button" onClick={handleSaveToCloud} disabled={saving} className={menuItem} data-testid="save-btn">
+            {saving ? <Loader2 size={16} className="animate-spin" /> : <Cloud size={16} />}
+            {user ? (savedSuccess ? t('actions.saved') : t('actions.saveToCloud')) : t('actions.loginToSave')}
+          </button>
+          <button type="button" onClick={handleExportPng} disabled={exporting} className={menuItem} data-testid="export-png-btn">
+            {exporting ? <Loader2 size={16} className="animate-spin" /> : <FileImage size={16} />}
+            {t('actions.exportImage')}
+          </button>
+          <button type="button" onClick={handleExportPdf} disabled={exporting} className={menuItem} data-testid="export-pdf-btn">
+            <Download size={16} />
+            {t('actions.exportPdf')}
+          </button>
+          <button type="button" onClick={handleShare} disabled={sharing} className={menuItem} data-testid="share-btn">
+            {sharing ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
+            {shareUrl ? t('actions.shareCopied') : t('actions.share')}
+          </button>
+          {user && (
+            <button type="button" onClick={logout} className={`${menuItem} text-delete`}>
+              <LogOut size={16} /> {t('actions.logout', { email: user.email ?? '' })}
+            </button>
+          )}
+          <div className="px-3 py-1.5 text-[11px] text-text-muted">{t('itinerary.exportNote')}</div>
+        </div>
       )}
-
-      {itinerary ? (
-        <ItineraryPane
-          itinerary={itinerary}
-          selectedPlaceId={selectedPlaceId}
-          onSelectPlace={setSelectedPlaceId}
-          onUpdateItinerary={setItinerary}
-          onRequestDelete={handleRequestDelete}
-          onAddPlaceToSlot={(dayNumber, period) => setSearchTarget({ dayNumber, period })}
-          rootRef={itineraryPaneRef}
-        />
-      ) : (
-        clarifyQuestions.length === 0 && (
-          <div className="h-full min-h-[40vh] flex flex-col items-center justify-center text-center opacity-60">
-            <Plane size={40} className="mb-4 opacity-30" />
-            <p className="font-display text-xl">Your journey awaits.</p>
-            <p className="font-sans text-xs mt-2 text-text-muted">Fill in your trip details to get started</p>
-          </div>
-        )
-      )}
-    </>
-  );
+    </div>
+  ) : null;
 
   return (
-    <div className="h-screen w-full overflow-hidden relative print:h-auto print:overflow-visible">
-      {/* DESKTOP: left form + right column (map on top, list below) */}
-      <div className="hidden md:flex h-full w-full overflow-hidden print:block print:h-auto print:overflow-visible">
-        <aside className="w-[320px] lg:w-[400px] shrink-0 border-r border-border bg-surface flex flex-col z-20 h-full overflow-y-auto print:hidden">
-          <SidePanel variant="desktop" {...sidePanelProps} />
-        </aside>
+    <div className="min-h-screen flex flex-col bg-bg-base">
+      <TopBar
+        itinerary={itinerary}
+        libraryOn={libraryOn}
+        onToggleLibrary={() => setLibraryOn(v => !v)}
+        panelOpen={panelOpen}
+        onTogglePanel={togglePanel}
+      />
 
-        <div className="flex-1 flex flex-col min-w-[300px] h-full overflow-hidden print:block print:h-auto print:overflow-visible">
-          <div className="h-[45%] shrink-0 border-b border-border bg-surface relative print:hidden">
-            <MapPane
-              itinerary={itinerary}
-              selectedPlaceId={selectedPlaceId}
-              onSelectPlace={setSelectedPlaceId}
-              darkMode={darkMode}
-            />
-          </div>
-          <main className="flex-1 overflow-y-auto bg-bg-base p-6 lg:p-10 print:overflow-visible print:p-0">
-            {itineraryContent}
-          </main>
+      <main className="w-full max-w-[1440px] mx-auto p-4 md:p-6 flex flex-wrap gap-4 items-stretch print:block print:p-0" data-testid="app-shell">
+        <ConversationPane
+          stage={stage}
+          input={pendingInput}
+          itinerary={itinerary}
+          error={error}
+          clarifyQuestions={clarifyQuestions}
+          onClarifyResolve={handleClarifyResolve}
+          onSubmit={handleFormSubmit}
+          memory={memory}
+          formOpen={formOpen}
+          onToggleForm={() => setFormOpen(v => !v)}
+        />
+
+        <div className="[flex:2.6_1_520px] min-w-0 flex flex-col gap-4 print:block">
+          <section aria-label={t('map.title')} className="bg-surface border border-border rounded-[14px] p-3 flex flex-col gap-2.5 print:hidden">
+            <div className="relative h-[280px] md:h-[320px] rounded-[10px] overflow-hidden bg-[#E7ECE8]" data-testid="map-container">
+              <MapPane itinerary={itinerary} activeDay={activeDay} selectedPlaceId={selectedPlaceId} onSelectPlace={onSelectPlace} />
+              {!itinerary && (
+                <div className="absolute inset-0 flex items-center justify-center text-text-muted text-[13px] pointer-events-none">
+                  {t('map.empty')}
+                </div>
+              )}
+              <div className="absolute left-3 bottom-3 bg-surface rounded-lg px-2.5 py-1.5 text-[12px] text-text-muted pointer-events-none z-[400]">
+                {t('map.tiles')}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3 text-[12px] text-text-muted">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-text-main" />
+                {t('map.legendUnchanged')}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-accent" />
+                {t('map.legendSelected')}
+              </span>
+            </div>
+          </section>
+
+          <section aria-label={t('itinerary.title')} className="bg-surface border border-border rounded-[14px] p-4 md:p-[18px] flex-1">
+            {itinerary ? (
+              <ItineraryPane
+                itinerary={itinerary}
+                activeDay={activeDay}
+                onChangeDay={day => {
+                  setActiveDay(day);
+                  setSelectedPlaceId(null);
+                }}
+                selectedPlaceId={selectedPlaceId}
+                onSelectPlace={onSelectPlace}
+                onUpdateItinerary={setItinerary}
+                onRequestDelete={handleRequestDelete}
+                onAddPlaceToSlot={(dayNumber, period) => setSearchTarget({ dayNumber, period })}
+                rootRef={itineraryPaneRef}
+                budgetCap={pendingInput?.budget.max}
+                headerActions={moreMenu}
+              />
+            ) : (
+              <div className="min-h-[240px] h-full flex flex-col items-center justify-center text-center" data-testid="itinerary-empty">
+                <p className="m-0 font-display text-xl font-semibold">{t('itinerary.empty')}</p>
+                <p className="m-0 mt-1 text-[13px] text-text-muted">{t('itinerary.emptyHint')}</p>
+              </div>
+            )}
+            {shareUrl && (
+              <p className="mt-3 text-[11px] text-text-muted break-all" data-testid="share-url-display">
+                {shareUrl}
+              </p>
+            )}
+          </section>
         </div>
-      </div>
 
-      {/* MOBILE: full-bleed map + bottom drawer + plan-form sheet */}
-      <div className="md:hidden absolute inset-0 flex flex-col print:hidden">
-        <header className="absolute top-0 inset-x-0 z-30 flex items-center justify-between px-4 py-3 bg-bg-base/80 backdrop-blur border-b border-border/40">
-          <h1 className="text-lg font-display font-medium tracking-wide flex items-center gap-2">
-            <Plane size={18} className="text-accent" /> WAYFOUND
-          </h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className="p-2 rounded-full border border-border text-text-muted bg-surface/60 backdrop-blur"
-              aria-label="Toggle theme"
-            >
-              {darkMode ? <Sun size={14} /> : <Moon size={14} />}
-            </button>
-            <button
-              onClick={() => setPlanFormOpen(true)}
-              data-testid="open-plan-form"
-              className="px-3 py-2 text-xs uppercase tracking-widest font-medium bg-accent text-white rounded-full inline-flex items-center gap-1"
-            >
-              <SlidersHorizontal size={12} /> Plan
-            </button>
-          </div>
-        </header>
-
-        <div className="absolute inset-0 pt-12">
-          <MapPane
-            itinerary={itinerary}
-            selectedPlaceId={selectedPlaceId}
-            onSelectPlace={setSelectedPlaceId}
-            darkMode={darkMode}
-          />
-        </div>
-
-        <BottomSheet
-          open={true}
-          snap={itineraryDrawer.snap}
-          onSnapChange={itineraryDrawer.setSnap}
-          title={itinerary ? itinerary.title : 'Itinerary'}
-          testId="itinerary-sheet"
-        >
-          <div className="p-4">{itineraryContent}</div>
-        </BottomSheet>
-
-        <BottomSheet
-          open={planFormOpen}
-          snap="full"
-          onSnapChange={s => {
-            if (s === 'peek') setPlanFormOpen(false);
-          }}
-          onClose={() => setPlanFormOpen(false)}
-          title="Plan your trip"
-          modal
-          testId="plan-sheet"
-        >
-          <SidePanel variant="sheet" {...sidePanelProps} />
-        </BottomSheet>
-      </div>
+        {panelOpen && (
+          <AgentPanel onClose={togglePanel} memory={memory} onClearMemory={handleClearMemory} requestId={itinerary?.requestId} />
+        )}
+      </main>
 
       {undo && itinerary && (
         <UndoSnack
-          message={`Deleted "${undo.place.name}"`}
+          message={t('undo.deleted', { name: undo.place.name })}
           onUndo={() => {
             const restored = insertPlace(itinerary, undo.place, undo.dayNumber, undo.period, undo.atIndex);
             setItinerary(restored);

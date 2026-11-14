@@ -43,7 +43,8 @@ describe('PlaceCard', () => {
     );
     expect(screen.getByText('Fushimi Inari')).toBeInTheDocument();
     expect(screen.getByText('4.8')).toBeInTheDocument();
-    expect(screen.getByText('Attraction')).toBeInTheDocument();
+    // Type, cost and duration share one "a · b · c" line.
+    expect(screen.getByText(/Attraction/)).toBeInTheDocument();
   });
 
   it('shows the running index +1', () => {

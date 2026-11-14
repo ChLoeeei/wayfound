@@ -1,0 +1,267 @@
+{
+  "app": {
+    "name": "Wayfound",
+    "loadingMaps": "Loading maps...",
+    "amapKey": {
+      "title": "Amap API key required",
+      "step1": "Step 1:",
+      "getKey": "Get an API key from Amap",
+      "step2": "Step 2:",
+      "addSecret": "Add your key and security code as a secret in AI Studio:",
+      "openSettings": "Open Settings (gear icon, top-right corner)",
+      "selectSecrets": "Select Secrets",
+      "addKey": "Add AMAP_API_KEY = Web JS API key",
+      "addCode": "Add AMAP_SECURITY_CODE = Web security code",
+      "rebuild": "The app rebuilds automatically after you add the secret."
+    }
+  },
+  "topbar": {
+    "tripTitle": "{destination} · {days} · {month}",
+    "days_one": "{count} day",
+    "days_other": "{count} days",
+    "language": "Language",
+    "libraryOn": "Experience library: On",
+    "libraryOff": "Experience library: Off",
+    "compare": "Compare mode",
+    "exitCompare": "Exit compare",
+    "agentPanel": "Agent panel"
+  },
+  "conversation": {
+    "title": "Conversation",
+    "planFirst": "Tell me about the trip and I will plan it from real search results.",
+    "editForm": "Edit request",
+    "hideForm": "Hide form",
+    "requestSummary": "{days} in {destination} for {people}, {group}. Vibes: {vibes}. About ¥{min}–{max} per person a day.",
+    "requestNeeds": "Needs: {needs}.",
+    "people_one": "{count} person",
+    "people_other": "{count} people",
+    "clarifying": "A couple of quick questions first.",
+    "generating": "Searching places and writing your plan. This takes about a minute.",
+    "ready": "Here is your plan: {title}.",
+    "readyGrounded": "Every stop comes from search results.",
+    "readyWarning": "Some details came from general knowledge; please verify addresses and hours before you travel.",
+    "failed": "Planning failed: {error}",
+    "inputPlaceholder": "Message edits arrive with partial replanning",
+    "inputDisabledHint": "Editing a day by message is coming in a later version",
+    "photoDisabledHint": "Adding a place from a photo is coming in a later version",
+    "send": "Send",
+    "addPhoto": "Add a photo or screenshot"
+  },
+  "form": {
+    "destination": "Destination",
+    "destinationPlaceholder": "e.g. 北京 / Kyoto",
+    "start": "Start",
+    "end": "End",
+    "daysTotal_one": "{count} day total",
+    "daysTotal_other": "{count} days total",
+    "travelers": "Travelers",
+    "tripType": "Trip type",
+    "vibe": "Trip vibe",
+    "budget": "Budget ¥{min} – ¥{max} / person · day",
+    "specialNeeds": "Special needs",
+    "optional": "(optional)",
+    "generate": "Generate itinerary",
+    "generating": "Generating",
+    "vibes": {
+      "nature": "Nature",
+      "culture": "Culture",
+      "food": "Food",
+      "shopping": "Shopping",
+      "leisure": "Leisure",
+      "adventure": "Adventure"
+    },
+    "groups": {
+      "solo": "Solo",
+      "couple": "Couple",
+      "family": "Family",
+      "friends": "Friends"
+    },
+    "needs": {
+      "accessibility": "Accessibility",
+      "vegetarian": "Vegetarian",
+      "baby": "Traveling with baby",
+      "pet": "Pet friendly"
+    }
+  },
+  "clarify": {
+    "intro": "A couple quick questions first",
+    "ownAnswer": "Or type your own answer",
+    "skip": "Skip, generate now",
+    "continue": "Continue",
+    "primaryVibe": {
+      "question": "You picked several vibes. Which one matters most? I'll weight it heavier."
+    },
+    "kidsOnBoard": {
+      "question": "Are kids coming along? That'll help me tune the pace.",
+      "options": {
+        "kids": "Yes, kids too",
+        "adults": "Adults only"
+      }
+    },
+    "budgetLean": {
+      "question": "Your budget of ¥{min}–¥{max} is a wide range. Lean more budget-friendly or more splurge?",
+      "options": {
+        "budget": "More budget-friendly",
+        "balanced": "Balanced",
+        "splurge": "More splurge-y"
+      }
+    },
+    "multiCity": {
+      "question": "{days} days is a good chunk of time. Want to cover multiple cities?",
+      "options": {
+        "one": "Stay in one city",
+        "multi": "Add a nearby city or two"
+      }
+    },
+    "destinationFocus": {
+      "question": "Looks like you listed a few places. Which one should I focus on?"
+    }
+  },
+  "map": {
+    "title": "Map",
+    "tiles": "Map tiles: OpenStreetMap outside China, Amap inside",
+    "legendUnchanged": "Stop",
+    "legendSelected": "Selected stop",
+    "empty": "Your route appears here once a plan exists"
+  },
+  "itinerary": {
+    "title": "Itinerary",
+    "days": "Days",
+    "day": "Day {n}",
+    "dayHeading": "Day {n} · {theme}",
+    "empty": "Your journey awaits.",
+    "emptyHint": "Fill in your trip details to get started",
+    "emptySlot": "Nothing planned for this slot yet",
+    "addPlace": "Add place",
+    "more": "More actions",
+    "aiCheck": "AI check itinerary",
+    "issuesFound_one": "AI found {count} issue",
+    "issuesFound_other": "AI found {count} issues",
+    "unverified": "Unverified",
+    "unverifiedHint": "This place did not match a map search result; coordinates are approximate.",
+    "groundingWarning": "Some details were generated from general knowledge. Please verify addresses and hours before traveling.",
+    "dayTotalUnder": "Day total ¥{total} per person · under the ¥{cap} cap",
+    "dayTotalOver": "Day total ¥{total} per person · over the ¥{cap} cap",
+    "exportNote": "Export and print cover the day shown"
+  },
+  "period": {
+    "morning": "Morning",
+    "afternoon": "Afternoon",
+    "evening": "Evening"
+  },
+  "place": {
+    "drag": "Drag",
+    "delete": "Delete",
+    "expand": "Expand",
+    "moveTo": "Move to",
+    "viewDetails": "View details",
+    "openInAmap": "Open in Amap",
+    "hours": "{hours}h",
+    "free": "Free",
+    "types": {
+      "attraction": "Attraction",
+      "restaurant": "Restaurant",
+      "hotel": "Hotel",
+      "shopping": "Shopping",
+      "cafe": "Cafe",
+      "nightlife": "Nightlife",
+      "leisure": "Leisure"
+    }
+  },
+  "search": {
+    "title": "Add a place",
+    "close": "Close",
+    "placeholder": "Search places / restaurants in {destination}...",
+    "addTo": "Add to",
+    "searching": "Searching...",
+    "noResults": "No results",
+    "typeToSearch": "Type to search",
+    "failed": "Search failed"
+  },
+  "actions": {
+    "saveToCloud": "Save to cloud",
+    "loginToSave": "Log in to save to cloud",
+    "saved": "Saved!",
+    "saveFailed": "Failed to save to cloud.",
+    "exportImage": "Export image",
+    "exportPdf": "Export PDF",
+    "exportFailed": "Export failed",
+    "exportNotMounted": "Export failed: itinerary container not mounted",
+    "share": "Create share link",
+    "shareCopied": "Share link copied",
+    "shareFailed": "Failed to create share link",
+    "logout": "Log out {email}",
+    "generateFailed": "Failed to generate"
+  },
+  "undo": {
+    "deleted": "Deleted \"{name}\"",
+    "undo": "Undo"
+  },
+  "panel": {
+    "title": "Agent panel",
+    "close": "Close agent panel",
+    "sections": "Agent panel sections",
+    "tabs": {
+      "lessons": "Lessons",
+      "preferences": "My preferences",
+      "trace": "Trace"
+    },
+    "lessons": {
+      "intro": "Strategies the agent learned from its own scored runs. No model was fine-tuned. Lessons never name a specific place.",
+      "comingSoon": "The lesson list connects to the experience library in the next step."
+    },
+    "preferences": {
+      "intro": "Saved in this browser from what you told me. Only you see these, and they never become shared lessons.",
+      "empty": "Nothing remembered yet. Preferences appear here after your first plan.",
+      "clearAll": "Clear all preferences",
+      "signedOut": "Signed out? Preferences stay in this browser and move to your account when you log in.",
+      "interests": "Interests",
+      "tripType": "Trip type",
+      "dailyBudget": "Daily budget",
+      "budgetValue": "About ¥{min}–{max} per person",
+      "budgetLean": "Budget lean",
+      "lean": {
+        "budget": "Budget-friendly",
+        "balanced": "Balanced",
+        "splurge": "Open to splurging"
+      },
+      "specialNeeds": "Special needs",
+      "pastTrips": "Past trips",
+      "avoids": "Tends to remove",
+      "notes": "Notes"
+    },
+    "trace": {
+      "intro": "Every step the agent took for this plan.",
+      "debugOnly": "Visible in debug mode only",
+      "enableHint": "Open the app with ?debug=1 to record and show traces.",
+      "noPlan": "Generate a plan to see its trace.",
+      "loading": "Loading trace…",
+      "failed": "Failed to load trace.",
+      "requestFailed": "Request failed: {error}",
+      "noSteps": "No steps recorded.",
+      "step": "Step {n}",
+      "finalAnswer": "final answer",
+      "lessonsStep": "Lessons injected"
+    }
+  },
+  "compare": {
+    "title": "Compare mode",
+    "intro": "Same request, same tool results, run twice: once with the experience library off and once with it on.",
+    "comingSoon": "Compare mode arrives with the Lessons panel in the next step."
+  },
+  "shared": {
+    "loading": "Loading shared itinerary...",
+    "notFound": "Itinerary not found",
+    "notPublic": "This itinerary does not exist or is not public",
+    "loadFailed": "Failed to load",
+    "readOnly": "Shared view · read-only",
+    "createOwn": "Create your own itinerary",
+    "backHome": "Back to home"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "unknown": "An unknown error was thrown while rendering",
+    "retry": "Retry",
+    "reload": "Reload page"
+  }
+}

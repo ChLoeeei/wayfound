@@ -1,0 +1,159 @@
+import React from 'react';
+import { Camera, ArrowRight, Loader2 } from 'lucide-react';
+import type { ClarificationQuestion, Itinerary, PlanningInput } from '../types';
+import type { TravelMemory } from '../lib/memory';
+import { useT } from '../i18n';
+import PlanningForm, { diffDays } from './PlanningForm';
+import AIClarification from './AIClarification';
+
+export type Stage = 'idle' | 'clarifying' | 'generating' | 'ready';
+
+interface ConversationPaneProps {
+  stage: Stage;
+  /** The request being planned (or last planned); null before the first submit. */
+  input: PlanningInput | null;
+  itinerary: Itinerary | null;
+  error: string;
+  clarifyQuestions: ClarificationQuestion[];
+  onClarifyResolve: (answers: Record<string, string>, skipped: boolean) => void;
+  onSubmit: (input: PlanningInput) => void;
+  memory: TravelMemory;
+  formOpen: boolean;
+  onToggleForm: () => void;
+}
+
+const USER_BUBBLE = 'self-end max-w-[88%] bg-text-main text-white px-3 py-2.5 rounded-[12px_12px_4px_12px]';
+const ASSISTANT_BUBBLE = 'max-w-[92%] bg-bg-base px-3 py-2.5 rounded-[12px_12px_12px_4px]';
+
+/**
+ * Left column: the planning request as the first turn, clarification
+ * questions and status as assistant turns. The message box and photo
+ * button are rendered but disabled until partial replanning (feature C)
+ * and photo input (feature D) exist; nothing here pretends to work.
+ */
+export default function ConversationPane({
+  stage,
+  input,
+  itinerary,
+  error,
+  clarifyQuestions,
+  onClarifyResolve,
+  onSubmit,
+  memory,
+  formOpen,
+  onToggleForm,
+}: ConversationPaneProps) {
+  const t = useT();
+  const generating = stage === 'generating' || (stage === 'clarifying' && clarifyQuestions.length === 0);
+  const showForm = !input || formOpen;
+
+  return (
+    <section
+      aria-label={t('conversation.title')}
+      className="[flex:1_1_280px] min-w-0 bg-surface border border-border rounded-[14px] p-4 md:p-[18px] flex flex-col gap-3"
+      data-testid="conversation-pane"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="m-0 font-display text-base font-semibold">{t('conversation.title')}</h2>
+        {input && (
+          <button
+            type="button"
+            onClick={onToggleForm}
+            data-testid="toggle-form"
+            className="min-h-[32px] px-3 rounded-full border border-border-strong text-[13px] hover:bg-bg-base"
+          >
+            {formOpen ? t('conversation.hideForm') : t('conversation.editForm')}
+          </button>
+        )}
+      </div>
+
+      {!input && <div className={ASSISTANT_BUBBLE}>{t('conversation.planFirst')}</div>}
+
+      {showForm && (
+        <div className="border border-border rounded-xl p-3" data-testid="form-card">
+          <PlanningForm loading={generating} onSubmit={onSubmit} memory={memory} />
+        </div>
+      )}
+
+      {input && (
+        <div className={USER_BUBBLE} data-testid="request-bubble">
+          {t('conversation.requestSummary', {
+            days: t('topbar.days', { count: diffDays(input.startDate, input.endDate) }),
+            destination: input.destination,
+            people: t('conversation.people', { count: input.people }),
+            group: t(`form.groups.${input.groupType}`),
+            vibes: input.vibes.map(v => t(`form.vibes.${v}`)).join(', '),
+            min: input.budget.min,
+            max: input.budget.max,
+          })}
+          {input.specialNeeds.length > 0 && (
+            <>
+              {' '}
+              {t('conversation.requestNeeds', { needs: input.specialNeeds.map(n => t(`form.needs.${n}`)).join(', ') })}
+            </>
+          )}
+        </div>
+      )}
+
+      {stage === 'clarifying' && clarifyQuestions.length > 0 && (
+        <AIClarification questions={clarifyQuestions} onResolve={onClarifyResolve} />
+      )}
+
+      {generating && (
+        <div className={`${ASSISTANT_BUBBLE} flex items-center gap-2`} data-testid="generating-bubble">
+          <Loader2 size={14} className="animate-spin shrink-0" />
+          {t('conversation.generating')}
+        </div>
+      )}
+
+      {stage === 'ready' && itinerary && (
+        <div className={ASSISTANT_BUBBLE} data-testid="ready-bubble">
+          {t('conversation.ready', { title: itinerary.title })}{' '}
+          {itinerary.groundingWarning ? t('conversation.readyWarning') : t('conversation.readyGrounded')}
+        </div>
+      )}
+
+      {error && (
+        <div className="max-w-[92%] bg-delete-tint border border-delete-line text-delete px-3 py-2.5 rounded-[12px_12px_12px_4px]" data-testid="error-bubble">
+          {t('conversation.failed', { error })}
+        </div>
+      )}
+
+      <div className="flex-1" />
+
+      <form
+        className="flex items-center gap-2 border border-border-strong rounded-xl p-1.5 opacity-70"
+        onSubmit={e => e.preventDefault()}
+        title={t('conversation.inputDisabledHint')}
+      >
+        <button
+          type="button"
+          disabled
+          aria-label={t('conversation.addPhoto')}
+          title={t('conversation.photoDisabledHint')}
+          data-testid="photo-button"
+          className="w-10 h-10 rounded-lg bg-bg-base flex items-center justify-center text-text-main disabled:cursor-not-allowed"
+        >
+          <Camera size={18} />
+        </button>
+        <input
+          type="text"
+          disabled
+          placeholder={t('conversation.inputPlaceholder')}
+          aria-label={t('conversation.inputPlaceholder')}
+          data-testid="message-input"
+          className="flex-1 min-w-0 border-0 bg-transparent p-2 outline-none disabled:cursor-not-allowed"
+        />
+        <button
+          type="submit"
+          disabled
+          aria-label={t('conversation.send')}
+          data-testid="send-button"
+          className="w-10 h-10 rounded-lg bg-text-main flex items-center justify-center text-white disabled:cursor-not-allowed"
+        >
+          <ArrowRight size={18} />
+        </button>
+      </form>
+    </section>
+  );
+}

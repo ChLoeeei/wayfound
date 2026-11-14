@@ -1,4 +1,6 @@
 import type { BudgetRange, GroupType, PlaceType, PlanningInput, SpecialNeed, Vibe } from '../types';
+import en from '../locales/en.json';
+import zh from '../locales/zh.json';
 
 /**
  * Client-side memory module.
@@ -97,21 +99,28 @@ export function clearMemory(): void {
   }
 }
 
-const BUDGET_LEAN_ANSWERS: Record<string, BudgetLean> = {
-  'More budget-friendly': 'budget',
-  Balanced: 'balanced',
-  'More splurge-y': 'splurge',
-};
+// Quick-pick answers are stored as their rendered text in the active UI
+// language (see src/lib/clarifyText.ts), so recognising them means checking
+// every locale's option texts, not one hard-coded English list.
+const LOCALES = [en, zh] as const;
+
+function optionTexts(questionId: string, optionKey: string): string[] {
+  return LOCALES.map(l => (l.clarify as any)[questionId]?.options?.[optionKey]).filter((v): v is string => typeof v === 'string');
+}
+
+const BUDGET_LEAN_ANSWERS: Record<string, BudgetLean> = Object.fromEntries(
+  (['budget', 'balanced', 'splurge'] as BudgetLean[]).flatMap(lean => optionTexts('budgetLean', lean).map(text => [text, lean])),
+);
 
 // Known quick-pick answers across all clarification questions (see
 // src/lib/clarifications.ts). Anything else the user typed free-form is
 // treated as a note worth remembering verbatim.
 const KNOWN_ANSWERS = new Set<string>([
   ...Object.keys(BUDGET_LEAN_ANSWERS),
-  'Yes, kids too',
-  'Adults only',
-  'Stay in one city',
-  'Add a nearby city or two',
+  ...optionTexts('kidsOnBoard', 'kids'),
+  ...optionTexts('kidsOnBoard', 'adults'),
+  ...optionTexts('multiCity', 'one'),
+  ...optionTexts('multiCity', 'multi'),
 ]);
 
 function dedupePrependCapped(list: string[], value: string, max: number): string[] {
@@ -230,15 +239,4 @@ export function buildMemoryPromptContext(mem: TravelMemory, currentDestination?:
   }
 
   return lines.join('\n');
-}
-
-/** Short one-line human-readable summary for a UI banner ("we remembered..."). */
-export function summariseMemory(mem: TravelMemory): string | null {
-  if (isMemoryEmpty(mem)) return null;
-  const parts: string[] = [];
-  if (mem.preferredVibes.length > 0) parts.push(mem.preferredVibes.slice(0, 3).join('/'));
-  if (mem.groupType) parts.push(mem.groupType);
-  if (mem.lastBudget) parts.push(`¥${mem.lastBudget.min}–${mem.lastBudget.max}`);
-  if (parts.length === 0) return 'We remembered a few things from your last trip.';
-  return `We remembered your preferences from last time: ${parts.join(' · ')}.`;
 }

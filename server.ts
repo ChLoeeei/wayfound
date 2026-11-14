@@ -187,7 +187,7 @@ async function startServer() {
     let destinationForTrace = '';
 
     try {
-      const { destination, days, people, preferences, groupType, budget, specialNeeds, startDate, endDate, clarifications, memoryContext } = req.body as PlanningRequest;
+      const { destination, days, people, preferences, groupType, budget, specialNeeds, startDate, endDate, clarifications, memoryContext, language } = req.body as PlanningRequest;
       destinationForTrace = destination ?? '';
 
       if (!destination || !days) {
@@ -207,6 +207,8 @@ async function startServer() {
           endDate,
           clarifications,
           memoryContext,
+          // Only 'en' / 'zh' reach the prompt; anything else is dropped.
+          language: language === 'en' || language === 'zh' ? language : undefined,
         },
         { client: deepseek, trace, stepTrace },
       );

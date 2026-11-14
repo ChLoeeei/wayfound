@@ -1,74 +1,76 @@
 import React, { useState } from 'react';
 import { ClarificationQuestion } from '../types';
-import { Sparkles } from 'lucide-react';
+import { useT } from '../i18n';
+import { clarificationOptionText, clarificationQuestionText } from '../lib/clarifyText';
 
 interface AIClarificationProps {
   questions: ClarificationQuestion[];
   onResolve: (answers: Record<string, string>, skipped: boolean) => void;
 }
 
+/** Assistant-side card in the conversation: up to two quick questions before planning. */
 export default function AIClarification({ questions, onResolve }: AIClarificationProps) {
+  const t = useT();
   const [answers, setAnswers] = useState<Record<string, string>>({});
 
   const allAnswered = questions.every(q => (answers[q.id] ?? '').trim().length > 0);
 
   return (
-    <div className="max-w-2xl mx-auto py-8" data-testid="ai-clarification">
-      <div className="flex items-center gap-2 mb-6 text-accent">
-        <Sparkles size={18} />
-        <span className="font-mono text-xs uppercase tracking-widest">A couple quick questions first</span>
-      </div>
+    <div className="max-w-[96%] border border-border rounded-xl p-3 flex flex-col gap-3" data-testid="ai-clarification">
+      <div className="font-semibold">{t('clarify.intro')}</div>
 
-      <div className="space-y-6">
-        {questions.map(q => (
-          <div key={q.id} className="bg-surface border border-border rounded-2xl p-5" data-testid={`clarify-${q.id}`}>
-            <p className="text-sm font-medium mb-4">{q.question}</p>
-            {q.options && q.options.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-3">
-                {q.options.map(opt => (
+      {questions.map(q => (
+        <div key={q.id} className="flex flex-col gap-2" data-testid={`clarify-${q.id}`}>
+          <p className="m-0 text-sm">{clarificationQuestionText(q, t)}</p>
+          {q.options && q.options.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {q.options.map(opt => {
+                const text = clarificationOptionText(q, opt, t);
+                const active = answers[q.id] === text;
+                return (
                   <button
                     key={opt}
                     type="button"
-                    onClick={() => setAnswers(a => ({ ...a, [q.id]: opt }))}
-                    className={`px-3 py-1.5 rounded-full text-xs border transition-all ${
-                      answers[q.id] === opt
-                        ? 'bg-text-main text-bg-base border-text-main'
-                        : 'bg-transparent text-text-muted border-border hover:border-accent'
+                    aria-pressed={active}
+                    onClick={() => setAnswers(a => ({ ...a, [q.id]: text }))}
+                    data-testid={`clarify-${q.id}-${opt}`}
+                    className={`min-h-[32px] px-3 rounded-full text-xs border transition-colors ${
+                      active ? 'bg-text-main text-white border-text-main' : 'bg-surface text-text-main border-border-strong hover:bg-bg-base'
                     }`}
                   >
-                    {opt}
+                    {text}
                   </button>
-                ))}
-              </div>
-            )}
-            <input
-              type="text"
-              value={answers[q.id] ?? ''}
-              placeholder="Or type your own answer"
-              onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
-              className="w-full bg-bg-base border border-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent"
-            />
-          </div>
-        ))}
-      </div>
+                );
+              })}
+            </div>
+          )}
+          <input
+            type="text"
+            value={answers[q.id] ?? ''}
+            placeholder={t('clarify.ownAnswer')}
+            onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
+            className="w-full bg-surface border border-border-strong rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent"
+          />
+        </div>
+      ))}
 
-      <div className="flex gap-3 mt-6 justify-end">
+      <div className="flex gap-2 justify-end">
         <button
           type="button"
           onClick={() => onResolve({}, true)}
           data-testid="clarify-skip"
-          className="px-4 py-2 text-sm text-text-muted hover:text-text-main transition-colors"
+          className="min-h-[36px] px-3 text-sm text-text-muted hover:text-text-main transition-colors"
         >
-          Skip, generate now
+          {t('clarify.skip')}
         </button>
         <button
           type="button"
           onClick={() => onResolve(answers, false)}
           disabled={!allAnswered}
           data-testid="clarify-continue"
-          className="px-5 py-2 bg-accent text-white text-sm rounded-full hover:opacity-90 transition-all disabled:opacity-50"
+          className="min-h-[36px] px-4 bg-accent text-white text-sm rounded-lg hover:bg-accent-deep transition-colors disabled:opacity-50 font-medium"
         >
-          Continue
+          {t('clarify.continue')}
         </button>
       </div>
     </div>

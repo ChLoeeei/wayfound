@@ -45,14 +45,23 @@ export interface PlanningInput {
 
 // -------- AI clarification questions -- PRD §3.1 ------------
 
+export type ClarificationId = 'primaryVibe' | 'kidsOnBoard' | 'budgetLean' | 'multiCity' | 'destinationFocus';
+
 export interface ClarificationQuestion {
-  /** unique id used as the key in PlanningInput.clarifications */
-  id: string;
-  /** the question rendered as a chat bubble */
-  question: string;
-  /** quick-pick suggested answers; user can also type a free-form reply */
+  /** unique id used as the key in PlanningInput.clarifications; also the locale key `clarify.<id>.question` */
+  id: ClarificationId;
+  /** values interpolated into the question text, e.g. the budget bounds */
+  params?: Record<string, string | number>;
+  /**
+   * quick-pick answer keys (`clarify.<id>.options.<key>`, or vibe keys for
+   * primaryVibe); the user can also type a free-form reply. The rendered
+   * text, not the key, is what gets stored as the answer.
+   */
   options?: string[];
 }
+
+/** UI language; also sent with a generation request so the agent writes its prose in it. */
+export type UiLanguage = 'en' | 'zh';
 
 // -------- Itinerary tree -- PRD §3.2 / §5.3 -----------------
 
