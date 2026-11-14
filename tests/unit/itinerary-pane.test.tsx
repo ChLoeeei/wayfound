@@ -82,3 +82,30 @@ describe('day budget helpers', () => {
     expect(isWithinDailyBudget(1101, 1000)).toBe(false);
   });
 });
+
+describe('ItineraryPane whole-trip mode (export / print)', () => {
+  it('renders every day with its own heading and budget line, and no tabs', () => {
+    render(
+      <ItineraryPane
+        itinerary={itinerary}
+        activeDay={1}
+        onChangeDay={() => {}}
+        selectedPlaceId={null}
+        onSelectPlace={() => {}}
+        onUpdateItinerary={() => {}}
+        onRequestDelete={() => {}}
+        onAddPlaceToSlot={() => {}}
+        budgetCap={1000}
+        allDays
+      />,
+    );
+    expect(screen.queryByTestId('day-tabs')).toBeNull();
+    expect(screen.getByTestId('day-1')).toBeInTheDocument();
+    expect(screen.getByTestId('day-2')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Kyoto trip');
+    expect(screen.getByRole('heading', { level: 2, name: 'Day 1 · Temples' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Day 2' })).toBeInTheDocument();
+    expect(screen.getByTestId('day-budget-1')).toHaveTextContent('over');
+    expect(screen.getByTestId('day-budget-2')).toHaveTextContent('under');
+  });
+});

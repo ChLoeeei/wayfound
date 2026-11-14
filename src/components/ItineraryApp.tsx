@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { MoreHorizontal, Loader2, Share2, Download, FileImage, Cloud, LogOut } from 'lucide-react';
 import { PlanningInput, ClarificationQuestion, Itinerary, Place, SlotPeriod } from '../types';
 import MapPane from './MapPane';
@@ -60,6 +61,20 @@ export default function ItineraryApp() {
   >(null);
 
   const [exporting, setExporting] = useState(false);
+  // While true the itinerary pane renders every day, so the image export and
+  // print / PDF cover the whole trip rather than the day tab that is open.
+  const [exportAll, setExportAll] = useState(false);
+
+  useEffect(() => {
+    const before = () => flushSync(() => setExportAll(true));
+    const after = () => setExportAll(false);
+    window.addEventListener('beforeprint', before);
+    window.addEventListener('afterprint', after);
+    return () => {
+      window.removeEventListener('beforeprint', before);
+      window.removeEventListener('afterprint', after);
+    };
+  }, []);
   const [sharing, setSharing] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -200,18 +215,25 @@ export default function ItineraryApp() {
     }
     setExporting(true);
     setError('');
+    flushSync(() => {
+      setMenuOpen(false);
+      setExportAll(true);
+    });
     try {
+      if (!itineraryPaneRef.current) throw new Error(t('actions.exportNotMounted'));
       await downloadAsPng(itineraryPaneRef.current, itinerary.title);
     } catch (e: any) {
       setError(e.message ?? t('actions.exportFailed'));
       console.error('[export] PNG failed:', e);
     } finally {
+      setExportAll(false);
       setExporting(false);
     }
   };
 
   const handleExportPdf = () => {
     if (!itinerary) return;
+    flushSync(() => setMenuOpen(false));
     window.print();
   };
 
@@ -278,7 +300,6 @@ export default function ItineraryApp() {
               <LogOut size={16} /> {t('actions.logout', { email: user.email ?? '' })}
             </button>
           )}
-          <div className="px-3 py-1.5 text-[11px] text-text-muted">{t('itinerary.exportNote')}</div>
         </div>
       )}
     </div>
@@ -350,6 +371,7 @@ export default function ItineraryApp() {
                 rootRef={itineraryPaneRef}
                 budgetCap={pendingInput?.budget.max}
                 headerActions={moreMenu}
+                allDays={exportAll}
               />
             ) : (
               <div className="min-h-[240px] h-full flex flex-col items-center justify-center text-center" data-testid="itinerary-empty">

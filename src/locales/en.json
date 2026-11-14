@@ -141,8 +141,7 @@
     "unverifiedHint": "This place did not match a map search result; coordinates are approximate.",
     "groundingWarning": "Some details were generated from general knowledge. Please verify addresses and hours before traveling.",
     "dayTotalUnder": "Day total ¥{total} per person · under the ¥{cap} cap",
-    "dayTotalOver": "Day total ¥{total} per person · over the ¥{cap} cap",
-    "exportNote": "Export and print cover the day shown"
+    "dayTotalOver": "Day total ¥{total} per person · over the ¥{cap} cap"
   },
   "period": {
     "morning": "Morning",

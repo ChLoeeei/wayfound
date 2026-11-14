@@ -17,6 +17,8 @@ interface PlaceCardProps {
   onChangeSlot?: (next: SlotPeriod) => void;
   /** Disable drag-and-drop (read-only views). */
   disableDrag?: boolean;
+  /** Hide the button column (whole-trip export / print). */
+  hideActions?: boolean;
 }
 
 /**
@@ -34,6 +36,7 @@ export default function PlaceCard({
   onDelete,
   onChangeSlot,
   disableDrag,
+  hideActions,
 }: PlaceCardProps) {
   const t = useT();
   const [expanded, setExpanded] = useState(false);
@@ -159,7 +162,7 @@ export default function PlaceCard({
         )}
       </div>
 
-      <div className="flex gap-1.5 self-start">
+      <div className={`flex gap-1.5 self-start ${hideActions ? 'hidden' : ''}`}>
         {!disableDrag && (
           <button
             type="button"

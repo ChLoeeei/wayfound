@@ -141,8 +141,7 @@
     "unverifiedHint": "这个地点没有匹配到地图搜索结果，坐标只是估计值。",
     "groundingWarning": "部分内容由通用知识生成，出行前请核实地址和开放时间。",
     "dayTotalUnder": "当天人均 ¥{total} · 在 ¥{cap} 预算内",
-    "dayTotalOver": "当天人均 ¥{total} · 超出 ¥{cap} 预算",
-    "exportNote": "导出和打印只包含当前显示的这一天"
+    "dayTotalOver": "当天人均 ¥{total} · 超出 ¥{cap} 预算"
   },
   "period": {
     "morning": "上午",

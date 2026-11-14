@@ -12,7 +12,7 @@ import {
   useDroppable,
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import type { Itinerary, Place, SlotPeriod } from '../types';
+import type { Day, Itinerary, Place, SlotPeriod } from '../types';
 import {
   orderedSlots,
   PERIOD_TIME_HINT,
@@ -44,6 +44,11 @@ interface ItineraryPaneProps {
   budgetCap?: number;
   /** Extra controls for the day header row (the "more" menu). */
   headerActions?: React.ReactNode;
+  /**
+   * Render every day stacked instead of the tabbed single day. Used while
+   * exporting an image and while printing, so both cover the whole trip.
+   */
+  allDays?: boolean;
 }
 
 interface VerifyIssue {
@@ -96,8 +101,11 @@ export default function ItineraryPane({
   rootRef,
   budgetCap,
   headerActions,
+  allDays,
 }: ItineraryPaneProps) {
   const t = useT();
+  // Whole-trip mode is for export and print, so it carries no edit controls.
+  const editable = !readOnly && !allDays;
   const [verifying, setVerifying] = useState(false);
   const [issues, setIssues] = useState<VerifyIssue[]>([]);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
@@ -125,17 +133,9 @@ export default function ItineraryPane({
       const overFound = findPlace(itinerary, String(over.id));
       const fromFound = findPlace(itinerary, placeId);
       if (overFound && fromFound) {
-        const sameSlot =
-          overFound.day.dayNumber === fromFound.day.dayNumber &&
-          overFound.slot.period === fromFound.slot.period;
+        const sameSlot = overFound.day.dayNumber === fromFound.day.dayNumber && overFound.slot.period === fromFound.slot.period;
         if (sameSlot && overFound.placeIndex === fromFound.placeIndex) return;
-        const next = movePlace(
-          itinerary,
-          placeId,
-          overFound.day.dayNumber,
-          overFound.slot.period,
-          overFound.placeIndex,
-        );
+        const next = movePlace(itinerary, placeId, overFound.day.dayNumber, overFound.slot.period, overFound.placeIndex);
         onUpdateItinerary(next);
       }
       return;
@@ -179,42 +179,59 @@ export default function ItineraryPane({
 
   const activePlace = activeDragId ? findPlace(itinerary, activeDragId)?.place : null;
   const day = itinerary.days.find(d => d.dayNumber === activeDay) ?? itinerary.days[0];
-  const dayTotal = day ? Math.round(dayCostPerPerson(day)) : 0;
-  const withinBudget = budgetCap != null ? isWithinDailyBudget(dayTotal, budgetCap) : null;
-  let runningIndex = 0;
+  const shownDays = allDays ? itinerary.days : day ? [day] : [];
+  const dayTitle = (d: Day) =>
+    d.theme ? t('itinerary.dayHeading', { n: d.dayNumber, theme: d.theme }) : t('itinerary.day', { n: d.dayNumber });
+
+  const dayBudget = (d: Day) => {
+    if (budgetCap == null) return null;
+    const total = Math.round(dayCostPerPerson(d));
+    const within = isWithinDailyBudget(total, budgetCap);
+    return (
+      <div className="flex items-center gap-1.5 text-[13px]" data-testid={allDays ? `day-budget-${d.dayNumber}` : 'day-budget'}>
+        {within ? (
+          <Check size={16} className="text-accent shrink-0" strokeWidth={2.2} />
+        ) : (
+          <AlertTriangle size={16} className="text-updated shrink-0" strokeWidth={2.2} />
+        )}
+        {t(within ? 'itinerary.dayTotalUnder' : 'itinerary.dayTotalOver', {
+          total,
+          cap: budgetCap,
+        })}
+      </div>
+    );
+  };
 
   return (
-    <div ref={rootRef} className="flex flex-col gap-3.5" data-testid="itinerary-pane">
-      <nav aria-label={t('itinerary.days')} className="flex flex-wrap gap-1.5 print:hidden" data-testid="day-tabs">
-        {itinerary.days.map(d => {
-          const active = d.dayNumber === day?.dayNumber;
-          return (
-            <button
-              key={d.dayNumber}
-              type="button"
-              aria-current={active ? 'true' : undefined}
-              onClick={() => onChangeDay(d.dayNumber)}
-              data-testid={`day-tab-${d.dayNumber}`}
-              className={`min-h-[36px] px-3.5 rounded-full border transition-colors ${
-                active ? 'bg-text-main text-white border-text-main font-medium' : 'bg-surface text-text-main border-border hover:bg-bg-base'
-              }`}
-            >
-              {t('itinerary.day', { n: d.dayNumber })}
-            </button>
-          );
-        })}
-      </nav>
+    <div ref={rootRef} className={`flex flex-col gap-3.5 ${allDays ? 'p-4' : ''}`} data-testid="itinerary-pane">
+      {!allDays && (
+        <nav aria-label={t('itinerary.days')} className="flex flex-wrap gap-1.5 print:hidden" data-testid="day-tabs">
+          {itinerary.days.map(d => {
+            const active = d.dayNumber === day?.dayNumber;
+            return (
+              <button
+                key={d.dayNumber}
+                type="button"
+                aria-current={active ? 'true' : undefined}
+                onClick={() => onChangeDay(d.dayNumber)}
+                data-testid={`day-tab-${d.dayNumber}`}
+                className={`min-h-[36px] px-3.5 rounded-full border transition-colors ${
+                  active
+                    ? 'bg-text-main text-white border-text-main font-medium'
+                    : 'bg-surface text-text-main border-border hover:bg-bg-base'
+                }`}
+              >
+                {t('itinerary.day', { n: d.dayNumber })}
+              </button>
+            );
+          })}
+        </nav>
+      )}
 
       <div className="flex flex-wrap items-center gap-2.5">
-        <h1 className="m-0 font-display text-2xl font-semibold min-w-0">
-          {day
-            ? day.theme
-              ? t('itinerary.dayHeading', { n: day.dayNumber, theme: day.theme })
-              : t('itinerary.day', { n: day.dayNumber })
-            : itinerary.title}
-        </h1>
+        <h1 className="m-0 font-display text-2xl font-semibold min-w-0">{allDays || !day ? itinerary.title : dayTitle(day)}</h1>
         <div className="flex-1" />
-        {!readOnly && (
+        {editable && (
           <button
             type="button"
             onClick={verifyItinerary}
@@ -226,7 +243,7 @@ export default function ItineraryPane({
             {t('itinerary.aiCheck')}
           </button>
         )}
-        {headerActions}
+        {!allDays && headerActions}
       </div>
 
       {itinerary.summary && <p className="m-0 text-text-muted text-[13px]">{itinerary.summary}</p>}
@@ -255,7 +272,7 @@ export default function ItineraryPane({
         </div>
       )}
 
-      {day && (
+      {shownDays.length > 0 && (
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -263,54 +280,60 @@ export default function ItineraryPane({
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
         >
-          <section className="flex flex-col gap-4" data-testid={`day-${day.dayNumber}`}>
-            {orderedSlots(day).map(slot => (
-              <div key={slot.period} className="flex flex-col gap-2">
-                <div className="flex items-baseline justify-between">
-                  <h4 className="m-0 text-[13px] font-medium text-text-muted">{t(`period.${slot.period}`)}</h4>
-                  <span className="text-[12px] text-text-muted tabular-nums">{PERIOD_TIME_HINT[slot.period]}</span>
-                </div>
+          {shownDays.map(d => {
+            let runningIndex = 0;
+            return (
+              <section key={d.dayNumber} className="flex flex-col gap-4" data-testid={`day-${d.dayNumber}`}>
+                {allDays && <h2 className="m-0 font-display text-lg font-semibold">{dayTitle(d)}</h2>}
+                {orderedSlots(d).map(slot => (
+                  <div key={slot.period} className="flex flex-col gap-2">
+                    <div className="flex items-baseline justify-between">
+                      <h4 className="m-0 text-[13px] font-medium text-text-muted">{t(`period.${slot.period}`)}</h4>
+                      <span className="text-[12px] text-text-muted tabular-nums">{PERIOD_TIME_HINT[slot.period]}</span>
+                    </div>
 
-                <DroppableSlot dayNumber={day.dayNumber} period={slot.period} placeIds={slot.places.map(p => p.id)}>
-                  {slot.places.length === 0 && (
-                    <p className="m-0 text-xs text-text-muted px-3 py-2">{t('itinerary.emptySlot')}</p>
-                  )}
+                    <DroppableSlot dayNumber={d.dayNumber} period={slot.period} placeIds={slot.places.map(p => p.id)}>
+                      {slot.places.length === 0 && <p className="m-0 text-xs text-text-muted px-3 py-2">{t('itinerary.emptySlot')}</p>}
 
-                  {slot.places.map((place, placeIdx) => {
-                    const idx = runningIndex++;
-                    return (
-                      <PlaceCard
-                        key={place.id}
-                        place={place}
-                        index={idx}
-                        period={slot.period}
-                        isSelected={selectedPlaceId === place.id}
-                        onSelect={() => onSelectPlace(place.id)}
-                        onDelete={readOnly ? undefined : () => handleDelete(place, day.dayNumber, slot.period, placeIdx)}
-                        onChangeSlot={readOnly ? undefined : next => handleChangeSlot(place.id, next)}
-                        disableDrag={readOnly}
-                      />
-                    );
-                  })}
+                      {slot.places.map((place, placeIdx) => {
+                        const idx = runningIndex++;
+                        return (
+                          <PlaceCard
+                            key={place.id}
+                            place={place}
+                            index={idx}
+                            period={slot.period}
+                            isSelected={selectedPlaceId === place.id}
+                            onSelect={() => onSelectPlace(place.id)}
+                            onDelete={!editable ? undefined : () => handleDelete(place, d.dayNumber, slot.period, placeIdx)}
+                            onChangeSlot={!editable ? undefined : next => handleChangeSlot(place.id, next)}
+                            disableDrag={!editable}
+                            hideActions={allDays}
+                          />
+                        );
+                      })}
 
-                  {!readOnly && (
-                    <button
-                      type="button"
-                      onClick={e => {
-                        e.stopPropagation();
-                        onAddPlaceToSlot(day.dayNumber, slot.period);
-                      }}
-                      className="w-full min-h-[40px] border border-dashed border-border-strong rounded-xl flex items-center justify-center gap-2 text-text-muted hover:text-accent hover:border-accent-line transition-colors text-[13px] print:hidden"
-                      data-testid={`add-place-${day.dayNumber}-${slot.period}`}
-                    >
-                      <Plus size={14} />
-                      {t('itinerary.addPlace')}
-                    </button>
-                  )}
-                </DroppableSlot>
-              </div>
-            ))}
-          </section>
+                      {editable && (
+                        <button
+                          type="button"
+                          onClick={e => {
+                            e.stopPropagation();
+                            onAddPlaceToSlot(d.dayNumber, slot.period);
+                          }}
+                          className="w-full min-h-[40px] border border-dashed border-border-strong rounded-xl flex items-center justify-center gap-2 text-text-muted hover:text-accent hover:border-accent-line transition-colors text-[13px] print:hidden"
+                          data-testid={`add-place-${d.dayNumber}-${slot.period}`}
+                        >
+                          <Plus size={14} />
+                          {t('itinerary.addPlace')}
+                        </button>
+                      )}
+                    </DroppableSlot>
+                  </div>
+                ))}
+                {allDays && dayBudget(d)}
+              </section>
+            );
+          })}
 
           <DragOverlay>
             {activePlace ? (
@@ -323,16 +346,7 @@ export default function ItineraryPane({
       )}
 
       <div className="flex flex-wrap gap-2.5 pt-2 border-t border-border text-[13px]" data-testid="day-summary">
-        {withinBudget != null && budgetCap != null && (
-          <div className="flex items-center gap-1.5" data-testid="day-budget">
-            {withinBudget ? (
-              <Check size={16} className="text-accent shrink-0" strokeWidth={2.2} />
-            ) : (
-              <AlertTriangle size={16} className="text-updated shrink-0" strokeWidth={2.2} />
-            )}
-            {t(withinBudget ? 'itinerary.dayTotalUnder' : 'itinerary.dayTotalOver', { total: dayTotal, cap: budgetCap })}
-          </div>
-        )}
+        {!allDays && day && dayBudget(day)}
         {itinerary.sourceAttributions && itinerary.sourceAttributions.length > 0 && (
           <div className="text-[12px] text-text-muted w-full" data-testid="source-attributions">
             {itinerary.sourceAttributions.join(' · ')}
