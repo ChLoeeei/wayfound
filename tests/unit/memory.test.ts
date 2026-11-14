@@ -8,6 +8,13 @@ import {
   recordPlanningSession,
   recordPlaceDeleted,
   buildMemoryPromptContext,
+  freeTextAnswers,
+  applyExtractedPreferences,
+  removeListItem,
+  editListItem,
+  clearScalar,
+  setScalar,
+  removeDislikedType,
 } from '../../src/lib/memory';
 import type { PlanningInput } from '../../src/types';
 
@@ -179,5 +186,61 @@ describe('buildMemoryPromptContext', () => {
     expect(buildMemoryPromptContext(mem)).not.toContain('removed');
     mem = recordPlaceDeleted(mem, 'shopping');
     expect(buildMemoryPromptContext(mem)).toContain('shopping');
+  });
+});
+
+describe('memory v2: pace, avoid, extraction merge and per-item edits', () => {
+  it('upgrades a v1 blob and rejects unknown versions', () => {
+    window.localStorage.setItem(
+      'wayfound.memory.v1',
+      JSON.stringify({ version: 1, updatedAt: null, preferredVibes: ['food'], specialNeeds: [], visitedDestinations: ['Kyoto'], dislikedTypeCounts: {}, notes: ['no seafood'] }),
+    );
+    const mem = loadMemory();
+    expect(mem.version).toBe(2);
+    expect(mem.avoid).toEqual([]);
+    expect(mem.notes).toEqual(['no seafood']);
+    window.localStorage.setItem('wayfound.memory.v1', JSON.stringify({ version: 3 }));
+    expect(isMemoryEmpty(loadMemory())).toBe(true);
+  });
+
+  it('free-text answers exclude quick-pick options in either language', () => {
+    const input = baseInput({ clarifications: { budgetLean: '偏省钱', primaryVibe: 'Food', kidsOnBoard: 'Adults only', destinationFocus: 'I hate early mornings' } });
+    expect(freeTextAnswers(input)).toEqual(['I hate early mornings']);
+  });
+
+  it('applies extracted preferences and retires the consumed note', () => {
+    const mem = recordPlanningSession(emptyMemory(), baseInput({ clarifications: { destinationFocus: 'I hate early mornings and never eat seafood' } }));
+    expect(mem.notes).toEqual(['I hate early mornings and never eat seafood']);
+    const next = applyExtractedPreferences(mem, { pace: 'relaxed', avoid: ['early mornings', 'seafood'], interests: ['nature'] }, ['I hate early mornings and never eat seafood']);
+    expect(next.pace).toBe('relaxed');
+    expect(next.avoid).toEqual(['early mornings', 'seafood']);
+    expect(next.preferredVibes[0]).toBe('nature');
+    expect(next.notes).toEqual([]);
+    const ctx = buildMemoryPromptContext(next);
+    expect(ctx).toContain('Preferred pace: relaxed');
+    expect(ctx).toContain('Asked to avoid: "early mornings"; "seafood"');
+  });
+
+  it('edits and removes single items', () => {
+    let mem = applyExtractedPreferences(recordPlanningSession(emptyMemory(), baseInput({ specialNeeds: ['vegetarian'] })), { avoid: ['seafood', 'crowds'], pace: 'packed' });
+    mem = removeListItem(mem, 'preferredVibes', 'food');
+    expect(mem.preferredVibes).toEqual(['culture']);
+    mem = editListItem(mem, 'avoid', 'crowds', 'big crowds');
+    expect(mem.avoid).toEqual(['seafood', 'big crowds']);
+    mem = editListItem(mem, 'avoid', 'big crowds', '   ');
+    expect(mem.avoid).toEqual(['seafood']);
+    mem = editListItem(mem, 'avoid', 'seafood', 'Seafood');
+    expect(mem.avoid).toEqual(['Seafood']);
+    mem = clearScalar(mem, 'pace');
+    expect(mem.pace).toBeUndefined();
+    mem = setScalar(mem, { pace: 'relaxed', lastBudget: { min: 100, max: 200 } });
+    expect(mem.pace).toBe('relaxed');
+    expect(mem.lastBudget).toEqual({ min: 100, max: 200 });
+    mem = recordPlaceDeleted(recordPlaceDeleted(mem, 'nightlife'), 'nightlife');
+    expect(mem.dislikedTypeCounts.nightlife).toBe(2);
+    mem = removeDislikedType(mem, 'nightlife');
+    expect(mem.dislikedTypeCounts.nightlife).toBeUndefined();
+    mem = removeListItem(mem, 'specialNeeds', 'vegetarian');
+    expect(mem.specialNeeds).toEqual([]);
   });
 });

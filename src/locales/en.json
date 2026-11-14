@@ -246,10 +246,10 @@
       }
     },
     "preferences": {
-      "intro": "Saved in this browser from what you told me. Only you see these, and they never become shared lessons.",
+      "intro": "What you told me, saved for your next trips. Only explicit statements are kept, nothing is guessed, and these never become shared lessons.",
       "empty": "Nothing remembered yet. Preferences appear here after your first plan.",
       "clearAll": "Clear all preferences",
-      "signedOut": "Signed out? Preferences stay in this browser and move to your account when you log in.",
+      "signedOut": "Signed out: preferences stay in this browser and move to your account the first time you log in.",
       "interests": "Interests",
       "tripType": "Trip type",
       "dailyBudget": "Daily budget",
@@ -263,7 +263,26 @@
       "specialNeeds": "Special needs",
       "pastTrips": "Past trips",
       "avoids": "Tends to remove",
-      "notes": "Notes"
+      "notes": "Notes",
+      "signedIn": "Saved to your account ({email}); available on any device you log in from.",
+      "migrated": "Your preferences from this browser were moved to your account.",
+      "pace": "Pace",
+      "paces": {
+        "relaxed": "Relaxed",
+        "moderate": "Moderate",
+        "packed": "Packed"
+      },
+      "avoid": "Avoid",
+      "edit": "Edit",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "remove": "Remove {value}",
+      "extracting": "Noting what you said…",
+      "extracted_one": "Remembered {count} preference from what you typed.",
+      "extracted_other": "Remembered {count} preferences from what you typed.",
+      "budgetMin": "Min",
+      "budgetMax": "Max"
     },
     "trace": {
       "intro": "Every step the agent took for this plan.",

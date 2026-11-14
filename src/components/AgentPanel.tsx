@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import type { TravelMemory } from '../lib/memory';
-import { isMemoryEmpty } from '../lib/memory';
+import PreferencesTab from './PreferencesTab';
 import { useT } from '../i18n';
 import TraceList, { isDebugMode } from './TraceViewer';
 import LessonsTab from './LessonsTab';
@@ -41,6 +41,12 @@ interface AgentPanelProps {
   onTabChange?: (tab: AgentPanelTab) => void;
   /** Filter the Lessons tab should start on. */
   lessonFilter?: LessonFilter;
+  /** Per-item edits from the preferences tab. Rows are read-only when omitted. */
+  onUpdateMemory?: (next: TravelMemory) => void;
+  /** Signed-in user's email (preferences tab footer). */
+  userEmail?: string | null;
+  /** One-line status for the preferences tab (migrated on login, extraction result). */
+  memoryNotice?: string | null;
 }
 
 /**
@@ -48,7 +54,19 @@ interface AgentPanelProps {
  * remembered preferences, and the run trace. Collapsed by default for
  * everyday users; the open state is remembered per browser.
  */
-export default function AgentPanel({ onClose, memory, onClearMemory, requestId, usedLessonIds, tab: controlledTab, onTabChange, lessonFilter }: AgentPanelProps) {
+export default function AgentPanel({
+  onClose,
+  memory,
+  onClearMemory,
+  requestId,
+  usedLessonIds,
+  tab: controlledTab,
+  onTabChange,
+  lessonFilter,
+  onUpdateMemory,
+  userEmail,
+  memoryNotice,
+}: AgentPanelProps) {
   const t = useT();
   const [ownTab, setOwnTab] = useState<AgentPanelTab>('lessons');
   const tab = controlledTab ?? ownTab;
@@ -97,7 +115,9 @@ export default function AgentPanel({ onClose, memory, onClearMemory, requestId, 
 
       {tab === 'lessons' && <LessonsTab usedLessonIds={usedLessonIds} initialFilter={lessonFilter} />}
 
-      {tab === 'preferences' && <PreferencesTab memory={memory} onClearMemory={onClearMemory} />}
+      {tab === 'preferences' && (
+        <PreferencesTab memory={memory} onChange={onUpdateMemory ?? (() => {})} onClearMemory={onClearMemory} userEmail={userEmail} notice={memoryNotice} />
+      )}
 
       {tab === 'trace' && (
         <div className="flex flex-col gap-3 flex-1" data-testid="panel-trace">
@@ -113,73 +133,5 @@ export default function AgentPanel({ onClose, memory, onClearMemory, requestId, 
         </div>
       )}
     </aside>
-  );
-}
-
-function PreferencesTab({ memory, onClearMemory }: { memory: TravelMemory; onClearMemory: () => void }) {
-  const t = useT();
-  const rows: Array<{ key: string; label: string; value: string }> = [];
-  if (memory.preferredVibes.length > 0) {
-    rows.push({ key: 'interests', label: t('panel.preferences.interests'), value: memory.preferredVibes.map(v => t(`form.vibes.${v}`)).join(', ') });
-  }
-  if (memory.groupType) {
-    rows.push({ key: 'tripType', label: t('panel.preferences.tripType'), value: t(`form.groups.${memory.groupType}`) });
-  }
-  if (memory.lastBudget) {
-    rows.push({
-      key: 'dailyBudget',
-      label: t('panel.preferences.dailyBudget'),
-      value: t('panel.preferences.budgetValue', { min: memory.lastBudget.min, max: memory.lastBudget.max }),
-    });
-  }
-  if (memory.budgetLean) {
-    rows.push({ key: 'budgetLean', label: t('panel.preferences.budgetLean'), value: t(`panel.preferences.lean.${memory.budgetLean}`) });
-  }
-  if (memory.specialNeeds.length > 0) {
-    rows.push({ key: 'specialNeeds', label: t('panel.preferences.specialNeeds'), value: memory.specialNeeds.map(n => t(`form.needs.${n}`)).join(', ') });
-  }
-  if (memory.visitedDestinations.length > 0) {
-    rows.push({ key: 'pastTrips', label: t('panel.preferences.pastTrips'), value: memory.visitedDestinations.join(', ') });
-  }
-  const avoided = Object.entries(memory.dislikedTypeCounts)
-    .filter(([, n]) => (n ?? 0) >= 2)
-    .map(([type]) => t(`place.types.${type}`));
-  if (avoided.length > 0) {
-    rows.push({ key: 'avoids', label: t('panel.preferences.avoids'), value: avoided.join(', ') });
-  }
-  if (memory.notes.length > 0) {
-    rows.push({ key: 'notes', label: t('panel.preferences.notes'), value: memory.notes.join('; ') });
-  }
-
-  return (
-    <div className="flex flex-col gap-3 flex-1" data-testid="panel-preferences">
-      <p className="m-0 text-text-muted text-[13px]">{t('panel.preferences.intro')}</p>
-      {isMemoryEmpty(memory) ? (
-        <p className="m-0 text-[13px] text-text-muted" data-testid="preferences-empty">
-          {t('panel.preferences.empty')}
-        </p>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {rows.map(r => (
-            <div key={r.key} className="p-3 border border-border rounded-[10px]" data-testid={`preference-${r.key}`}>
-              <div className="text-[12px] text-text-muted">{r.label}</div>
-              <div className="font-medium">{r.value}</div>
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="flex-1" />
-      {!isMemoryEmpty(memory) && (
-        <button
-          type="button"
-          onClick={onClearMemory}
-          data-testid="memory-clear"
-          className="min-h-[40px] border border-delete-line rounded-lg bg-surface text-delete font-medium hover:bg-delete-tint"
-        >
-          {t('panel.preferences.clearAll')}
-        </button>
-      )}
-      <div className="text-[12px] text-text-muted">{t('panel.preferences.signedOut')}</div>
-    </div>
   );
 }

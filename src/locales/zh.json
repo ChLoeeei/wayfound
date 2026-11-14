@@ -246,10 +246,10 @@
       }
     },
     "preferences": {
-      "intro": "根据你说过的话保存在这个浏览器里。只有你能看到，它们不会变成共享经验。",
+      "intro": "你告诉过我的事情，留给下次旅行用。只保存你明确说过的，不做推测，也永远不会变成共享经验。",
       "empty": "还没有记住任何偏好。生成第一份行程后会显示在这里。",
       "clearAll": "清空全部偏好",
-      "signedOut": "未登录？偏好会保存在这个浏览器里，登录后迁移到你的账户。",
+      "signedOut": "未登录：偏好保存在这个浏览器里，第一次登录时会迁移到你的账户。",
       "interests": "兴趣",
       "tripType": "出行类型",
       "dailyBudget": "每日预算",
@@ -263,7 +263,26 @@
       "specialNeeds": "特殊需求",
       "pastTrips": "去过的目的地",
       "avoids": "经常删掉",
-      "notes": "备注"
+      "notes": "备注",
+      "signedIn": "已保存到你的账户（{email}），登录后任何设备都能用。",
+      "migrated": "这个浏览器里的偏好已经迁移到你的账户。",
+      "pace": "节奏",
+      "paces": {
+        "relaxed": "轻松",
+        "moderate": "适中",
+        "packed": "紧凑"
+      },
+      "avoid": "避免",
+      "edit": "编辑",
+      "save": "保存",
+      "cancel": "取消",
+      "delete": "删除",
+      "remove": "删除 {value}",
+      "extracting": "正在记下你说的话…",
+      "extracted_one": "从你输入的内容里记住了 {count} 条偏好。",
+      "extracted_other": "从你输入的内容里记住了 {count} 条偏好。",
+      "budgetMin": "最低",
+      "budgetMax": "最高"
     },
     "trace": {
       "intro": "Agent 为这份行程走过的每一步。",

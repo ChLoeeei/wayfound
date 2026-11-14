@@ -109,8 +109,9 @@ describe('AgentPanel', () => {
     let cleared = false;
     render(<AgentPanel onClose={() => {}} memory={memory} onClearMemory={() => (cleared = true)} />);
     fireEvent.click(screen.getByTestId('panel-tab-preferences'));
-    // Memory keeps the most recently used vibe first.
-    expect(screen.getByTestId('preference-interests')).toHaveTextContent('Culture, Food');
+    // Memory keeps the most recently used vibe first; each interest is its own removable chip.
+    const chips = Array.from(screen.getByTestId('preference-interests').querySelectorAll('[data-testid^="preference-item-interests-"]')).map(c => c.textContent);
+    expect(chips).toEqual(['Culture', 'Food']);
     expect(screen.getByTestId('preference-tripType')).toHaveTextContent('Couple');
     expect(screen.getByTestId('preference-pastTrips')).toHaveTextContent('Kyoto');
     expect(screen.getByTestId('preference-specialNeeds')).toHaveTextContent('Vegetarian');

@@ -1,0 +1,330 @@
+{
+  "version": 1,
+  "comment": "Two-stage memory cases (v2 feature A). Stage 1: the user's free text goes through the extraction step; `expect` lists what must come back, `forbid` lists fields that must not (nothing stated). Stage 2: a later trip is planned with the extracted memory and, as a control, without it; `checks` are deterministic tests on the itinerary. Destinations are outside tests/eval/cases.json on purpose.",
+  "cases": [
+    {
+      "id": "en-no-seafood-no-early",
+      "stage1": {
+        "language": "en",
+        "texts": [
+          "I don't eat seafood, and I really hate early mornings."
+        ],
+        "expect": {
+          "avoid": [
+            "seafood",
+            "early morning"
+          ]
+        },
+        "forbid": [
+          "interest",
+          "budget"
+        ]
+      },
+      "stage2": {
+        "destination": "Porto",
+        "days": 2,
+        "people": 2,
+        "preferences": [
+          "culture",
+          "food"
+        ],
+        "groupType": "couple",
+        "budget": {
+          "min": 300,
+          "max": 1200
+        },
+        "specialNeeds": []
+      },
+      "checks": [
+        {
+          "type": "noKeyword",
+          "keywords": [
+            "seafood",
+            "oyster",
+            "sushi",
+            "fish",
+            "sardine",
+            "shrimp",
+            "prawn",
+            "clam",
+            "octopus",
+            "cod",
+            "bacalhau",
+            "海鲜",
+            "鱼",
+            "虾",
+            "蚝"
+          ]
+        },
+        {
+          "type": "maxMorningPlaces",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "zh-vegetarian-no-shopping",
+      "stage1": {
+        "language": "zh",
+        "texts": [
+          "我吃素，另外完全不想逛街购物。"
+        ],
+        "expect": {
+          "avoid": [
+            "购物"
+          ]
+        },
+        "forbid": [
+          "budget",
+          "pace"
+        ]
+      },
+      "stage2": {
+        "destination": "洛阳",
+        "days": 2,
+        "people": 1,
+        "preferences": [
+          "culture",
+          "leisure"
+        ],
+        "groupType": "solo",
+        "budget": {
+          "min": 200,
+          "max": 600
+        },
+        "specialNeeds": []
+      },
+      "checks": [
+        {
+          "type": "maxPlaceType",
+          "types": [
+            "shopping"
+          ],
+          "value": 0
+        },
+        {
+          "type": "noKeyword",
+          "keywords": [
+            "购物",
+            "商场",
+            "shopping mall",
+            "outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "en-packed-pace",
+      "stage1": {
+        "language": "en",
+        "texts": [
+          "We like packed days: start early and see as much as possible."
+        ],
+        "expect": {
+          "pace": "packed"
+        },
+        "forbid": [
+          "avoid",
+          "budget",
+          "interest"
+        ]
+      },
+      "stage2": {
+        "destination": "Krakow",
+        "days": 2,
+        "people": 2,
+        "preferences": [
+          "culture"
+        ],
+        "groupType": "friends",
+        "budget": {
+          "min": 300,
+          "max": 1000
+        },
+        "specialNeeds": []
+      },
+      "checks": [
+        {
+          "type": "minPlacesPerDay",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "zh-relaxed-pace",
+      "stage1": {
+        "language": "zh",
+        "texts": [
+          "节奏慢一点，一天最多安排三个地方就好。"
+        ],
+        "expect": {
+          "pace": "relaxed"
+        },
+        "forbid": [
+          "avoid",
+          "budget",
+          "interest"
+        ]
+      },
+      "stage2": {
+        "destination": "威海",
+        "days": 2,
+        "people": 2,
+        "preferences": [
+          "nature",
+          "food"
+        ],
+        "groupType": "couple",
+        "budget": {
+          "min": 300,
+          "max": 1000
+        },
+        "specialNeeds": []
+      },
+      "checks": [
+        {
+          "type": "maxPlacesPerDay",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "en-tight-budget-numbers",
+      "stage1": {
+        "language": "en",
+        "texts": [
+          "Budget between 100 and 150 a day per person, we are students."
+        ],
+        "expect": {
+          "budget": {
+            "min": 100,
+            "max": 150
+          }
+        },
+        "forbid": [
+          "avoid",
+          "pace"
+        ]
+      },
+      "stage2": {
+        "destination": "Da Nang",
+        "days": 2,
+        "people": 2,
+        "preferences": [
+          "food",
+          "culture"
+        ],
+        "groupType": "friends",
+        "budget": {
+          "min": 100,
+          "max": 400
+        },
+        "specialNeeds": []
+      },
+      "checks": [
+        {
+          "type": "maxDayCostPerPerson",
+          "value": 165
+        }
+      ]
+    },
+    {
+      "id": "en-nature-not-museums",
+      "stage1": {
+        "language": "en",
+        "texts": [
+          "I really love nature and hiking. Museums bore me."
+        ],
+        "expect": {
+          "interests": [
+            "nature"
+          ],
+          "avoid": [
+            "museum"
+          ]
+        },
+        "forbid": [
+          "budget",
+          "pace"
+        ]
+      },
+      "stage2": {
+        "destination": "Montreal",
+        "days": 2,
+        "people": 1,
+        "preferences": [
+          "food"
+        ],
+        "groupType": "solo",
+        "budget": {
+          "min": 300,
+          "max": 1000
+        },
+        "specialNeeds": []
+      },
+      "checks": [
+        {
+          "type": "noKeyword",
+          "keywords": [
+            "museum",
+            "gallery",
+            "博物馆",
+            "美术馆"
+          ]
+        },
+        {
+          "type": "minKeyword",
+          "keywords": [
+            "park",
+            "trail",
+            "garden",
+            "mountain",
+            "beach",
+            "forest",
+            "hike",
+            "seawall",
+            "公园",
+            "山",
+            "海滩",
+            "森林"
+          ],
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "en-trip-only-statement",
+      "stage1": {
+        "language": "en",
+        "texts": [
+          "Travelling with my parents this time, they are in their 70s."
+        ],
+        "expect": {},
+        "forbid": [
+          "pace",
+          "interest",
+          "avoid",
+          "budget",
+          "note"
+        ]
+      }
+    },
+    {
+      "id": "zh-trip-only-statement",
+      "stage1": {
+        "language": "zh",
+        "texts": [
+          "这次去上海主要是出差，顺便玩两天。"
+        ],
+        "expect": {},
+        "forbid": [
+          "pace",
+          "interest",
+          "avoid",
+          "budget",
+          "note"
+        ]
+      }
+    }
+  ]
+}

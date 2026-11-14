@@ -17,13 +17,16 @@ import { loginWithGoogle, logout, saveItinerary, shareItinerary, onAuthStateChan
 import type { User } from '@supabase/supabase-js';
 import {
   loadMemory,
-  saveMemory,
-  clearMemory,
+  emptyMemory,
+  freeTextAnswers,
+  applyExtractedPreferences,
+  type ExtractedPreferences,
   recordPlanningSession,
   recordPlaceDeleted,
   buildMemoryPromptContext,
   type TravelMemory,
 } from '../lib/memory';
+import { persistMemory, resolveMemoryOnLogin, wipeMemory } from '../lib/memoryStore';
 import { useLang, useT } from '../i18n';
 
 export const LIBRARY_STORAGE_KEY = 'wayfound.library';
@@ -64,7 +67,17 @@ export default function ItineraryApp() {
 
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [memory, setMemory] = useState<TravelMemory>(() => loadMemory());
+  const [memoryNotice, setMemoryNotice] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const userId = user?.id ?? null;
+  // Latest memory for async steps (extraction finishes after other updates).
+  const memoryRef = useRef(memory);
+  memoryRef.current = memory;
+  const updateMemory = (next: TravelMemory) => {
+    memoryRef.current = next;
+    setMemory(next);
+    void persistMemory(userId, next);
+  };
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
@@ -106,6 +119,28 @@ export default function ItineraryApp() {
     const unsub = onAuthStateChanged(u => setUser(u));
     return unsub;
   }, []);
+
+  // Memory follows the session: the account row when signed in (guest memory
+  // migrates on the account's first login), localStorage otherwise.
+  useEffect(() => {
+    let cancelled = false;
+    if (!userId) {
+      setMemory(loadMemory());
+      return;
+    }
+    resolveMemoryOnLogin(userId, loadMemory())
+      .then(({ memory: next, migrated }) => {
+        if (cancelled) return;
+        memoryRef.current = next;
+        setMemory(next);
+        if (migrated) setMemoryNotice(t('panel.preferences.migrated'));
+      })
+      .catch(err => console.error('[memory] load for account failed', err));
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   const toggleLibrary = () => {
     setLibraryOn(on => {
@@ -171,12 +206,38 @@ export default function ItineraryApp() {
       setStage('ready');
       setFormOpen(false);
 
-      const updatedMemory = recordPlanningSession(memory, input);
-      saveMemory(updatedMemory);
-      setMemory(updatedMemory);
+      const updatedMemory = recordPlanningSession(memoryRef.current, input);
+      updateMemory(updatedMemory);
+      void extractFromSession(input);
     } catch (err: any) {
       setError(err.message);
       setStage('idle');
+    }
+  };
+
+  // Extraction step (feature A): only the free text the user typed goes to
+  // the server, and only quoted statements come back (server/preferences.ts).
+  const extractFromSession = async (input: PlanningInput) => {
+    const texts = freeTextAnswers(input);
+    if (texts.length === 0) return;
+    setMemoryNotice(t('panel.preferences.extracting'));
+    try {
+      const res = await fetch(`${process.env.API_BASE_URL}/api/extract-preferences`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ texts, language: lang }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as { preferences: ExtractedPreferences; items: unknown[] };
+      if (data.items.length > 0) {
+        updateMemory(applyExtractedPreferences(memoryRef.current, data.preferences, texts));
+        setMemoryNotice(t('panel.preferences.extracted', { count: data.items.length }));
+      } else {
+        setMemoryNotice(null);
+      }
+    } catch (err) {
+      console.error('[memory] extraction failed; the typed text stays as a note', err);
+      setMemoryNotice(null);
     }
   };
 
@@ -217,14 +278,14 @@ export default function ItineraryApp() {
 
   const handleRequestDelete = (place: Place, dayNumber: number, period: SlotPeriod, atIndex: number) => {
     setUndo({ place, dayNumber, period, atIndex });
-    const updatedMemory = recordPlaceDeleted(memory, place.type);
-    saveMemory(updatedMemory);
-    setMemory(updatedMemory);
+    updateMemory(recordPlaceDeleted(memoryRef.current, place.type));
   };
 
   const handleClearMemory = () => {
-    clearMemory();
-    setMemory(loadMemory());
+    void wipeMemory(userId);
+    memoryRef.current = emptyMemory();
+    setMemory(emptyMemory());
+    setMemoryNotice(null);
   };
 
   const handleSaveToCloud = async () => {
@@ -440,6 +501,9 @@ export default function ItineraryApp() {
               if (next !== 'lessons') setLessonFilter(undefined);
             }}
             lessonFilter={lessonFilter}
+            onUpdateMemory={updateMemory}
+            userEmail={user?.email ?? null}
+            memoryNotice={memoryNotice}
           />
         )}
       </main>

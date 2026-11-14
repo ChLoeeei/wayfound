@@ -12,6 +12,7 @@ import { searchPlaces, parseLngLat } from "./server/tools/amap";
 import { computeSourceAttributions, computeGroundingWarning } from "./server/tools/attributions";
 import { getLiveLibrary, lessonsForRequest } from "./server/experience/live";
 import { ungroundedPlaceNames } from "./server/grounding";
+import { extractPreferences } from "./server/preferences";
 
 // Persistent per-request trace files for the debug TraceViewer
 // (src/components/TraceViewer.tsx) — one JSON file per generation request,
@@ -292,6 +293,23 @@ async function startServer() {
       } else {
         res.status(500).json({ error: "Failed to generate itinerary. Please try again." });
       }
+    }
+  });
+
+  // Preference extraction (v2 feature A): the free text a user typed in a
+  // session -> structured memory fields, each backed by a verbatim quote
+  // (server/preferences.ts). The result goes to the user's own memory
+  // (browser, or the account row when signed in), never to the experience library.
+  app.post("/api/extract-preferences", async (req, res) => {
+    try {
+      const { texts, language } = req.body as { texts?: unknown; language?: unknown };
+      const clean = Array.isArray(texts) ? texts.filter((t): t is string => typeof t === "string").map(t => t.slice(0, 1000)).slice(0, 20) : [];
+      if (clean.length === 0) return res.json({ preferences: {}, items: [], dropped: 0 });
+      const result = await extractPreferences(deepseek, clean, language === "zh" ? "zh" : "en");
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error extracting preferences:", error);
+      res.status(500).json({ error: "Failed to extract preferences." });
     }
   });
 

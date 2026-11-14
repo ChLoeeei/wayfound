@@ -43,6 +43,18 @@ SUPABASE_ANON_KEY=eyJhbGciOi...
 - 用户能读/写/删自己的行程
 - 任何人（包括未登录）能读 `is_public = true` 的行程
 
+### 3.1 用户记忆表（v2 功能 A）
+
+再执行 [`supabase/migrations/0003_user_memory.sql`](../supabase/migrations/0003_user_memory.sql)，得到 `user_memory` 表：
+
+| 列 | 类型 | 说明 |
+|---|---|---|
+| `user_id` | uuid pk → auth.users | 一个用户一行 |
+| `memory` | jsonb | `TravelMemory` 对象（`src/lib/memory.ts`） |
+| `updated_at` | timestamptz | trigger 自动更新 |
+
+RLS 只允许用户读写删自己这一行。游客的记忆存在浏览器 localStorage，第一次登录时由前端复制到这张表并清掉本地副本（`src/lib/memoryStore.ts`）。服务端不读这张表，经验库也不会用到它。
+
 ## 4. 配 Google OAuth
 
 ### 4.1 在 Google Cloud Console 建 OAuth client
