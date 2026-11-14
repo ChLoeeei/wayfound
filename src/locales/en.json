@@ -141,7 +141,17 @@
     "unverifiedHint": "This place did not match a map search result; coordinates are approximate.",
     "groundingWarning": "Some details were generated from general knowledge. Please verify addresses and hours before traveling.",
     "dayTotalUnder": "Day total ¥{total} per person · under the ¥{cap} cap",
-    "dayTotalOver": "Day total ¥{total} per person · over the ¥{cap} cap"
+    "dayTotalOver": "Day total ¥{total} per person · over the ¥{cap} cap",
+    "usedLessons_one": "Used {count} lesson",
+    "usedLessons_other": "Used {count} lessons",
+    "usedLessonsHint": "Experience-library lessons injected into this plan's prompt. Click to see them.",
+    "noLessonsUsed": "No lessons used",
+    "groundedAll": "All {total} stops matched search results",
+    "groundedSome": "{matched} of {total} stops matched search results",
+    "attribution": {
+      "osm": "Place data © OpenStreetMap contributors, ODbL",
+      "wikivoyage": "Destination context from Wikivoyage, CC BY-SA 4.0"
+    }
   },
   "period": {
     "morning": "Morning",
@@ -207,7 +217,33 @@
     },
     "lessons": {
       "intro": "Strategies the agent learned from its own scored runs. No model was fine-tuned. Lessons never name a specific place.",
-      "comingSoon": "The lesson list connects to the experience library in the next step."
+      "readOnly": "Read-only here. Only the offline learning script changes the library.",
+      "library": "Library v{version} · {count} lessons · epoch {epoch}",
+      "loading": "Loading lessons…",
+      "failed": "Could not load the experience library.",
+      "empty": "No lessons match this filter.",
+      "noPlanYet": "Generate a plan to see which lessons it used.",
+      "usedBadge": "Used this time",
+      "helpful": "helpful",
+      "harmful": "harmful",
+      "net": "net",
+      "filters": {
+        "all": "All",
+        "used": "This run",
+        "search_places": "Search",
+        "calculate_distance": "Distance",
+        "final_answer": "Final answer"
+      },
+      "scopes": {
+        "general": "General",
+        "domestic": "Mainland China",
+        "international": "International",
+        "search_places": "Searching places",
+        "get_poi_details": "Place details",
+        "calculate_distance": "Distances",
+        "get_destination_context": "Destination context",
+        "final_answer": "Final answer"
+      }
     },
     "preferences": {
       "intro": "Saved in this browser from what you told me. Only you see these, and they never become shared lessons.",
@@ -240,13 +276,52 @@
       "noSteps": "No steps recorded.",
       "step": "Step {n}",
       "finalAnswer": "final answer",
-      "lessonsStep": "Lessons injected"
+      "lessonsStep": "Lessons injected",
+      "lessonsInjected_one": "{count} lesson added to the system prompt",
+      "lessonsInjected_other": "{count} lessons added to the system prompt"
     }
   },
   "compare": {
     "title": "Compare mode",
-    "intro": "Same request, same tool results, run twice: once with the experience library off and once with it on.",
-    "comingSoon": "Compare mode arrives with the Lessons panel in the next step."
+    "intro": "The same request run twice: once with the experience library off, once with it on.",
+    "precomputed": "Precomputed example from the held-out eval ({setup} vs {baseline}, case {caseId}). Nothing here calls the API.",
+    "pickExample": "Example",
+    "request": "{days} in {destination} for {people}, {group}. Vibes: {vibes}. About ¥{min}–{max} per person a day.",
+    "libraryOff": "Library off",
+    "libraryOn": "Library on",
+    "noLessons": "0 lessons",
+    "lessonsUsed_one": "{count} lesson used: {ids}",
+    "lessonsUsed_other": "{count} lessons used: {ids}",
+    "metrics": {
+      "reward": "Reward",
+      "toolCorrect": "Tool calls",
+      "hallucination": "Not grounded",
+      "steps": "Steps"
+    },
+    "notGrounded": "Not in search results",
+    "notGroundedHint": "The model wrote this place itself; no search_places result matched it.",
+    "invalidIds_one": "{count} call used a POI id no search returned",
+    "invalidIds_other": "{count} calls used a POI id no search returned",
+    "heldOutTitle": "On held-out test cases",
+    "heldOutSub": "{cases} cases × {repeats} runs, paired against {baseline}, 95% intervals. Read from {files}.",
+    "heldOut": {
+      "toolCorrectInternational": "Tool-call correctness, international",
+      "hallucinationDomestic": "Hallucination rate, domestic",
+      "rewardCore": "Reward, original {n} cases",
+      "rewardAll": "Reward, all {n} cases",
+      "promptTokens": "Prompt tokens per run (the cost)"
+    },
+    "betterWorse": "{better} cases better, {worse} worse",
+    "ci": "95% CI {lo} to {hi}",
+    "live": {
+      "title": "Live compare",
+      "hint": "Runs the agent twice for this request (library off and on), about 1–3 minutes. Each click spends API quota for two full plans.",
+      "run": "Run both again",
+      "running": "Running both plans…",
+      "badge": "Live run",
+      "failed": "Live run failed: {error}",
+      "backToExample": "Back to the saved example"
+    }
   },
   "shared": {
     "loading": "Loading shared itinerary...",

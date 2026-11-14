@@ -4,6 +4,8 @@ import type { TravelMemory } from '../lib/memory';
 import { isMemoryEmpty } from '../lib/memory';
 import { useT } from '../i18n';
 import TraceList, { isDebugMode } from './TraceViewer';
+import LessonsTab from './LessonsTab';
+import type { LessonFilter } from '../lib/lessons';
 
 export type AgentPanelTab = 'lessons' | 'preferences' | 'trace';
 const TABS: AgentPanelTab[] = ['lessons', 'preferences', 'trace'];
@@ -32,6 +34,13 @@ interface AgentPanelProps {
   onClearMemory: () => void;
   /** Request id of the shown plan, for the Trace tab. */
   requestId?: string;
+  /** Lesson ids the shown plan used; undefined before any plan. */
+  usedLessonIds?: string[];
+  /** Controlled tab (the "Used N lessons" chip opens the Lessons tab). Uncontrolled when omitted. */
+  tab?: AgentPanelTab;
+  onTabChange?: (tab: AgentPanelTab) => void;
+  /** Filter the Lessons tab should start on. */
+  lessonFilter?: LessonFilter;
 }
 
 /**
@@ -39,9 +48,14 @@ interface AgentPanelProps {
  * remembered preferences, and the run trace. Collapsed by default for
  * everyday users; the open state is remembered per browser.
  */
-export default function AgentPanel({ onClose, memory, onClearMemory, requestId }: AgentPanelProps) {
+export default function AgentPanel({ onClose, memory, onClearMemory, requestId, usedLessonIds, tab: controlledTab, onTabChange, lessonFilter }: AgentPanelProps) {
   const t = useT();
-  const [tab, setTab] = useState<AgentPanelTab>('lessons');
+  const [ownTab, setOwnTab] = useState<AgentPanelTab>('lessons');
+  const tab = controlledTab ?? ownTab;
+  const setTab = (next: AgentPanelTab) => {
+    setOwnTab(next);
+    onTabChange?.(next);
+  };
 
   return (
     <aside
@@ -81,14 +95,7 @@ export default function AgentPanel({ onClose, memory, onClearMemory, requestId }
         })}
       </div>
 
-      {tab === 'lessons' && (
-        <div className="flex flex-col gap-3" data-testid="panel-lessons">
-          <p className="m-0 text-text-muted text-[13px]">{t('panel.lessons.intro')}</p>
-          <p className="m-0 text-[13px] border border-dashed border-border-strong rounded-[10px] p-3 text-text-muted">
-            {t('panel.lessons.comingSoon')}
-          </p>
-        </div>
-      )}
+      {tab === 'lessons' && <LessonsTab usedLessonIds={usedLessonIds} initialFilter={lessonFilter} />}
 
       {tab === 'preferences' && <PreferencesTab memory={memory} onClearMemory={onClearMemory} />}
 

@@ -147,6 +147,18 @@ export interface Itinerary {
    * (not just false) when there's nothing to warn about.
    */
   groundingWarning?: boolean;
+  /**
+   * Experience-library lesson ids injected into this plan's prompt (v2
+   * Core 2); empty when the library was off. Set by server.ts.
+   */
+  usedLessonIds?: string[];
+  /** Version of the library those lessons came from. */
+  libraryVersion?: number;
+  /**
+   * Names of places that matched no search_places result this run, by the
+   * eval's own rule (server/grounding.ts). Duplicates kept, itinerary order.
+   */
+  ungroundedPlaceNames?: string[];
 }
 
 // -------- Map integration helpers ---------------------------

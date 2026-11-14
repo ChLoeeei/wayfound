@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { useT } from '../i18n';
+import { type Lesson, fetchLessons } from '../lib/lessons';
 
 /**
  * Debug-only trace list: fetches the persisted reasoning/tool-call trace for
@@ -22,6 +23,8 @@ interface AgentStepRecord {
   isFinal: boolean;
   /** Set on segment completions and on the lessons-injection entry (server/agent.ts). */
   segment?: string;
+  /** On the lessons entry: the injected lesson ids. */
+  lessonIds?: string[];
 }
 
 /** Matches the payload shape server.ts's writeTraceFile actually writes. */
@@ -56,6 +59,20 @@ export default function TraceList({ requestId }: TraceListProps) {
   const [trace, setTrace] = useState<TracePayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lessonText, setLessonText] = useState<Record<string, Lesson>>({});
+
+  // Lesson texts for the "lessons injected" step; missing texts just leave the ids.
+  useEffect(() => {
+    let cancelled = false;
+    fetchLessons()
+      .then(lib => {
+        if (!cancelled) setLessonText(Object.fromEntries(lib.lessons.map(l => [l.id, l])));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -126,7 +143,21 @@ export default function TraceList({ requestId }: TraceListProps) {
                           ? step.segment
                           : `${t('panel.trace.step', { n: step.step })}${step.isFinal ? ` · ${t('panel.trace.finalAnswer')}` : ''}`}
                     </div>
-                    {step.reasoning && <p className="m-0 mt-1 text-xs text-text-muted whitespace-pre-wrap">{step.reasoning}</p>}
+                    {lessons && step.lessonIds ? (
+                      <div className="mt-1 flex flex-col gap-1.5" data-testid="trace-lessons">
+                        <p className="m-0 text-xs text-text-muted">{t('panel.trace.lessonsInjected', { count: step.lessonIds.length })}</p>
+                        <ul className="m-0 p-0 list-none flex flex-col gap-1">
+                          {step.lessonIds.map(id => (
+                            <li key={id} className="text-xs flex gap-1.5">
+                              <span className="font-mono font-semibold shrink-0">{id}</span>
+                              {lessonText[id] && <span className="text-text-muted">{lessonText[id].lesson}</span>}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : (
+                      step.reasoning && <p className="m-0 mt-1 text-xs text-text-muted whitespace-pre-wrap">{step.reasoning}</p>
+                    )}
                     {step.toolCalls.length > 0 && (
                       <div className="mt-2 flex flex-col gap-1.5">
                         {step.toolCalls.map((call, j) => (

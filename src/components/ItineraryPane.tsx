@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldAlert, Loader2, RefreshCw, Plus, Info, Check, AlertTriangle } from 'lucide-react';
+import { ShieldAlert, Loader2, RefreshCw, Plus, Info, Check, AlertTriangle, BookOpen, Search } from 'lucide-react';
 import {
   DndContext,
   PointerSensor,
@@ -49,7 +49,15 @@ interface ItineraryPaneProps {
    * exporting an image and while printing, so both cover the whole trip.
    */
   allDays?: boolean;
+  /** Opens the agent panel on the lessons this plan used (the "Used N lessons" chip). */
+  onShowLessons?: () => void;
 }
+
+/** Server attribution strings (server/tools/attributions.ts) → locale keys. Unknown strings render as sent. */
+const ATTRIBUTION_KEYS: Record<string, string> = {
+  'Place data © OpenStreetMap contributors, ODbL': 'osm',
+  'Destination context from Wikivoyage, CC BY-SA 4.0': 'wikivoyage',
+};
 
 interface VerifyIssue {
   severity: 'low' | 'medium' | 'high';
@@ -102,6 +110,7 @@ export default function ItineraryPane({
   budgetCap,
   headerActions,
   allDays,
+  onShowLessons,
 }: ItineraryPaneProps) {
   const t = useT();
   // Whole-trip mode is for export and print, so it carries no edit controls.
@@ -183,6 +192,52 @@ export default function ItineraryPane({
   const dayTitle = (d: Day) =>
     d.theme ? t('itinerary.dayHeading', { n: d.dayNumber, theme: d.theme }) : t('itinerary.day', { n: d.dayNumber });
 
+  // "N of M stops matched search results", from the server's grounding
+  // check (same rule as the eval's hallucination score). Hidden on
+  // itineraries that never carried the field (saved / shared ones).
+  const ungroundedCounts = new Map<string, number>();
+  for (const n of itinerary.ungroundedPlaceNames ?? []) ungroundedCounts.set(n, (ungroundedCounts.get(n) ?? 0) + 1);
+  const dayGrounding = (d: Day) => {
+    if (!itinerary.ungroundedPlaceNames) return null;
+    const counts = new Map(ungroundedCounts);
+    let total = 0;
+    let matched = 0;
+    for (const slot of d.slots) {
+      for (const p of slot.places) {
+        total++;
+        const left = counts.get(p.name) ?? 0;
+        if (left > 0) counts.set(p.name, left - 1);
+        else matched++;
+      }
+    }
+    if (total === 0) return null;
+    const all = matched === total;
+    return (
+      <div className="flex items-center gap-1.5 text-[13px]" data-testid={allDays ? `day-grounding-${d.dayNumber}` : 'day-grounding'}>
+        {all ? <Check size={16} className="text-accent shrink-0" strokeWidth={2.2} /> : <Search size={15} className="text-updated shrink-0" />}
+        {t(all ? 'itinerary.groundedAll' : 'itinerary.groundedSome', { matched, total })}
+      </div>
+    );
+  };
+
+  const usedLessons = itinerary.usedLessonIds;
+  const lessonsChip =
+    usedLessons && !allDays ? (
+      <button
+        type="button"
+        onClick={onShowLessons}
+        disabled={!onShowLessons}
+        title={t('itinerary.usedLessonsHint')}
+        data-testid="used-lessons"
+        className={`inline-flex items-center gap-1.5 min-h-[28px] px-2.5 rounded-full text-[12px] font-medium border print:hidden ${
+          usedLessons.length > 0 ? 'bg-accent-tint border-accent-line text-accent-deep' : 'bg-bg-base border-border text-text-muted'
+        } disabled:cursor-default`}
+      >
+        <BookOpen size={13} />
+        {usedLessons.length > 0 ? t('itinerary.usedLessons', { count: usedLessons.length }) : t('itinerary.noLessonsUsed')}
+      </button>
+    ) : null;
+
   const dayBudget = (d: Day) => {
     if (budgetCap == null) return null;
     const total = Math.round(dayCostPerPerson(d));
@@ -230,6 +285,7 @@ export default function ItineraryPane({
 
       <div className="flex flex-wrap items-center gap-2.5">
         <h1 className="m-0 font-display text-2xl font-semibold min-w-0">{allDays || !day ? itinerary.title : dayTitle(day)}</h1>
+        {lessonsChip}
         <div className="flex-1" />
         {editable && (
           <button
@@ -331,6 +387,7 @@ export default function ItineraryPane({
                   </div>
                 ))}
                 {allDays && dayBudget(d)}
+            {allDays && dayGrounding(d)}
               </section>
             );
           })}
@@ -347,9 +404,10 @@ export default function ItineraryPane({
 
       <div className="flex flex-wrap gap-2.5 pt-2 border-t border-border text-[13px]" data-testid="day-summary">
         {!allDays && day && dayBudget(day)}
+        {!allDays && day && dayGrounding(day)}
         {itinerary.sourceAttributions && itinerary.sourceAttributions.length > 0 && (
           <div className="text-[12px] text-text-muted w-full" data-testid="source-attributions">
-            {itinerary.sourceAttributions.join(' · ')}
+            {itinerary.sourceAttributions.map(a => (ATTRIBUTION_KEYS[a] ? t(`itinerary.attribution.${ATTRIBUTION_KEYS[a]}`) : a)).join(' · ')}
           </div>
         )}
       </div>

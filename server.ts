@@ -10,6 +10,8 @@ import { buildClarifications } from "./src/lib/clarifications";
 import { generateItinerary, type PlanningRequest, type ToolCallRecord, type AgentStepRecord } from "./server/agent";
 import { searchPlaces, parseLngLat } from "./server/tools/amap";
 import { computeSourceAttributions, computeGroundingWarning } from "./server/tools/attributions";
+import { getLiveLibrary, lessonsForRequest } from "./server/experience/live";
+import { ungroundedPlaceNames } from "./server/grounding";
 
 // Persistent per-request trace files for the debug TraceViewer
 // (src/components/TraceViewer.tsx) — one JSON file per generation request,
@@ -187,12 +189,17 @@ async function startServer() {
     let destinationForTrace = '';
 
     try {
-      const { destination, days, people, preferences, groupType, budget, specialNeeds, startDate, endDate, clarifications, memoryContext, language } = req.body as PlanningRequest;
+      const { destination, days, people, preferences, groupType, budget, specialNeeds, startDate, endDate, clarifications, memoryContext, language, useLibrary } = req.body as PlanningRequest & { useLibrary?: unknown };
       destinationForTrace = destination ?? '';
 
       if (!destination || !days) {
         return res.status(400).json({ error: "Destination and days are required." });
       }
+
+      // Experience library (v2 Core 2): on unless the request says
+      // `useLibrary: false`. Off, the prompt is byte-identical to a plan
+      // without a library.
+      const lessons = lessonsForRequest(useLibrary, destination);
 
       const itinerary = await generateItinerary(
         {
@@ -210,7 +217,7 @@ async function startServer() {
           // Only 'en' / 'zh' reach the prompt; anything else is dropped.
           language: language === 'en' || language === 'zh' ? language : undefined,
         },
-        { client: deepseek, trace, stepTrace },
+        { client: deepseek, trace, stepTrace, lessons },
       );
 
       // Shared with tests/eval/run-eval.ts so the eval harness's
@@ -223,6 +230,9 @@ async function startServer() {
       // general knowledge rather than a verified search hit. See
       // computeGroundingWarning's docstring; rendered in ItineraryPane.tsx.
       const groundingWarning = computeGroundingWarning(trace);
+      // Places that matched no search_places result this run, by the same
+      // rule as the eval's hallucination score (server/grounding.ts).
+      const ungrounded = ungroundedPlaceNames(trace, itinerary as any);
 
       // Debug: count valid coordinates
       try {
@@ -258,6 +268,9 @@ async function startServer() {
         ...(itinerary as object),
         ...(sourceAttributions.length > 0 ? { sourceAttributions } : {}),
         ...(groundingWarning ? { groundingWarning } : {}),
+        usedLessonIds: lessons?.ids ?? [],
+        ...(lessons ? { libraryVersion: lessons.libraryVersion } : {}),
+        ungroundedPlaceNames: ungrounded,
         requestId,
       });
     } catch (error: any) {
@@ -279,6 +292,24 @@ async function startServer() {
       } else {
         res.status(500).json({ error: "Failed to generate itinerary. Please try again." });
       }
+    }
+  });
+
+  // The experience library, read-only (v2 Core 2). Only the offline
+  // learning loop writes it; the Lessons panel and compare page read it.
+  app.get("/api/lessons", (_req, res) => {
+    try {
+      const lib = getLiveLibrary();
+      res.json({
+        libraryVersion: lib.libraryVersion,
+        method: lib.method,
+        epoch: lib.epoch,
+        updatedAt: lib.updatedAt,
+        lessons: lib.lessons,
+      });
+    } catch (error: any) {
+      console.error("Error reading the experience library:", error);
+      res.status(500).json({ error: "Failed to read the experience library." });
     }
   });
 

@@ -202,6 +202,8 @@ export interface AgentStepRecord {
   isFinal: boolean;
   /** Set on long-trip writing completions (outline / a day batch), which are not agent reasoning steps. */
   segment?: string;
+  /** On the `segment: 'lessons'` entry: ids of the experience-library lessons injected into the system prompt. */
+  lessonIds?: string[];
 }
 
 export interface RunAgentOptions {
@@ -297,6 +299,7 @@ export async function generateItinerary(
       toolCalls: [],
       isFinal: false,
       segment: 'lessons',
+      lessonIds: [...opts.lessons!.ids],
     });
   }
 

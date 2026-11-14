@@ -6,7 +6,8 @@ import MapPane from './MapPane';
 import ItineraryPane from './ItineraryPane';
 import TopBar from './TopBar';
 import ConversationPane, { type Stage } from './ConversationPane';
-import AgentPanel, { loadPanelOpen, savePanelOpen } from './AgentPanel';
+import AgentPanel, { type AgentPanelTab, loadPanelOpen, savePanelOpen } from './AgentPanel';
+import type { LessonFilter } from '../lib/lessons';
 import UndoSnack from './UndoSnack';
 import PlaceSearchModal from './PlaceSearchModal';
 import { diffDays } from './PlanningForm';
@@ -24,6 +25,25 @@ import {
   type TravelMemory,
 } from '../lib/memory';
 import { useLang, useT } from '../i18n';
+
+export const LIBRARY_STORAGE_KEY = 'wayfound.library';
+
+/** Experience library on/off for new plans; on unless this browser turned it off. */
+export function loadLibraryOn(): boolean {
+  try {
+    return window.localStorage.getItem(LIBRARY_STORAGE_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+
+export function saveLibraryOn(on: boolean): void {
+  try {
+    window.localStorage.setItem(LIBRARY_STORAGE_KEY, on ? 'on' : 'off');
+  } catch {
+    // not fatal
+  }
+}
 
 /**
  * The plan view: top bar, conversation (left), map + itinerary (middle),
@@ -49,8 +69,10 @@ export default function ItineraryApp() {
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const [panelOpen, setPanelOpen] = useState<boolean>(() => loadPanelOpen());
-  // Local state only until the Lessons panel wires it to the request (v2 step 2).
-  const [libraryOn, setLibraryOn] = useState(true);
+  const [panelTab, setPanelTab] = useState<AgentPanelTab>('lessons');
+  const [lessonFilter, setLessonFilter] = useState<LessonFilter | undefined>(undefined);
+  // Experience library on/off for the next plan; sent as `useLibrary`. Remembered per browser.
+  const [libraryOn, setLibraryOn] = useState<boolean>(() => loadLibraryOn());
 
   const [undo, setUndo] = useState<
     | { place: Place; dayNumber: number; period: SlotPeriod; atIndex: number }
@@ -85,6 +107,22 @@ export default function ItineraryApp() {
     return unsub;
   }, []);
 
+  const toggleLibrary = () => {
+    setLibraryOn(on => {
+      saveLibraryOn(!on);
+      return !on;
+    });
+  };
+
+  const showUsedLessons = () => {
+    setPanelTab('lessons');
+    setLessonFilter('used');
+    if (!panelOpen) {
+      savePanelOpen(true);
+      setPanelOpen(true);
+    }
+  };
+
   const togglePanel = () => {
     setPanelOpen(open => {
       savePanelOpen(!open);
@@ -118,6 +156,7 @@ export default function ItineraryApp() {
           clarifications: input.clarifications,
           memoryContext: memoryContext || undefined,
           language: lang,
+          useLibrary: libraryOn,
         }),
       });
 
@@ -310,7 +349,7 @@ export default function ItineraryApp() {
       <TopBar
         itinerary={itinerary}
         libraryOn={libraryOn}
-        onToggleLibrary={() => setLibraryOn(v => !v)}
+        onToggleLibrary={toggleLibrary}
         panelOpen={panelOpen}
         onTogglePanel={togglePanel}
       />
@@ -372,6 +411,7 @@ export default function ItineraryApp() {
                 budgetCap={pendingInput?.budget.max}
                 headerActions={moreMenu}
                 allDays={exportAll}
+                onShowLessons={showUsedLessons}
               />
             ) : (
               <div className="min-h-[240px] h-full flex flex-col items-center justify-center text-center" data-testid="itinerary-empty">
@@ -388,7 +428,19 @@ export default function ItineraryApp() {
         </div>
 
         {panelOpen && (
-          <AgentPanel onClose={togglePanel} memory={memory} onClearMemory={handleClearMemory} requestId={itinerary?.requestId} />
+          <AgentPanel
+            onClose={togglePanel}
+            memory={memory}
+            onClearMemory={handleClearMemory}
+            requestId={itinerary?.requestId}
+            usedLessonIds={itinerary?.usedLessonIds}
+            tab={panelTab}
+            onTabChange={next => {
+              setPanelTab(next);
+              if (next !== 'lessons') setLessonFilter(undefined);
+            }}
+            lessonFilter={lessonFilter}
+          />
         )}
       </main>
 

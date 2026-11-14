@@ -109,3 +109,58 @@ describe('ItineraryPane whole-trip mode (export / print)', () => {
     expect(screen.getByTestId('day-budget-2')).toHaveTextContent('under');
   });
 });
+
+describe('ItineraryPane lessons chip and grounding line', () => {
+  const withMeta: Itinerary = {
+    ...itinerary,
+    usedLessonIds: ['L01', 'L04'],
+    ungroundedPlaceNames: ['Place b'],
+  };
+  const renderWith = (it: Itinerary, onShowLessons?: () => void, activeDay = 1) =>
+    render(
+      <ItineraryPane
+        itinerary={it}
+        activeDay={activeDay}
+        onChangeDay={() => {}}
+        selectedPlaceId={null}
+        onSelectPlace={() => {}}
+        onUpdateItinerary={() => {}}
+        onRequestDelete={() => {}}
+        onAddPlaceToSlot={() => {}}
+        onShowLessons={onShowLessons}
+      />,
+    );
+
+  it('shows how many lessons the plan used and opens them on click', () => {
+    let opened = false;
+    renderWith(withMeta, () => (opened = true));
+    const chip = screen.getByTestId('used-lessons');
+    expect(chip).toHaveTextContent('Used 2 lessons');
+    fireEvent.click(chip);
+    expect(opened).toBe(true);
+  });
+
+  it('says when no lessons were used, and shows nothing for older itineraries', () => {
+    renderWith({ ...itinerary, usedLessonIds: [] });
+    expect(screen.getByTestId('used-lessons')).toHaveTextContent('No lessons used');
+  });
+
+  it('hides the chip and grounding line when the fields are absent', () => {
+    renderWith(itinerary);
+    expect(screen.queryByTestId('used-lessons')).toBeNull();
+    expect(screen.queryByTestId('day-grounding')).toBeNull();
+  });
+
+  it('counts the shown day\'s stops that matched search results', () => {
+    const { unmount } = renderWith(withMeta);
+    expect(screen.getByTestId('day-grounding')).toHaveTextContent('1 of 2 stops matched search results');
+    unmount();
+    renderWith(withMeta, undefined, 2);
+    expect(screen.getByTestId('day-grounding')).toHaveTextContent('All 1 stops matched search results');
+  });
+
+  it('translates the server attribution strings', () => {
+    renderWith({ ...itinerary, sourceAttributions: ['Place data © OpenStreetMap contributors, ODbL', 'Something custom'] });
+    expect(screen.getByTestId('source-attributions')).toHaveTextContent('Place data © OpenStreetMap contributors, ODbL · Something custom');
+  });
+});

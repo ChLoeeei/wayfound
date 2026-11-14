@@ -1,0 +1,2510 @@
+{
+  "generatedAt": "2026-11-14T06:40:13.461Z",
+  "baseline": {
+    "file": "tests/eval/results/baseline-v2-test-2026-11-11T03-14-02-147Z.json",
+    "setup": "baseline-v2",
+    "stamp": "2026-11-11T03-14-02-147Z",
+    "commit": "6ca20ae",
+    "repeats": 3
+  },
+  "library": {
+    "file": "tests/eval/results/group-lessons-test-2026-11-12T00-44-18-991Z.json",
+    "setup": "group-lessons",
+    "stamp": "2026-11-12T00-44-18-991Z",
+    "commit": "1d1cc93",
+    "repeats": 3
+  },
+  "heldOut": {
+    "cases": 35,
+    "coreCases": 30,
+    "repeats": 3,
+    "tiles": [
+      {
+        "key": "toolCorrectInternational",
+        "metric": "toolCorrect",
+        "subset": "core",
+        "region": "international",
+        "n": 15,
+        "meanA": 0.862599,
+        "meanB": 0.939661,
+        "meanDiff": 0.077062,
+        "ci95": [
+          0.033026,
+          0.121097
+        ],
+        "better": 11,
+        "worse": 2,
+        "tied": 2
+      },
+      {
+        "key": "hallucinationDomestic",
+        "metric": "hallucinationRate",
+        "subset": "core",
+        "region": "domestic",
+        "n": 15,
+        "meanA": 0.022476,
+        "meanB": 0.004068,
+        "meanDiff": -0.018407,
+        "ci95": [
+          -0.035958,
+          -0.000857
+        ],
+        "better": 7,
+        "worse": 0,
+        "tied": 8
+      },
+      {
+        "key": "rewardCore",
+        "metric": "reward",
+        "subset": "core",
+        "n": 30,
+        "meanA": 0.730731,
+        "meanB": 0.743368,
+        "meanDiff": 0.012637,
+        "ci95": [
+          0.00279,
+          0.022484
+        ],
+        "better": 22,
+        "worse": 6,
+        "tied": 2
+      },
+      {
+        "key": "rewardAll",
+        "metric": "reward",
+        "subset": "all",
+        "n": 35,
+        "meanA": 0.723647,
+        "meanB": 0.733691,
+        "meanDiff": 0.010045,
+        "ci95": [
+          -0.007604,
+          0.027694
+        ],
+        "better": 26,
+        "worse": 7,
+        "tied": 2
+      },
+      {
+        "key": "promptTokens",
+        "metric": "promptTokens",
+        "subset": "core",
+        "n": 30,
+        "meanA": 98591.711111,
+        "meanB": 123325.588889,
+        "meanDiff": 24733.877778,
+        "ci95": [
+          13147.195641,
+          36320.559915
+        ],
+        "better": 3,
+        "worse": 27,
+        "tied": 0
+      }
+    ]
+  },
+  "examples": [
+    {
+      "caseId": "luangprabang-solo-vegetarian-tight",
+      "region": "international",
+      "hard": true,
+      "request": {
+        "destination": "Luang Prabang",
+        "days": 4,
+        "people": 1,
+        "preferences": [
+          "culture",
+          "nature"
+        ],
+        "groupType": "solo",
+        "budget": {
+          "min": 100,
+          "max": 250
+        },
+        "specialNeeds": [
+          "vegetarian"
+        ]
+      },
+      "off": {
+        "setup": "baseline-v2",
+        "repeat": 3,
+        "reward": 0.6320854700854701,
+        "toolCorrect": 0.7259259259259259,
+        "constraint": 1,
+        "hallucinationRate": 0.11538461538461539,
+        "judge": 4.3,
+        "steps": 9,
+        "invalidPoiRefs": 2,
+        "usedLessonIds": [],
+        "ungroundedPlaceNames": [
+          "Phou Si (Mount Phousi) Sunset",
+          "Kuang Si Falls",
+          "Sai Bat Alms Giving (Sisavangvong Road)"
+        ],
+        "itinerary": {
+          "title": "Luang Prabang: Temples, Waterfalls & Slow Riverside Days (Solo, Vegetarian)",
+          "summary": "A 4-day solo culture-and-nature loop through the UNESCO-listed old town of Luang Prabang — golden-roofed wats, teak shophouses and French-Indochine shutters under a backdrop of green mountains, exactly as the old capital is described. Mornings are for temples and markets, afternoons for waterfalls, craft villages and the Mekong, evenings for the night market and vegetarian buffets. Everything is walkable or a short tuk-tuk ride, and the plan leans on cheap local food (Luang Prabang is very veg-friendly: bamboo-soup stalls, the night-market vegetarian buffet, and Lao coffee) to stay inside ¥100–250/day. Budget notes: guesthouse dorm/private room ~¥60–110/night, meals ¥15–40, temple tickets ¥8–20, shared tuk-tuk to waterfalls ¥30–60. Bring a sarong for temple visits and cash (kip) for markets.",
+          "days": [
+            {
+              "dayNumber": 1,
+              "theme": "Old Town Icons & the View from Phou Si",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "lp_d1_m1",
+                      "name": "Royal Palace & National Museum",
+                      "type": "attraction",
+                      "estimatedCost": 20,
+                      "duration": 90
+                    },
+                    {
+                      "id": "lp_d1_m2",
+                      "name": "Wat Mai Suwannaphumaham",
+                      "type": "attraction",
+                      "estimatedCost": 10,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "lp_d1_a1",
+                      "name": "TAEC Traditional Arts and Ethnology Centre",
+                      "type": "attraction",
+                      "estimatedCost": 20,
+                      "duration": 60
+                    },
+                    {
+                      "id": "lp_d1_a2",
+                      "name": "Lao Coffee Bean",
+                      "type": "cafe",
+                      "estimatedCost": 15,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "lp_d1_e1",
+                      "name": "Phou Si (Mount Phousi) Sunset",
+                      "type": "attraction",
+                      "estimatedCost": 10,
+                      "duration": 75
+                    },
+                    {
+                      "id": "lp_d1_e2",
+                      "name": "Vegetarian Buffet (Night Market)",
+                      "type": "restaurant",
+                      "estimatedCost": 20,
+                      "duration": 60
+                    },
+                    {
+                      "id": "lp_d1_e3",
+                      "name": "Night Market",
+                      "type": "shopping",
+                      "estimatedCost": 0,
+                      "duration": 60
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 2,
+              "theme": "Waterfall Day: Turquoise Pools & River Villages",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "lp_d2_m1",
+                      "name": "Kuang Si Falls",
+                      "type": "attraction",
+                      "estimatedCost": 45,
+                      "duration": 210
+                    },
+                    {
+                      "id": "lp_d2_m2",
+                      "name": "Tad Sae Waterfall",
+                      "type": "attraction",
+                      "estimatedCost": 15,
+                      "duration": 90
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "lp_d2_a1",
+                      "name": "Ock Pop Tok Living Crafts Center",
+                      "type": "attraction",
+                      "estimatedCost": 25,
+                      "duration": 90
+                    },
+                    {
+                      "id": "lp_d2_a2",
+                      "name": "Bamboo Tree Restaurant",
+                      "type": "restaurant",
+                      "estimatedCost": 35,
+                      "duration": 60
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "lp_d2_e1",
+                      "name": "Mekong Sunset View",
+                      "type": "leisure",
+                      "estimatedCost": 15,
+                      "duration": 60
+                    },
+                    {
+                      "id": "lp_d2_e2",
+                      "name": "Dyen Sabai Restaurant",
+                      "type": "restaurant",
+                      "estimatedCost": 40,
+                      "duration": 75
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 3,
+              "theme": "Temples, Alms & the Quiet East Bank",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "lp_d3_m1",
+                      "name": "Sai Bat Alms Giving (Sisavangvong Road)",
+                      "type": "attraction",
+                      "estimatedCost": 10,
+                      "duration": 45
+                    },
+                    {
+                      "id": "lp_d3_m2",
+                      "name": "Wat Xieng Thong",
+                      "type": "attraction",
+                      "estimatedCost": 20,
+                      "duration": 75
+                    },
+                    {
+                      "id": "lp_d3_m3",
+                      "name": "Viewpoint Café",
+                      "type": "cafe",
+                      "estimatedCost": 20,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "lp_d3_a1",
+                      "name": "Wat Longkhun",
+                      "type": "attraction",
+                      "estimatedCost": 15,
+                      "duration": 60
+                    },
+                    {
+                      "id": "lp_d3_a2",
+                      "name": "Wat Visoun",
+                      "type": "attraction",
+                      "estimatedCost": 10,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "lp_d3_e1",
+                      "name": "Yuni Yupoun Restaurant",
+                      "type": "restaurant",
+                      "estimatedCost": 35,
+                      "duration": 60
+                    },
+                    {
+                      "id": "lp_d3_e2",
+                      "name": "Epoca cafe",
+                      "type": "cafe",
+                      "estimatedCost": 15,
+                      "duration": 45
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 4,
+              "theme": "Craft Villages, Markets & a Slow Farewell",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "lp_d4_m1",
+                      "name": "Wat Manorom",
+                      "type": "attraction",
+                      "estimatedCost": 10,
+                      "duration": 45
+                    },
+                    {
+                      "id": "lp_d4_m2",
+                      "name": "Phousi Road Morning Market",
+                      "type": "shopping",
+                      "estimatedCost": 15,
+                      "duration": 60
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "lp_d4_a1",
+                      "name": "Ock Pop Tok (Sakkaline Road shop)",
+                      "type": "shopping",
+                      "estimatedCost": 30,
+                      "duration": 45
+                    },
+                    {
+                      "id": "lp_d4_a2",
+                      "name": "Indochine Restaurant",
+                      "type": "restaurant",
+                      "estimatedCost": 40,
+                      "duration": 60
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "lp_d4_e1",
+                      "name": "Wat Senesoukharam",
+                      "type": "attraction",
+                      "estimatedCost": 10,
+                      "duration": 45
+                    },
+                    {
+                      "id": "lp_d4_e2",
+                      "name": "Night Market (Sisavangvong Road)",
+                      "type": "shopping",
+                      "estimatedCost": 20,
+                      "duration": 60
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "on": {
+        "setup": "group-lessons",
+        "repeat": 2,
+        "reward": 0.772,
+        "toolCorrect": 1,
+        "constraint": 1,
+        "hallucinationRate": 0,
+        "judge": 4.3,
+        "steps": 9,
+        "invalidPoiRefs": 0,
+        "usedLessonIds": [
+          "L04",
+          "L01",
+          "L03",
+          "L08",
+          "L05"
+        ],
+        "ungroundedPlaceNames": [],
+        "itinerary": {
+          "title": "Luang Prabang: Temples, Waterfalls & Mekong Calm (Solo, Vegetarian)",
+          "summary": "A 4-day solo culture-and-nature loop through the UNESCO-listed old town of Luang Prabang, where golden-roofed wats sit beneath teak balconies and French-Indochine shutters, backed by green mountains and the Mekong. Mornings are for temples and markets, afternoons for waterfalls and craft villages, evenings for night markets and riverside sunsets. Every food stop is vegetarian-friendly — Lao cuisine leans heavily on herbs, sticky rice, morning glory, bamboo shoots and coconut curries, and Luang Prabang has a dedicated vegan restaurant plus a famous all-you-can-eat vegetarian night-market buffet. Budget is kept tight with guesthouse-style lodging, shared songthaews and street food, comfortably inside ¥100–250/day.",
+          "days": [
+            {
+              "dayNumber": 1,
+              "theme": "Old Town Golden Temples & Night Market First Taste",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "lp1a",
+                      "name": "Royal Palace & National Museum",
+                      "type": "attraction",
+                      "estimatedCost": 25,
+                      "duration": 90
+                    },
+                    {
+                      "id": "lp1b",
+                      "name": "Wat Mai Suwannaphumaham",
+                      "type": "attraction",
+                      "estimatedCost": 15,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "lp1c",
+                      "name": "TAEC Traditional Arts and Ethnology Centre",
+                      "type": "attraction",
+                      "estimatedCost": 25,
+                      "duration": 75
+                    },
+                    {
+                      "id": "lp1d",
+                      "name": "Wat Visoun",
+                      "type": "attraction",
+                      "estimatedCost": 15,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "lp1e",
+                      "name": "Vegetarian Buffet (Night Market)",
+                      "type": "restaurant",
+                      "estimatedCost": 20,
+                      "duration": 60
+                    },
+                    {
+                      "id": "lp1f",
+                      "name": "Night Market",
+                      "type": "shopping",
+                      "estimatedCost": 30,
+                      "duration": 60
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 2,
+              "theme": "Waterfall Day: Turquoise Pools & Jungle Trails",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "lp2a",
+                      "name": "Kuang Si Falls",
+                      "type": "attraction",
+                      "estimatedCost": 45,
+                      "duration": 210
+                    },
+                    {
+                      "id": "lp2b",
+                      "name": "Tad Sae Waterfall",
+                      "type": "attraction",
+                      "estimatedCost": 20,
+                      "duration": 90
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "lp2c",
+                      "name": "Ock Pop Tok Living Crafts Center",
+                      "type": "attraction",
+                      "estimatedCost": 30,
+                      "duration": 90
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "lp2d",
+                      "name": "Mekong Sunset View",
+                      "type": "leisure",
+                      "estimatedCost": 15,
+                      "duration": 60
+                    },
+                    {
+                      "id": "lp2e",
+                      "name": "Laungprabang Vegan Restaurant",
+                      "type": "restaurant",
+                      "estimatedCost": 35,
+                      "duration": 60
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 3,
+              "theme": "Mekong Caves, Villages & Hilltop Sunset",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "lp3a",
+                      "name": "Public boat for Pak ou caves",
+                      "type": "attraction",
+                      "estimatedCost": 60,
+                      "duration": 180
+                    },
+                    {
+                      "id": "lp3b",
+                      "name": "Wat Longkhun",
+                      "type": "attraction",
+                      "estimatedCost": 15,
+                      "duration": 40
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "lp3c",
+                      "name": "Wat Xieng Thong",
+                      "type": "attraction",
+                      "estimatedCost": 20,
+                      "duration": 75
+                    },
+                    {
+                      "id": "lp3d",
+                      "name": "Viewpoint Café",
+                      "type": "cafe",
+                      "estimatedCost": 20,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "lp3e",
+                      "name": "Phousi Road",
+                      "type": "attraction",
+                      "estimatedCost": 15,
+                      "duration": 60
+                    },
+                    {
+                      "id": "lp3f",
+                      "name": "Bamboo Tree Restaurant",
+                      "type": "restaurant",
+                      "estimatedCost": 40,
+                      "duration": 60
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 4,
+              "theme": "Alms, Markets & Slow Craft Morning",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "lp4a",
+                      "name": "Wat Senesoukharam",
+                      "type": "attraction",
+                      "estimatedCost": 15,
+                      "duration": 45
+                    },
+                    {
+                      "id": "lp4b",
+                      "name": "Lao Coffee Bean",
+                      "type": "cafe",
+                      "estimatedCost": 15,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "lp4c",
+                      "name": "Ock Pop Tok",
+                      "type": "shopping",
+                      "estimatedCost": 40,
+                      "duration": 60
+                    },
+                    {
+                      "id": "lp4d",
+                      "name": "Wat Manorom",
+                      "type": "attraction",
+                      "estimatedCost": 15,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "lp4e",
+                      "name": "Night Food Market",
+                      "type": "restaurant",
+                      "estimatedCost": 25,
+                      "duration": 60
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "caseId": "tokyo-family-food-culture",
+      "region": "international",
+      "hard": false,
+      "request": {
+        "destination": "Tokyo",
+        "days": 6,
+        "people": 4,
+        "preferences": [
+          "food",
+          "culture"
+        ],
+        "groupType": "family",
+        "budget": {
+          "min": 500,
+          "max": 1500
+        },
+        "specialNeeds": [
+          "baby"
+        ]
+      },
+      "off": {
+        "setup": "baseline-v2",
+        "repeat": 3,
+        "reward": 0.6856170212765957,
+        "toolCorrect": 0.778723404255319,
+        "constraint": 1,
+        "hallucinationRate": 0,
+        "judge": 3.8,
+        "steps": 8,
+        "invalidPoiRefs": 1,
+        "usedLessonIds": [],
+        "ungroundedPlaceNames": [],
+        "itinerary": {
+          "title": "Tokyo Family Food & Culture Journey (6 Days, Baby-Friendly)",
+          "summary": "A relaxed six-day Tokyo itinerary for a family of four with a baby, balancing food and culture at a gentle pace. Days are grouped by neighbourhood to minimise travel and maximise stroller-friendly stops: historic Asakusa and Ueno's museums and markets, the Imperial Palace and Nihonbashi/Ginza food halls, Meiji Shrine and Shibuya/Harajuku, Toyosu's teamLab and Odaiba's open waterfront, and finally Shinjuku's gardens and viewpoints with a food-street evening. Each day mixes temples, gardens, markets and family-friendly dining within the ¥500–1500 per person daily budget, with plenty of parks, indoor alternatives and short walking legs suited to a baby.",
+          "days": [
+            {
+              "dayNumber": 1,
+              "theme": "Old Tokyo arrival: Sensō-ji, Nakamise snacks and Skytree views",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d1h1",
+                      "name": "Richmond Hotel Asakusa",
+                      "type": "hotel",
+                      "estimatedCost": 420,
+                      "duration": 45
+                    },
+                    {
+                      "id": "d1a1",
+                      "name": "Sensō-ji",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 90
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d1a2",
+                      "name": "Nakamise Shopping Street",
+                      "type": "shopping",
+                      "estimatedCost": 60,
+                      "duration": 60
+                    },
+                    {
+                      "id": "d1a3",
+                      "name": "Sushi Zanmai",
+                      "type": "restaurant",
+                      "estimatedCost": 130,
+                      "duration": 60
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d1e1",
+                      "name": "Tokyo Skytree",
+                      "type": "attraction",
+                      "estimatedCost": 150,
+                      "duration": 120
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 2,
+              "theme": "Museums, zoo and market food in Ueno and Yanaka",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d2m1",
+                      "name": "Ueno Zoo",
+                      "type": "attraction",
+                      "estimatedCost": 40,
+                      "duration": 120
+                    },
+                    {
+                      "id": "d2m2",
+                      "name": "Tokyo National Museum",
+                      "type": "attraction",
+                      "estimatedCost": 60,
+                      "duration": 90
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d2a1",
+                      "name": "Ameyoko Market",
+                      "type": "shopping",
+                      "estimatedCost": 80,
+                      "duration": 75
+                    },
+                    {
+                      "id": "d2a2",
+                      "name": "Tempura Miya Honten",
+                      "type": "restaurant",
+                      "estimatedCost": 110,
+                      "duration": 60
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d2e1",
+                      "name": "Nezu Shrine",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 60
+                    },
+                    {
+                      "id": "d2e2",
+                      "name": "Yanaka",
+                      "type": "leisure",
+                      "estimatedCost": 70,
+                      "duration": 60
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 3,
+              "theme": "Imperial gardens, Nihonbashi food halls and Ginza shopping",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d3m1",
+                      "name": "Guided Tour Of The East Gardens Higashi -Gyoen",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 90
+                    },
+                    {
+                      "id": "d3m2",
+                      "name": "Ishiraku Otemachi – Soba & Tempura",
+                      "type": "restaurant",
+                      "estimatedCost": 90,
+                      "duration": 50
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d3a1",
+                      "name": "Nihonbashi Mitsukoshi Main Store",
+                      "type": "shopping",
+                      "estimatedCost": 100,
+                      "duration": 75
+                    },
+                    {
+                      "id": "d3a2",
+                      "name": "Ginza Six",
+                      "type": "shopping",
+                      "estimatedCost": 80,
+                      "duration": 90
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d3e1",
+                      "name": "Hamarikyu Gardens",
+                      "type": "attraction",
+                      "estimatedCost": 20,
+                      "duration": 60
+                    },
+                    {
+                      "id": "d3e2",
+                      "name": "Tsukiji Outer Market",
+                      "type": "restaurant",
+                      "estimatedCost": 120,
+                      "duration": 60
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 4,
+              "theme": "Shrine calm and city energy: Meiji Jingu, Harajuku and Shibuya",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d4m1",
+                      "name": "Meiji Jingu Main Shrine",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 75
+                    },
+                    {
+                      "id": "d4m2",
+                      "name": "Meiji Shrine Museum",
+                      "type": "attraction",
+                      "estimatedCost": 20,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d4a1",
+                      "name": "Yoyogi Park",
+                      "type": "leisure",
+                      "estimatedCost": 0,
+                      "duration": 60
+                    },
+                    {
+                      "id": "d4a2",
+                      "name": "原宿駅竹下口",
+                      "type": "shopping",
+                      "estimatedCost": 60,
+                      "duration": 60
+                    },
+                    {
+                      "id": "d4a3",
+                      "name": "Tokyu Plaza Harajuku",
+                      "type": "shopping",
+                      "estimatedCost": 0,
+                      "duration": 40
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d4e1",
+                      "name": "Shibuya Scramble Crossing",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 30
+                    },
+                    {
+                      "id": "d4e2",
+                      "name": "Shibuya Hikarie",
+                      "type": "shopping",
+                      "estimatedCost": 120,
+                      "duration": 90
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 5,
+              "theme": "Waterfront play: teamLab Planets, Toyosu market and Odaiba",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d5m1",
+                      "name": "teamLab Planets",
+                      "type": "attraction",
+                      "estimatedCost": 180,
+                      "duration": 90
+                    },
+                    {
+                      "id": "d5m2",
+                      "name": "Tsukiji Outer Market",
+                      "type": "attraction",
+                      "estimatedCost": 100,
+                      "duration": 75
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d5a1",
+                      "name": "Odaiba Marine Park",
+                      "type": "leisure",
+                      "estimatedCost": 0,
+                      "duration": 75
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d5e1",
+                      "name": "Restaurant Ragout",
+                      "type": "restaurant",
+                      "estimatedCost": 180,
+                      "duration": 90
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 6,
+              "theme": "Gardens, skyline views and izakaya alleys in Shinjuku",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d6m1",
+                      "name": "Shinjuku Gyoen National Garden",
+                      "type": "attraction",
+                      "estimatedCost": 25,
+                      "duration": 100
+                    },
+                    {
+                      "id": "d6m2",
+                      "name": "Tokyo Metropolitan Government Building 1",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d6a1",
+                      "name": "Kagurazaka",
+                      "type": "attraction",
+                      "estimatedCost": 50,
+                      "duration": 75
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d6e1",
+                      "name": "Shinjuku Omoide Yokochō",
+                      "type": "nightlife",
+                      "estimatedCost": 150,
+                      "duration": 90
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "on": {
+        "setup": "group-lessons",
+        "repeat": 1,
+        "reward": 0.772,
+        "toolCorrect": 1,
+        "constraint": 1,
+        "hallucinationRate": 0,
+        "judge": 4.3,
+        "steps": 8,
+        "invalidPoiRefs": 0,
+        "usedLessonIds": [
+          "L04",
+          "L01",
+          "L03",
+          "L08",
+          "L05"
+        ],
+        "ungroundedPlaceNames": [],
+        "itinerary": {
+          "title": "Tokyo Family Food & Culture Journey — 6 Days with a Baby",
+          "summary": "A relaxed six-day Tokyo itinerary built for a family of four travelling with a baby, balancing food and culture at a gentle pace. Days are grouped by neighbourhood so you spend less time on trains and more time eating, wandering and letting the little one nap. Expect temple streets and market breakfasts in Asakusa and Tsukiji, museum and park mornings in Ueno, shrine-and-city-view afternoons in Shibuya and Harajuku, a modern-art and waterfront day in Toyosu and Odaiba, and a green, slow-paced finale around Shinjuku and the old Yanaka lanes. All stops are chosen to be stroller-friendly, with short walking hops, indoor backup options and plenty of casual, budget-friendly eating spots so each person stays comfortably within ¥500–1500 per day.",
+          "days": [
+            {
+              "dayNumber": 1,
+              "theme": "Old Tokyo welcome: temple lanes, market snacks and a riverside tower view",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d1a1",
+                      "name": "Sensō-ji",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 75
+                    },
+                    {
+                      "id": "d1a2",
+                      "name": "Nakamise Shopping Street",
+                      "type": "shopping",
+                      "estimatedCost": 60,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d1a3",
+                      "name": "Daikokuya Tempura",
+                      "type": "restaurant",
+                      "estimatedCost": 110,
+                      "duration": 60
+                    },
+                    {
+                      "id": "d1a4",
+                      "name": "Kappabashi kitchen street",
+                      "type": "shopping",
+                      "estimatedCost": 0,
+                      "duration": 60
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d1a5",
+                      "name": "Tokyo Skytree",
+                      "type": "attraction",
+                      "estimatedCost": 180,
+                      "duration": 90
+                    },
+                    {
+                      "id": "d1a6",
+                      "name": "Richmond Hotel Premier Asakusa",
+                      "type": "hotel",
+                      "estimatedCost": 420,
+                      "duration": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 2,
+              "theme": "Market breakfast and museum culture, then a neon evening in the electric city",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d2a1",
+                      "name": "Tsukiji Outer Market",
+                      "type": "attraction",
+                      "estimatedCost": 120,
+                      "duration": 90
+                    },
+                    {
+                      "id": "d2a2",
+                      "name": "Sushi Zanmai",
+                      "type": "restaurant",
+                      "estimatedCost": 130,
+                      "duration": 50
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d2a3",
+                      "name": "Tokyo National Museum",
+                      "type": "attraction",
+                      "estimatedCost": 50,
+                      "duration": 120
+                    },
+                    {
+                      "id": "d2a4",
+                      "name": "Ueno Park",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 60
+                    },
+                    {
+                      "id": "d2a5",
+                      "name": "Ameyoko Market",
+                      "type": "shopping",
+                      "estimatedCost": 60,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d2a6",
+                      "name": "Shinjuku Omoide Yokochō",
+                      "type": "attraction",
+                      "estimatedCost": 150,
+                      "duration": 75
+                    },
+                    {
+                      "id": "d2a7",
+                      "name": "Hotel Sunroute Plaza Shinjuku",
+                      "type": "hotel",
+                      "estimatedCost": 450,
+                      "duration": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 3,
+              "theme": "Shrines, forest paths and the city's best rooftop sunset",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d3a1",
+                      "name": "Meiji Jingu Main Shrine",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 90
+                    },
+                    {
+                      "id": "d3a2",
+                      "name": "Meiji Shrine Museum",
+                      "type": "attraction",
+                      "estimatedCost": 30,
+                      "duration": 40
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d3a3",
+                      "name": "Tokyu Plaza Harajuku",
+                      "type": "shopping",
+                      "estimatedCost": 80,
+                      "duration": 60
+                    },
+                    {
+                      "id": "d3a4",
+                      "name": "原宿駅竹下口",
+                      "type": "attraction",
+                      "estimatedCost": 40,
+                      "duration": 45
+                    },
+                    {
+                      "id": "d3a5",
+                      "name": "Shibuya Scramble Crossing",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 30
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d3a6",
+                      "name": "Shibuya Sky",
+                      "type": "attraction",
+                      "estimatedCost": 180,
+                      "duration": 75
+                    },
+                    {
+                      "id": "d3a7",
+                      "name": "Mawashizushi Katsu (Katsu Midori)",
+                      "type": "restaurant",
+                      "estimatedCost": 120,
+                      "duration": 60
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 4,
+              "theme": "Modern art, waterfront parks and a family-friendly bay evening",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d4p1",
+                      "name": "teamLab Planets",
+                      "type": "attraction",
+                      "estimatedCost": 230,
+                      "duration": 120
+                    },
+                    {
+                      "id": "d4p2",
+                      "name": "Toyosu Market",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 75
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d4p3",
+                      "name": "Odaiba Marine Park",
+                      "type": "leisure",
+                      "estimatedCost": 0,
+                      "duration": 90
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d4p4",
+                      "name": "Kaiten Sushi Ginza Onodera",
+                      "type": "restaurant",
+                      "estimatedCost": 180,
+                      "duration": 75
+                    },
+                    {
+                      "id": "d4p5",
+                      "name": "Shibuya Tokyu REI Hotel",
+                      "type": "hotel",
+                      "estimatedCost": 420,
+                      "duration": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 5,
+              "theme": "Imperial gardens, department-store food halls and yakitori alleys",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d5p1",
+                      "name": "Tokyo Station Marunouchu Building",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 60
+                    },
+                    {
+                      "id": "d5p2",
+                      "name": "Ginza Six",
+                      "type": "shopping",
+                      "estimatedCost": 0,
+                      "duration": 90
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d5p3",
+                      "name": "Ginza Six Garden",
+                      "type": "leisure",
+                      "estimatedCost": 0,
+                      "duration": 45
+                    },
+                    {
+                      "id": "d5p4",
+                      "name": "Kura Sushi",
+                      "type": "restaurant",
+                      "estimatedCost": 120,
+                      "duration": 60
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d5p5",
+                      "name": "Yurakucho Yakitori Alley",
+                      "type": "nightlife",
+                      "estimatedCost": 150,
+                      "duration": 90
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 6,
+              "theme": "Slow lanes, old-town temples and a farewell garden stroll",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d6p1",
+                      "name": "Yanaka Ginza",
+                      "type": "shopping",
+                      "estimatedCost": 60,
+                      "duration": 90
+                    },
+                    {
+                      "id": "d6p2",
+                      "name": "Yanesen tourist information and culture centre",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 30
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d6p3",
+                      "name": "Nezu Shrine",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 60
+                    },
+                    {
+                      "id": "d6p4",
+                      "name": "Gyokurinji Temple",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 30
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d6p5",
+                      "name": "Shinjuku Gyoen National Garden",
+                      "type": "attraction",
+                      "estimatedCost": 25,
+                      "duration": 90
+                    },
+                    {
+                      "id": "d6p6",
+                      "name": "SUSHIYOKO",
+                      "type": "restaurant",
+                      "estimatedCost": 130,
+                      "duration": 60
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "caseId": "hefei-couple-leisure-food",
+      "region": "domestic",
+      "hard": false,
+      "request": {
+        "destination": "合肥",
+        "days": 2,
+        "people": 2,
+        "preferences": [
+          "leisure",
+          "food"
+        ],
+        "groupType": "couple",
+        "budget": {
+          "min": 250,
+          "max": 700
+        },
+        "specialNeeds": [
+          "accessibility"
+        ]
+      },
+      "off": {
+        "setup": "baseline-v2",
+        "repeat": 2,
+        "reward": 0.772,
+        "toolCorrect": 1,
+        "constraint": 1,
+        "hallucinationRate": 0,
+        "judge": 4.3,
+        "steps": 4,
+        "invalidPoiRefs": 0,
+        "usedLessonIds": [],
+        "ungroundedPlaceNames": [],
+        "itinerary": {
+          "title": "合肥两日慢游：包公故里 · 徽味烟火",
+          "summary": "为两位同行者设计的合肥休闲+美食两日行程，节奏舒缓，以步行和短途打车为主，全程优先选择平坦步道、电梯和无障碍通道完善的景点与商圈。第一天集中游览老城区包公园—李鸿章故居—淮河路步行街—古逍遥津，文化底蕴与市井小吃一次打包；第二天转战政务区天鹅湖与安徽博物院新馆（室内无障碍设施完备），傍晚在罍街收尾，用一顿地道徽菜和一整条小吃街结束旅程。人均日消费约 ¥250–700，覆盖中档酒店、徽菜正餐与小吃。",
+          "days": [
+            {
+              "dayNumber": 1,
+              "theme": "老城文脉与市井烟火：包公祠、淮河路步行街、逍遥津",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "hf-d1-pkg",
+                      "name": "包公园",
+                      "type": "attraction",
+                      "estimatedCost": 50,
+                      "duration": 120
+                    },
+                    {
+                      "id": "hf-d1-bgc",
+                      "name": "包公祠",
+                      "type": "attraction",
+                      "estimatedCost": 40,
+                      "duration": 60
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "hf-d1-lhz",
+                      "name": "李鸿章故居",
+                      "type": "attraction",
+                      "estimatedCost": 30,
+                      "duration": 75
+                    },
+                    {
+                      "id": "hf-d1-hhl",
+                      "name": "淮河路步行街",
+                      "type": "shopping",
+                      "estimatedCost": 0,
+                      "duration": 90
+                    },
+                    {
+                      "id": "hf-d1-xcj",
+                      "name": "淮河路小吃街",
+                      "type": "restaurant",
+                      "estimatedCost": 45,
+                      "duration": 60
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "hf-d1-xxj",
+                      "name": "古逍遥津",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 90
+                    },
+                    {
+                      "id": "hf-d1-tql",
+                      "name": "同庆楼(铜陵北路店)",
+                      "type": "restaurant",
+                      "estimatedCost": 120,
+                      "duration": 90
+                    },
+                    {
+                      "id": "hf-d1-hotel",
+                      "name": "合肥淮河路步行街城际酒店",
+                      "type": "hotel",
+                      "estimatedCost": 320,
+                      "duration": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 2,
+              "theme": "天鹅湖新城慢生活：博物院看展、湖畔散步、罍街夜市",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "hf-d2-ahb",
+                      "name": "安徽博物院",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 150
+                    },
+                    {
+                      "id": "hf-d2-kfhy",
+                      "name": "安徽博物院|刻划符号",
+                      "type": "cafe",
+                      "estimatedCost": 35,
+                      "duration": 40
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "hf-d2-lztt",
+                      "name": "庐州太太(天鹅湖店)",
+                      "type": "restaurant",
+                      "estimatedCost": 90,
+                      "duration": 75
+                    },
+                    {
+                      "id": "hf-d2-teh",
+                      "name": "天鹅湖公园",
+                      "type": "leisure",
+                      "estimatedCost": 0,
+                      "duration": 90
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "hf-d2-lj",
+                      "name": "罍街",
+                      "type": "nightlife",
+                      "estimatedCost": 80,
+                      "duration": 120
+                    },
+                    {
+                      "id": "hf-d2-ljxc",
+                      "name": "罍+小吃(罍街店)",
+                      "type": "restaurant",
+                      "estimatedCost": 70,
+                      "duration": 75
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "on": {
+        "setup": "group-lessons",
+        "repeat": 1,
+        "reward": 0.776,
+        "toolCorrect": 1,
+        "constraint": 1,
+        "hallucinationRate": 0,
+        "judge": 4.4,
+        "steps": 6,
+        "invalidPoiRefs": 0,
+        "usedLessonIds": [
+          "L04",
+          "L01",
+          "L03",
+          "L08",
+          "L05"
+        ],
+        "ungroundedPlaceNames": [],
+        "itinerary": {
+          "title": "合肥慢游两日：包公故里 · 徽味与湖光",
+          "summary": "为两位情侣设计的合肥轻松两日游，节奏舒缓、以美食为主线，全程优先选择平坦步道、电梯与地铁直达的场所，方便无障碍出行。第一天漫步老城区：包公园（包公祠、包公墓）地势平坦、园内有无障碍通道，随后在淮河路步行街与庐州烤鸭店品尝地道庐州风味，夜晚沿步行街与中市街国潮街区闲逛。第二天走新城线：安徽博物院新馆（免费、全馆无障碍电梯、室内恒温）看徽州古建筑，午后到天鹅湖公园与天鹅湖体育公园沿湖散步，傍晚在骆岗公园园博小镇的庐州荟·原著合肥味用餐，红塔与山不卷咖啡空间适合拍照收尾。人均每日花费约 ¥300–550，含餐饮、门票与交通，符合 ¥250–700 的预算区间；建议住淮河路步行街一带酒店，地铁1号线包公园站、4号线天鹅湖站均有无障碍电梯。",
+          "days": [
+            {
+              "dayNumber": 1,
+              "theme": "老城徽韵 · 包公故里与庐州味道",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "hf-d1-pkg",
+                      "name": "包公园",
+                      "type": "attraction",
+                      "estimatedCost": 50,
+                      "duration": 120
+                    },
+                    {
+                      "id": "hf-d1-bgc",
+                      "name": "包公祠",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "hf-d1-lzky",
+                      "name": "庐州烤鸭店(总店)",
+                      "type": "restaurant",
+                      "estimatedCost": 90,
+                      "duration": 75
+                    },
+                    {
+                      "id": "hf-d1-hhl",
+                      "name": "淮河路步行街",
+                      "type": "shopping",
+                      "estimatedCost": 0,
+                      "duration": 90
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "hf-d1-xcj",
+                      "name": "淮河路小吃街",
+                      "type": "restaurant",
+                      "estimatedCost": 60,
+                      "duration": 60
+                    },
+                    {
+                      "id": "hf-d1-zsj",
+                      "name": "中市街国潮街区(东)",
+                      "type": "leisure",
+                      "estimatedCost": 0,
+                      "duration": 45
+                    },
+                    {
+                      "id": "hf-d1-hotel",
+                      "name": "合肥淮河路步行街美居酒店",
+                      "type": "hotel",
+                      "estimatedCost": 280,
+                      "duration": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 2,
+              "theme": "新城湖光 · 徽文化、天鹅湖与园博小镇",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "hf-d2-mus",
+                      "name": "安徽博物院",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 150
+                    },
+                    {
+                      "id": "hf-d2-cafe",
+                      "name": "Coincide重合咖啡馆(置地店)",
+                      "type": "cafe",
+                      "estimatedCost": 45,
+                      "duration": 60
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "hf-d2-tth",
+                      "name": "天鹅湖公园",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 90
+                    },
+                    {
+                      "id": "hf-d2-tyg",
+                      "name": "天鹅湖体育公园",
+                      "type": "leisure",
+                      "estimatedCost": 0,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "hf-d2-lgh",
+                      "name": "庐州荟·原著合肥味(骆岗公园店)",
+                      "type": "restaurant",
+                      "estimatedCost": 130,
+                      "duration": 90
+                    },
+                    {
+                      "id": "hf-d2-lgg",
+                      "name": "骆岗公园",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 75
+                    },
+                    {
+                      "id": "hf-d2-sbj",
+                      "name": "山不卷·万物生长咖啡空间(骆岗公园店)",
+                      "type": "cafe",
+                      "estimatedCost": 40,
+                      "duration": 45
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "caseId": "faroe-family-accessibility-adventure",
+      "region": "international",
+      "hard": true,
+      "request": {
+        "destination": "Faroe Islands",
+        "days": 5,
+        "people": 4,
+        "preferences": [
+          "adventure",
+          "nature"
+        ],
+        "groupType": "family",
+        "budget": {
+          "min": 400,
+          "max": 900
+        },
+        "specialNeeds": [
+          "accessibility",
+          "baby"
+        ]
+      },
+      "off": {
+        "setup": "baseline-v2",
+        "repeat": 2,
+        "reward": 0.5193103448275862,
+        "toolCorrect": 0.7310344827586206,
+        "constraint": 1,
+        "hallucinationRate": 0.32,
+        "judge": 4,
+        "steps": 9,
+        "invalidPoiRefs": 2,
+        "usedLessonIds": [],
+        "ungroundedPlaceNames": [
+          "Tinganes peninsula",
+          "Vágar coast drive & Sørvágsvatn viewpoint",
+          "Saksun village & lagoon",
+          "Saksun church & Dúvugarðar farm",
+          "Tjørnuvík beach viewpoint",
+          "Eiði coastal lay-by",
+          "Gjógv natural gorge & harbour",
+          "Gjógv village & guesthouse cafe"
+        ],
+        "itinerary": {
+          "title": "Faroe Islands Family Adventure: 5 Days of Waterfalls, Sea Cliffs & Sheep-Country Villages",
+          "summary": "A gentle-paced 5-day loop for a family of four with a baby, built around short drives, stroller-friendly viewpoints and boat trips rather than long mountain hikes. Base yourself in Tórshavn (Hotel Tórshavn, central and lift-equipped) and day-trip out to Vágar's Múlafossur waterfall, the bird cliffs of Vestmanna, and the storybook villages of Saksun and Gjógv. The Faroes are never more than 5 km from the ocean, and the countryside is steep, green and wind-swept — so this plan swaps summit hikes for coastal lookouts, paved paths and indoor warm-up stops. Budget ¥400–900 per person per day covers a shared rental car, guesthouse/hotel rooms, self-catered breakfasts and one restaurant meal a day. Accessibility notes: Faroese turf-roof villages have gravel lanes and uneven grass, so bring a carrier as backup to the stroller; the Vestmanna boat and the Vágar tunnels are fully step-free. Weather changes hourly — keep one flexible day for a rain-plan swap.",
+          "days": [
+            {
+              "dayNumber": 1,
+              "theme": "Arrival in Tórshavn — harbour, Tinganes & old town on flat ground",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d1a1",
+                      "name": "Tórshavn Camping & Yviri við Strond waterfront",
+                      "type": "leisure",
+                      "estimatedCost": 0,
+                      "duration": 60
+                    },
+                    {
+                      "id": "d1a2",
+                      "name": "Hotel Tórshavn",
+                      "type": "hotel",
+                      "estimatedCost": 420,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d1a3",
+                      "name": "Tinganes peninsula",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 75
+                    },
+                    {
+                      "id": "d1a4",
+                      "name": "Tórshavn Harbour & Kongabrúgvin",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 60
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d1a5",
+                      "name": "Harbour-side fish dinner, Tórshavn",
+                      "type": "restaurant",
+                      "estimatedCost": 230,
+                      "duration": 90
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 2,
+              "theme": "Vágar day — Múlafossur waterfall and the village at the end of the world",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d2a1",
+                      "name": "Múlafossur waterfall, Gásadalur",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 90
+                    },
+                    {
+                      "id": "d2a2",
+                      "name": "Gásadalur village",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d2a3",
+                      "name": "Múlafossur Cottages picnic stop",
+                      "type": "cafe",
+                      "estimatedCost": 60,
+                      "duration": 60
+                    },
+                    {
+                      "id": "d2a4",
+                      "name": "Vágar coast drive & Sørvágsvatn viewpoint",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 75
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d2a5",
+                      "name": "Hotel Tórshavn — early family supper",
+                      "type": "restaurant",
+                      "estimatedCost": 180,
+                      "duration": 75
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 3,
+              "theme": "Vestmanna sea cliffs by boat — puffins, grottoes and no walking required",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d3a1",
+                      "name": "Vestmanna Tourist Centre (boat departure)",
+                      "type": "attraction",
+                      "estimatedCost": 330,
+                      "duration": 150
+                    },
+                    {
+                      "id": "d3a2",
+                      "name": "Vestmanna kirkja & village lanes",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d3a3",
+                      "name": "Vestmanna Bygdarsavn (village museum)",
+                      "type": "attraction",
+                      "estimatedCost": 40,
+                      "duration": 60
+                    },
+                    {
+                      "id": "d3a4",
+                      "name": "Magn Vestmanna (groceries & picnic supplies)",
+                      "type": "shopping",
+                      "estimatedCost": 70,
+                      "duration": 30
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d3a5",
+                      "name": "Tórshavn harbour evening stroll & ice cream",
+                      "type": "leisure",
+                      "estimatedCost": 45,
+                      "duration": 60
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 4,
+              "theme": "Streymoy's north — Saksun's lagoon and the turf-roofed storybook village",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d4a1",
+                      "name": "Saksun village & lagoon",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 120
+                    },
+                    {
+                      "id": "d4a2",
+                      "name": "Saksun church & Dúvugarðar farm",
+                      "type": "attraction",
+                      "estimatedCost": 30,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d4a3",
+                      "name": "Tjørnuvík beach viewpoint",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 75
+                    },
+                    {
+                      "id": "d4a4",
+                      "name": "Eiði coastal lay-by",
+                      "type": "leisure",
+                      "estimatedCost": 0,
+                      "duration": 30
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d4a5",
+                      "name": "Tórshavn — family dinner in the old town",
+                      "type": "restaurant",
+                      "estimatedCost": 210,
+                      "duration": 90
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 5,
+              "theme": "Eysturoy's Gjógv gorge and a slow last morning before the flight",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d5a1",
+                      "name": "Gjógv natural gorge & harbour",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 90
+                    },
+                    {
+                      "id": "d5a2",
+                      "name": "Gjógv village & guesthouse cafe",
+                      "type": "cafe",
+                      "estimatedCost": 80,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d5a3",
+                      "name": "Klaksvík harbour & viewpoint",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 75
+                    },
+                    {
+                      "id": "d5a4",
+                      "name": "Kalsoy Lighthouse viewpoint (drive-by)",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d5a5",
+                      "name": "Hotel Tórshavn — farewell dinner",
+                      "type": "restaurant",
+                      "estimatedCost": 200,
+                      "duration": 90
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "on": {
+        "setup": "group-lessons",
+        "repeat": 1,
+        "reward": 0.35944827586206896,
+        "toolCorrect": 1,
+        "constraint": 1,
+        "hallucinationRate": 0.7931034482758621,
+        "judge": 3.9,
+        "steps": 9,
+        "invalidPoiRefs": 0,
+        "usedLessonIds": [
+          "L04",
+          "L01",
+          "L03",
+          "L08",
+          "L05"
+        ],
+        "ungroundedPlaceNames": [
+          "Tórshavn Harbour (Havnarvág)",
+          "Tinganes (Old Town peninsula)",
+          "Føroya Fornminnissavn (National Museum)",
+          "SMS Shopping Centre, Tórshavn",
+          "Hotel Hafnia, Tórshavn",
+          "Áarstova (Faroese home cooking)",
+          "Múlafossur Waterfall, Gásadalur",
+          "Sørvágsvatn / Leitisvatn (Lake above the Ocean)",
+          "Bøur village viewpoint",
+          "Vágar Airport area café stop",
+          "Hotel Hafnia, Tórshavn",
+          "Hvonn Brasserie, Tórshavn",
+          "Tjørnuvík black-sand bay",
+          "Saksun lagoon & turf church",
+          "Guesthouse / cottage stay, Tjørnuvík or Eiði area",
+          "Self-catered dinner from the local shop",
+          "Mjóvanes lighthouse, Lamba",
+          "Hotel Hafnia, Tórshavn",
+          "Barbara Fish Restaurant, Tórshavn",
+          "Kirkjubøur — Magnus Cathedral and Kirkjubøargarður",
+          "Sandagerði / Sandavágur beach stop",
+          "Tórshavn café and wool shop wander",
+          "Harbour-side farewell dinner, Tórshavn"
+        ],
+        "itinerary": {
+          "title": "Faroe Islands Family Adventure — 5 Days of Waterfalls, Cliffs & Sea Air",
+          "summary": "A slow-paced, stroller-friendly loop around the Faroe Islands for a family of four with a baby. The plan keeps driving legs short (the whole archipelago is only ~5 km from the ocean at any point), favours paved or boardwalk viewpoints over steep scrambles, and mixes big-nature highlights — the Fossá waterfall in Eiði, the Klaksvík fjord, the Mjóvanes lighthouse — with cosy indoor time in Tórshavn for nap schedules and rainy North Atlantic afternoons. Costs are per person per day and stay inside the ¥400–900 band by self-catering breakfasts, using the excellent local supermarkets, and picking one paid activity per day. Accessibility notes: all viewpoints listed have short, level approaches or can be viewed from the car park; the Vestmanna and Saksun boat/hillside options are flagged as optional for the adults while one parent stays with the baby. Pack layers, a rain cover and a carrier — paths are often grass or gravel, and weather turns fast.",
+          "days": [
+            {
+              "dayNumber": 1,
+              "theme": "Arrival in Tórshavn — harbour, old town and gentle settling in",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d1a1",
+                      "name": "Tórshavn Harbour (Havnarvág)",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 75
+                    },
+                    {
+                      "id": "d1a2",
+                      "name": "Tinganes (Old Town peninsula)",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 60
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d1a3",
+                      "name": "Føroya Fornminnissavn (National Museum)",
+                      "type": "attraction",
+                      "estimatedCost": 60,
+                      "duration": 90
+                    },
+                    {
+                      "id": "d1a4",
+                      "name": "SMS Shopping Centre, Tórshavn",
+                      "type": "shopping",
+                      "estimatedCost": 80,
+                      "duration": 60
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d1a5",
+                      "name": "Hotel Hafnia, Tórshavn",
+                      "type": "hotel",
+                      "estimatedCost": 420,
+                      "duration": 720
+                    },
+                    {
+                      "id": "d1a6",
+                      "name": "Áarstova (Faroese home cooking)",
+                      "type": "restaurant",
+                      "estimatedCost": 180,
+                      "duration": 90
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 2,
+              "theme": "Vágar — the famous waterfall and the lake above the sea",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d2a1",
+                      "name": "Múlafossur Waterfall, Gásadalur",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 90
+                    },
+                    {
+                      "id": "d2a2",
+                      "name": "Sørvágsvatn / Leitisvatn (Lake above the Ocean)",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 120
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d2a3",
+                      "name": "Bøur village viewpoint",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 45
+                    },
+                    {
+                      "id": "d2a4",
+                      "name": "Vágar Airport area café stop",
+                      "type": "cafe",
+                      "estimatedCost": 70,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d2a5",
+                      "name": "Hotel Hafnia, Tórshavn",
+                      "type": "hotel",
+                      "estimatedCost": 420,
+                      "duration": 720
+                    },
+                    {
+                      "id": "d2a6",
+                      "name": "Hvonn Brasserie, Tórshavn",
+                      "type": "restaurant",
+                      "estimatedCost": 150,
+                      "duration": 75
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 3,
+              "theme": "Streymoy north — turf-roof churches, sea stacks and the Fossá falls",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d3a1",
+                      "name": "Fossá waterfall view, Eiði",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 60
+                    },
+                    {
+                      "id": "d3a2",
+                      "name": "Fossa waterfall direct viewpoint, Haldórsvík",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d3a3",
+                      "name": "Tjørnuvík black-sand bay",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 90
+                    },
+                    {
+                      "id": "d3a4",
+                      "name": "Saksun lagoon & turf church",
+                      "type": "attraction",
+                      "estimatedCost": 50,
+                      "duration": 75
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d3a5",
+                      "name": "Guesthouse / cottage stay, Tjørnuvík or Eiði area",
+                      "type": "hotel",
+                      "estimatedCost": 380,
+                      "duration": 720
+                    },
+                    {
+                      "id": "d3a6",
+                      "name": "Self-catered dinner from the local shop",
+                      "type": "restaurant",
+                      "estimatedCost": 90,
+                      "duration": 60
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 4,
+              "theme": "Norðoyar — the Klaksvík fjord, sea kayaking and northern lights of the map",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d4a1",
+                      "name": "Klaksvík town and harbour",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 75
+                    },
+                    {
+                      "id": "d4a2",
+                      "name": "Museum of North Islands, Klaksvík",
+                      "type": "attraction",
+                      "estimatedCost": 50,
+                      "duration": 60
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d4a3",
+                      "name": "Mjóvanes lighthouse, Lamba",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 60
+                    },
+                    {
+                      "id": "d4a4",
+                      "name": "Kajakk.fo — Sea Kayak Faroe Islands, Hósvík",
+                      "type": "leisure",
+                      "estimatedCost": 320,
+                      "duration": 150
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d4a5",
+                      "name": "Hotel Hafnia, Tórshavn",
+                      "type": "hotel",
+                      "estimatedCost": 420,
+                      "duration": 720
+                    },
+                    {
+                      "id": "d4a6",
+                      "name": "Barbara Fish Restaurant, Tórshavn",
+                      "type": "restaurant",
+                      "estimatedCost": 190,
+                      "duration": 90
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "dayNumber": 5,
+              "theme": "Slow last day — Kirkjubøur ruins, beach walk and a farewell harbour dinner",
+              "slots": [
+                {
+                  "period": "morning",
+                  "places": [
+                    {
+                      "id": "d5a1",
+                      "name": "Kirkjubøur — Magnus Cathedral and Kirkjubøargarður",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 90
+                    },
+                    {
+                      "id": "d5a2",
+                      "name": "Sandagerði / Sandavágur beach stop",
+                      "type": "attraction",
+                      "estimatedCost": 0,
+                      "duration": 60
+                    }
+                  ]
+                },
+                {
+                  "period": "afternoon",
+                  "places": [
+                    {
+                      "id": "d5a3",
+                      "name": "Tórshavn café and wool shop wander",
+                      "type": "cafe",
+                      "estimatedCost": 80,
+                      "duration": 75
+                    },
+                    {
+                      "id": "d5a4",
+                      "name": "Faroe Origin, Glyvrar (seafood deli)",
+                      "type": "shopping",
+                      "estimatedCost": 60,
+                      "duration": 45
+                    }
+                  ]
+                },
+                {
+                  "period": "evening",
+                  "places": [
+                    {
+                      "id": "d5a5",
+                      "name": "Harbour-side farewell dinner, Tórshavn",
+                      "type": "restaurant",
+                      "estimatedCost": 170,
+                      "duration": 90
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
