@@ -19,7 +19,12 @@ export interface PhotoCase {
 
 export const photoCases: PhotoCase[] = (casesJson as { cases: PhotoCase[] }).cases;
 
-const norm = (s: string) => s.toLowerCase().replace(/[\s\-–—'’`´.,()]/g, '');
+const norm = (s: string) =>
+  s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[\s\-–—'’`´.,()]/g, '');
 
 /** Case-insensitive containment either way, ignoring spaces and punctuation. */
 export function nameAccepted(candidate: string, accepted: string[]): boolean {

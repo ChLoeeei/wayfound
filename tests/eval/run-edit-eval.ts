@@ -67,6 +67,11 @@ async function main() {
 
     const rec: any = { id: c.id, fixture: c.fixture, message: c.message, plan, parse: match, expectResult: c.expectResult };
     if (plan.intent !== 'unclear') {
+      // For a move, the stop's original slot is a target too (it loses the stop), so preservation is measured on the rest.
+      const preservationTargets = [...plan.targetSlots];
+      if (plan.intent === 'move') {
+        for (const d of before.days) for (const s of d.slots) for (const p of s.places) if (plan.keep.includes(p.slotId ?? p.id)) preservationTargets.push({ dayNumber: d.dayNumber, period: s.period, slotId: p.slotId ?? p.id });
+      }
       const trace: ToolCallRecord[] = [];
       const stepTrace: AgentStepRecord[] = [];
       const candidates: Array<{ attempt: number; preservation: ReturnType<typeof preservationRate>; issues: string[] }> = [];
@@ -77,7 +82,7 @@ async function main() {
           client: metered(client, usage),
           trace,
           stepTrace,
-          onCandidate: ({ attempt, candidate, validation }) => candidates.push({ attempt, preservation: preservationRate(before, candidate, plan.targetSlots), issues: validation.issues }),
+          onCandidate: ({ attempt, candidate, validation }) => candidates.push({ attempt, preservation: preservationRate(before, candidate, preservationTargets), issues: validation.issues }),
         },
       );
       rec.result = result.ok ? { ok: true, attempt: result.attempt, modelCalled: result.modelCalled, changed: result.changedPlaceIds.length, removed: result.removedPlaceIds.length } : result;
@@ -85,7 +90,7 @@ async function main() {
       rec.toolCalls = trace.length;
       rec.steps = stepTrace.length;
       if (result.ok) {
-        rec.preservationApplied = preservationRate(before, result.itinerary, plan.targetSlots);
+        rec.preservationApplied = preservationRate(before, result.itinerary, preservationTargets);
         rec.checks = evaluateEditChecks(before, result.itinerary, c.checks ?? []);
         fs.writeFileSync(path.join(REPORTS_DIR, 'itineraries', `edit-${c.id}.json`), JSON.stringify(result.itinerary, null, 2));
       }

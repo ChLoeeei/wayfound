@@ -6,7 +6,8 @@
  *  2. every new stop carries the id of a POI this replanning searched (`poiId`), not just a matching name;
  *  3. no new stop violates the user's `avoid` list;
  *  4. estimated travel between a new stop and its neighbours is reasonable;
- *  5. the day's per-person total stays within the budget cap (+10%).
+ *  5. the day's per-person total stays within the budget cap (+10%), or at
+ *     least does not grow when the day was already over it.
  */
 import type { Itinerary, Place, SlotPeriod } from '../src/types';
 import { DAILY_BUDGET_TOLERANCE, PERIOD_ORDER, dayCostPerPerson } from '../src/lib/itineraryOps';
@@ -134,7 +135,9 @@ export function validateReplan(before: Itinerary, after: Itinerary, targets: Edi
     });
     if (ctx.budgetCap != null) {
       const total = Math.round(dayCostPerPerson(d));
-      if (total > ctx.budgetCap * (1 + DAILY_BUDGET_TOLERANCE)) issues.push(`day ${d.dayNumber} totals ¥${total} per person, over the ¥${ctx.budgetCap} cap`);
+      const was = Math.round(dayCostPerPerson(before.days.find(x => x.dayNumber === d.dayNumber)!));
+      // A day that was already over the cap is not the replanning's fault; it only may not get worse.
+      if (total > ctx.budgetCap * (1 + DAILY_BUDGET_TOLERANCE) && total > was) issues.push(`day ${d.dayNumber} totals ¥${total} per person, over the ¥${ctx.budgetCap} cap`);
     }
   }
 

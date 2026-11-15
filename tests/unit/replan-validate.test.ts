@@ -111,3 +111,16 @@ describe('validateReplan', () => {
     expect(validateReplan(base, after, [{ dayNumber: 1, period: 'afternoon' }], ctx).ok).toBe(true);
   });
 });
+
+describe('validateReplan budget rule', () => {
+  it('does not blame the replanning for a day that was already over the cap, unless it got worse', () => {
+    const over: Itinerary = JSON.parse(JSON.stringify(base));
+    over.days[0].slots[0].places[0].estimatedCost = 2000; // day 1 already ¥2500 before the edit
+    const same: Itinerary = JSON.parse(JSON.stringify(over));
+    same.days[0].slots[1].places = [{ ...place('n1', 'Nishiki Market', 35.005, 135.7649, { poiId: 'poi-nishiki' }), estimatedCost: 100 }];
+    expect(validateReplan(over, same, [{ dayNumber: 1, period: 'afternoon' }], ctx).ok).toBe(true);
+    const worse: Itinerary = JSON.parse(JSON.stringify(over));
+    worse.days[0].slots[1].places = [{ ...place('n1', 'Nishiki Market', 35.005, 135.7649, { poiId: 'poi-nishiki' }), estimatedCost: 900 }];
+    expect(validateReplan(over, worse, [{ dayNumber: 1, period: 'afternoon' }], ctx).issues.some(i => i.includes('over the'))).toBe(true);
+  });
+});
