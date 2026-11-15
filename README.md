@@ -2,7 +2,9 @@
 
 > Find your way, anywhere.
 
-**Live demo:** https://wayfound-ezv.pages.dev
+**Live demo:** https://wayfound-ezv.pages.dev (v1; the v2 build below is not deployed yet)
+
+![Wayfound v2 demo: plan, see which lessons were used, replan one stop by message, add a place from a photo, compare library off vs on](docs/v2/demo.gif)
 
 Wayfound is an AI trip-planning tool: describe a trip (destination, dates, group, vibe, budget, special needs), and a tool-using LLM agent generates a structured, day-by-day itinerary — grounded in real place data wherever that data is available, and transparent about it when it isn't. You then edit the result on a map + list dual-pane view (drag places between days, swap them out, reorder a day's route).
 
@@ -40,6 +42,49 @@ flowchart LR
 ```
 
 Every arrow into the dashed boxes on the map/routing side is a fallback, not a hard requirement — see [Reliability engineering](#reliability-engineering-the-map-provider-story) below for why that shape exists and what it fixed.
+
+### v2: what sits around the agent
+
+```mermaid
+flowchart TB
+    subgraph Shared["Shared layer (no user data)"]
+      Learn["npm run learn
+(train split, Training-Free GRPO)"] --> Lib[("Experience library
+server/experience/data/*.json")]
+      Lib -->|"GET /api/lessons (read-only)"| Panel["Lessons panel · compare page"]
+    end
+    subgraph UserLayer["User layer (never shared)"]
+      Form["Form choices + quick picks"] --> Mem["TravelMemory
+localStorage → Supabase user_memory on login"]
+      Text["Free text"] -->|"POST /api/extract-preferences
+quoted statements only"| Mem
+    end
+    Lib -->|"≤12 lessons, prompt block"| Gen["generateItinerary
+(server/agent.ts, unchanged loop)"]
+    Mem -->|"soft context block"| Gen
+    Gen --> Struct["structureItinerary
+slot ids · estimated times · travel · poiId"]
+    Struct --> UI["Plan view"]
+    UI -->|"message"| Parse["POST /api/parse-edit
+{intent, targetSlots, add, keep}"] --> Replan["POST /api/replan
+own tool loop, no lessons"] --> Validate{"untouched stops identical?
+new names in search results?
+avoid list · travel · budget"}
+    Validate -->|yes| UI
+    Validate -->|no, after 1 retry| Unchanged["nothing changes"]
+    UI -->|"photo"| Photo["POST /api/identify-photo
+strip EXIF → vision → search_places"] --> Pick["≤3 verified candidates"] --> UI
+```
+
+Design decisions behind v2, in one line each:
+
+- **Two memory layers that never meet.** Strategy lessons are learned offline from scored runs and injected into every plan; user preferences live in the browser or the user's own Supabase row. No server code reads `user_memory`, the learning loop never sees `memoryContext`, and a source-level test keeps it that way.
+- **Explicit statements only.** Form choices are recorded as is; free text goes through an extraction step that must quote the user, and the server drops anything it cannot find in the text.
+- **The agent's prompt is frozen for the eval.** The library, the language line, the memory block and the `pois` side channel are all opt-in; without them the prompt is byte-identical to the committed baselines (pinned by tests), so every number in this README is comparable.
+- **Replanning is a separate, smaller loop with a hard gate.** It touches only the named stops, must prove every new stop with a search result, and is rejected rather than trusted when anything else moved.
+- **Estimates look like estimates.** Times and travel between stops are straight-line heuristics shown as "approx." / "about N min", never as exact figures.
+- **Photos yield candidates, not facts.** The vision model's guess is never a place; only `search_places` results can be added, and text read off an image is data.
+- **Compare mode shows saved runs by default.** Precomputed from the result files (median repeat per setup, including a case the library made worse); live runs only in debug mode, with the cost stated.
 
 ## Tech stack
 
@@ -152,6 +197,7 @@ Reports land in `tests/eval/reports/latest.{json,md}`, with each run's full gene
 
 - International place/route data is best-effort across a 4–5 layer fallback chain, not a guaranteed single source of truth — see the reliability section above.
 - `get_weather`, `validate_itinerary` (auto-correction loop), `search_flights`, `search_hotels` are specced but not implemented; `/api/verify-itinerary` exists as a standalone critic endpoint, not wired into the generation loop itself.
-- Memory (returning-user preferences) is per-browser `localStorage`, not synced to a Supabase account across devices.
+- User memory is per-browser until the user logs in (then it lives in the `user_memory` row); the memory block is soft context, and the first two-stage memory eval (`tests/eval/results/memory-eval-2026-11-15T07-23-41-600Z.json`) found extraction recall 8/8 but no measurable adherence gain yet (33% with vs 42% without, 6 cases) — see that file and the eval section before relying on it.
+- Partial replanning and photo input have eval suites (`npm run eval:edit`, `npm run eval:photo`) but their full runs are pending; only smoke runs (1–2 cases each) have been made.
 - Trace files (`server/logs/traces/`) have no retention/cleanup policy yet — fine for a demo, not for long-running production use as-is.
 - Place photos only appear when a map provider actually returned one. The model used to invent plausible-looking `imageUrl`s (confirmed live: a Sensō-ji card showed an unrelated stock portrait), so the agent now blanks any `imageUrl` that isn't a `photoUrl` from that run's own tool results (`sanitizeImageUrls` in `server/agent.ts`). In practice that means mainland-China (Amap) places can have photos and international places mostly don't.
