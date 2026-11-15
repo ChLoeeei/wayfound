@@ -221,16 +221,22 @@ export async function identifyPhoto(client: OpenAI, dataUrl: string, destination
 
   const ctx = new ToolContext(seen.city || destination);
   const regions = [...new Set([seen.city, destination].filter(Boolean))];
+  // Query variants: the name as given, then without a parenthetical ("雷門（浅草寺）" -> "雷門"),
+  // then the parenthetical alone, since providers index one of the two.
+  const paren = /[（(]([^）)]+)[）)]/.exec(seen.name);
+  const variants = [...new Set([seen.name, seen.name.replace(/[（(][^）)]*[）)]/g, '').trim(), paren?.[1]?.trim() ?? ''].filter(Boolean))];
   let searchedIn: string | undefined;
-  for (const region of regions) {
-    try {
-      await runTool(ctx, 'search_places', { keywords: seen.name, region, limit: 5 });
-    } catch {
-      // provider trouble: try the next region
-    }
-    if (ctx.allPois().length > 0) {
-      searchedIn = region;
-      break;
+  outer: for (const keywords of variants) {
+    for (const region of regions) {
+      try {
+        await runTool(ctx, 'search_places', { keywords, region, limit: 5 });
+      } catch {
+        // provider trouble: try the next variant / region
+      }
+      if (ctx.allPois().length > 0) {
+        searchedIn = region;
+        break outer;
+      }
     }
   }
   const candidates = rankCandidates(ctx.allPois(), seen.name);

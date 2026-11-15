@@ -74,7 +74,7 @@ async function main() {
       }
       const trace: ToolCallRecord[] = [];
       const stepTrace: AgentStepRecord[] = [];
-      const candidates: Array<{ attempt: number; preservation: ReturnType<typeof preservationRate>; issues: string[] }> = [];
+      const candidates: Array<{ attempt: number; preservation: ReturnType<typeof preservationRate>; issues: string[]; rawAnswer?: string }> = [];
       process.stdout.write(`  replan ... `);
       const result = await replanItinerary(
         { itinerary: before, plan, language: c.language, avoid: c.avoid ?? [], budgetCap: c.budgetCap },
@@ -82,7 +82,7 @@ async function main() {
           client: metered(client, usage),
           trace,
           stepTrace,
-          onCandidate: ({ attempt, candidate, validation }) => candidates.push({ attempt, preservation: preservationRate(before, candidate, preservationTargets), issues: validation.issues }),
+          onCandidate: ({ attempt, candidate, validation, rawAnswer }) => candidates.push({ attempt, preservation: preservationRate(before, candidate, preservationTargets), issues: validation.issues, rawAnswer }),
         },
       );
       rec.result = result.ok ? { ok: true, attempt: result.attempt, modelCalled: result.modelCalled, changed: result.changedPlaceIds.length, removed: result.removedPlaceIds.length } : result;

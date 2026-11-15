@@ -37,7 +37,9 @@ describe('violatesAvoid', () => {
   it('matches names, notes and type labels in both languages', () => {
     expect(violatesAvoid({ name: 'Nishiki Market', type: 'shopping' }, ['购物'])).toBe('购物');
     expect(violatesAvoid({ name: 'Nishiki Market', type: 'shopping' }, ['shopping'])).toBe('shopping');
-    expect(violatesAvoid({ name: 'Cervejaria Ramiro', type: 'restaurant', aiNote: 'Famous for seafood platters' }, ['seafood'])).toBe('seafood');
+    expect(violatesAvoid({ name: 'Cervejaria Ramiro', type: 'restaurant', searchQuery: 'seafood restaurant Lisbon' }, ['seafood'])).toBe('seafood');
+    // The note is not evidence: a stop near a temple is not a temple.
+    expect(violatesAvoid({ name: 'Togetsu Bridge', type: 'attraction', aiNote: 'A short walk from Tenryu-ji temple' }, ['temple'])).toBeNull();
     expect(violatesAvoid({ name: 'Rijksmuseum', type: 'attraction' }, ['museum'])).toBe('museum');
     expect(violatesAvoid({ name: 'Vondelpark', type: 'leisure' }, ['museum', 'seafood'])).toBeNull();
   });

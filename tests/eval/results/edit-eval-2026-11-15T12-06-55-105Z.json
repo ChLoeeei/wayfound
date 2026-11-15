@@ -1,0 +1,708 @@
+{
+  "stamp": "2026-11-15T12-06-55-105Z",
+  "summary": {
+    "cases": 10,
+    "parseIntentAccuracy": 1,
+    "parseTargetAccuracy": 1,
+    "outcomeAccuracy": 0.7,
+    "editSuccess": 0.625,
+    "checkPassRate": 0.7777777777777778,
+    "rawPreservationFirstAttempt": 1,
+    "rawPreservationLastAttempt": 1,
+    "appliedPreservation": 0.9787330316742082,
+    "meanPromptTokensWithModel": 21018.666666666668,
+    "meanDurationMsWithModel": 21074.666666666668,
+    "meanFullRegenerationPromptTokens": 137996.5,
+    "meanFullRegenerationDurationMs": 87929.6,
+    "geoapifyRequests": 45
+  },
+  "records": [
+    {
+      "id": "tokyo-replace-kappabashi-dessert",
+      "fixture": "tokyo",
+      "message": "Swap Kappabashi kitchen street on day 1 for a dessert cafe nearby",
+      "plan": {
+        "intent": "replace",
+        "targetSlots": [
+          {
+            "dayNumber": 1,
+            "period": "afternoon",
+            "slotId": "slot-tokyo-4"
+          }
+        ],
+        "add": [
+          {
+            "what": "dessert cafe nearby",
+            "type": "cafe"
+          }
+        ],
+        "keep": [],
+        "instruction": "Swap Kappabashi kitchen street on day 1 for a dessert cafe nearby"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "ok",
+      "result": {
+        "ok": false,
+        "reason": "invalid",
+        "issues": [
+          "no stop was changed"
+        ],
+        "attempt": 2
+      },
+      "candidates": [
+        {
+          "attempt": 1,
+          "preservation": {
+            "kept": 34,
+            "total": 34,
+            "rate": 1
+          },
+          "issues": [
+            "no stop was changed"
+          ]
+        },
+        {
+          "attempt": 2,
+          "preservation": {
+            "kept": 34,
+            "total": 34,
+            "rate": 1
+          },
+          "issues": [
+            "no stop was changed"
+          ]
+        }
+      ],
+      "toolCalls": 8,
+      "steps": 6,
+      "outcomeMatches": false,
+      "promptTokens": 27422,
+      "completionTokens": 1400,
+      "completions": 7,
+      "durationMs": 75875,
+      "geoapifyRequests": 10,
+      "fullRegeneration": {
+        "promptTokens": 179455,
+        "completionTokens": 8025,
+        "durationMs": 116222,
+        "steps": 8
+      }
+    },
+    {
+      "id": "tokyo-zh-replace-ginza-kids",
+      "fixture": "tokyo",
+      "message": "第 3 天下午不想逛银座，换成一个适合小孩的地方",
+      "plan": {
+        "intent": "replace",
+        "targetSlots": [
+          {
+            "dayNumber": 3,
+            "period": "afternoon",
+            "slotId": "slot-tokyo-15"
+          }
+        ],
+        "add": [
+          {
+            "what": "适合小孩的地方",
+            "type": "attraction"
+          }
+        ],
+        "keep": [
+          "slot-tokyo-14"
+        ],
+        "instruction": "第 3 天下午不想逛银座，换成一个适合小孩的地方"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "ok",
+      "result": {
+        "ok": true,
+        "attempt": 1,
+        "modelCalled": true,
+        "changed": 1,
+        "removed": 1
+      },
+      "candidates": [
+        {
+          "attempt": 1,
+          "preservation": {
+            "kept": 34,
+            "total": 34,
+            "rate": 1
+          },
+          "issues": []
+        }
+      ],
+      "toolCalls": 8,
+      "steps": 5,
+      "preservationApplied": {
+        "kept": 34,
+        "total": 34,
+        "rate": 1
+      },
+      "checks": [
+        {
+          "check": {
+            "type": "noKeyword",
+            "keywords": [
+              "Ginza Six"
+            ]
+          },
+          "pass": false,
+          "detail": "Art Aquarium Museum GINZA"
+        }
+      ],
+      "outcomeMatches": true,
+      "promptTokens": 23715,
+      "completionTokens": 989,
+      "completions": 6,
+      "durationMs": 23606,
+      "geoapifyRequests": 11,
+      "fullRegeneration": {
+        "promptTokens": 179455,
+        "completionTokens": 8025,
+        "durationMs": 116222,
+        "steps": 8
+      }
+    },
+    {
+      "id": "tokyo-locked-tsukiji",
+      "fixture": "tokyo",
+      "message": "Replace Tsukiji Outer Market with something less crowded",
+      "plan": {
+        "intent": "replace",
+        "targetSlots": [
+          {
+            "dayNumber": 3,
+            "period": "morning",
+            "slotId": "slot-tokyo-12"
+          }
+        ],
+        "add": [
+          {
+            "what": "something less crowded",
+            "type": "attraction"
+          }
+        ],
+        "keep": [],
+        "instruction": "Replace Tsukiji Outer Market with something less crowded"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "locked",
+      "result": {
+        "ok": false,
+        "reason": "locked",
+        "lockedSlotIds": [
+          "slot-tokyo-12"
+        ]
+      },
+      "candidates": [],
+      "toolCalls": 0,
+      "steps": 0,
+      "outcomeMatches": true,
+      "promptTokens": 1622,
+      "completionTokens": 55,
+      "completions": 1,
+      "durationMs": 833,
+      "geoapifyRequests": 0,
+      "fullRegeneration": {
+        "promptTokens": 179455,
+        "completionTokens": 8025,
+        "durationMs": 116222,
+        "steps": 8
+      }
+    },
+    {
+      "id": "tokyo-move-skytree",
+      "fixture": "tokyo",
+      "message": "Move Tokyo Skytree to the evening of day 2",
+      "plan": {
+        "intent": "move",
+        "targetSlots": [
+          {
+            "dayNumber": 2,
+            "period": "evening"
+          }
+        ],
+        "add": [],
+        "keep": [
+          "slot-tokyo-6"
+        ],
+        "instruction": "Move Tokyo Skytree to the evening of day 2"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "ok",
+      "result": {
+        "ok": true,
+        "attempt": 1,
+        "modelCalled": false,
+        "changed": 0,
+        "removed": 0
+      },
+      "candidates": [],
+      "toolCalls": 0,
+      "steps": 0,
+      "preservationApplied": {
+        "kept": 33,
+        "total": 34,
+        "rate": 0.9705882352941176
+      },
+      "checks": [
+        {
+          "check": {
+            "type": "placeInPeriod",
+            "name": "Tokyo Skytree",
+            "dayNumber": 2,
+            "period": "evening"
+          },
+          "pass": true,
+          "detail": "Tokyo Skytree in day 2 evening"
+        },
+        {
+          "check": {
+            "type": "placeNotInPeriod",
+            "name": "Tokyo Skytree",
+            "dayNumber": 1,
+            "period": "evening"
+          },
+          "pass": true,
+          "detail": "Tokyo Skytree not in day 1 evening"
+        }
+      ],
+      "outcomeMatches": true,
+      "promptTokens": 1620,
+      "completionTokens": 41,
+      "completions": 1,
+      "durationMs": 945,
+      "geoapifyRequests": 0,
+      "fullRegeneration": {
+        "promptTokens": 179455,
+        "completionTokens": 8025,
+        "durationMs": 116222,
+        "steps": 8
+      }
+    },
+    {
+      "id": "kyoto-remove-doutor",
+      "fixture": "kyoto",
+      "message": "Remove Doutor Coffee Shop from day 3",
+      "plan": {
+        "intent": "remove",
+        "targetSlots": [
+          {
+            "dayNumber": 3,
+            "period": "evening",
+            "slotId": "slot-kyoto-19"
+          }
+        ],
+        "add": [],
+        "keep": [],
+        "instruction": "Remove Doutor Coffee Shop from day 3"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "ok",
+      "result": {
+        "ok": true,
+        "attempt": 1,
+        "modelCalled": false,
+        "changed": 0,
+        "removed": 1
+      },
+      "candidates": [],
+      "toolCalls": 0,
+      "steps": 0,
+      "preservationApplied": {
+        "kept": 31,
+        "total": 31,
+        "rate": 1
+      },
+      "checks": [
+        {
+          "check": {
+            "type": "noKeyword",
+            "keywords": [
+              "Doutor"
+            ]
+          },
+          "pass": true,
+          "detail": "none"
+        }
+      ],
+      "outcomeMatches": true,
+      "promptTokens": 1487,
+      "completionTokens": 49,
+      "completions": 1,
+      "durationMs": 890,
+      "geoapifyRequests": 0,
+      "fullRegeneration": {
+        "promptTokens": 118443,
+        "completionTokens": 7952,
+        "durationMs": 107208,
+        "steps": 9
+      }
+    },
+    {
+      "id": "kyoto-zh-avoid-temples",
+      "fixture": "kyoto",
+      "message": "第 4 天上午的天龙寺换一个不是寺庙的地方",
+      "plan": {
+        "intent": "replace",
+        "targetSlots": [
+          {
+            "dayNumber": 4,
+            "period": "morning",
+            "slotId": "slot-kyoto-22"
+          }
+        ],
+        "add": [
+          {
+            "what": "不是寺庙的地方",
+            "type": "attraction"
+          }
+        ],
+        "keep": [
+          "slot-kyoto-21"
+        ],
+        "instruction": "第 4 天上午的天龙寺换一个不是寺庙的地方"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "ok",
+      "result": {
+        "ok": false,
+        "reason": "invalid",
+        "issues": [
+          "the replanner ran out of steps"
+        ],
+        "attempt": 2
+      },
+      "candidates": [
+        {
+          "attempt": 1,
+          "preservation": {
+            "kept": 31,
+            "total": 31,
+            "rate": 1
+          },
+          "issues": [
+            "\"Monkey Park Iwatayama\" goes against the user's avoid preference \"寺庙\""
+          ]
+        }
+      ],
+      "toolCalls": 10,
+      "steps": 6,
+      "outcomeMatches": false,
+      "promptTokens": 25967,
+      "completionTokens": 1447,
+      "completions": 7,
+      "durationMs": 24048,
+      "geoapifyRequests": 12,
+      "fullRegeneration": {
+        "promptTokens": 118443,
+        "completionTokens": 7952,
+        "durationMs": 107208,
+        "steps": 9
+      }
+    },
+    {
+      "id": "kyoto-add-matcha",
+      "fixture": "kyoto",
+      "message": "Add a matcha dessert place to the afternoon of day 5",
+      "plan": {
+        "intent": "add",
+        "targetSlots": [
+          {
+            "dayNumber": 5,
+            "period": "afternoon"
+          }
+        ],
+        "add": [
+          {
+            "what": "matcha dessert place",
+            "type": "cafe"
+          }
+        ],
+        "keep": [],
+        "instruction": "Add a matcha dessert place to the afternoon of day 5"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "ok",
+      "result": {
+        "ok": true,
+        "attempt": 1,
+        "modelCalled": true,
+        "changed": 1,
+        "removed": 0
+      },
+      "candidates": [
+        {
+          "attempt": 1,
+          "preservation": {
+            "kept": 30,
+            "total": 30,
+            "rate": 1
+          },
+          "issues": []
+        }
+      ],
+      "toolCalls": 9,
+      "steps": 6,
+      "preservationApplied": {
+        "kept": 30,
+        "total": 30,
+        "rate": 1
+      },
+      "checks": [
+        {
+          "check": {
+            "type": "minNewPlaces",
+            "value": 1
+          },
+          "pass": true,
+          "detail": "1 new"
+        },
+        {
+          "check": {
+            "type": "placeInPeriod",
+            "name": "Nishiki Market",
+            "dayNumber": 5,
+            "period": "afternoon"
+          },
+          "pass": true,
+          "detail": "Nishiki Market in day 5 afternoon"
+        },
+        {
+          "check": {
+            "type": "placeInPeriod",
+            "name": "Ippodo Tea Co.",
+            "dayNumber": 5,
+            "period": "afternoon"
+          },
+          "pass": true,
+          "detail": "Ippodo Tea Co. in day 5 afternoon"
+        }
+      ],
+      "outcomeMatches": true,
+      "promptTokens": 27345,
+      "completionTokens": 1536,
+      "completions": 7,
+      "durationMs": 32410,
+      "geoapifyRequests": 12,
+      "fullRegeneration": {
+        "promptTokens": 118443,
+        "completionTokens": 7952,
+        "durationMs": 107208,
+        "steps": 9
+      }
+    },
+    {
+      "id": "hefei-zh-replace-fish",
+      "fixture": "hefei",
+      "message": "把第 2 天晚上的臭鳜鱼换成清淡一点的餐厅",
+      "plan": {
+        "intent": "replace",
+        "targetSlots": [
+          {
+            "dayNumber": 2,
+            "period": "evening",
+            "slotId": "slot-hefei-14"
+          }
+        ],
+        "add": [
+          {
+            "what": "清淡一点的餐厅",
+            "type": "restaurant"
+          }
+        ],
+        "keep": [],
+        "instruction": "把第 2 天晚上的臭鳜鱼换成清淡一点的餐厅"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "ok",
+      "result": {
+        "ok": true,
+        "attempt": 1,
+        "modelCalled": true,
+        "changed": 1,
+        "removed": 1
+      },
+      "candidates": [
+        {
+          "attempt": 1,
+          "preservation": {
+            "kept": 13,
+            "total": 13,
+            "rate": 1
+          },
+          "issues": []
+        }
+      ],
+      "toolCalls": 4,
+      "steps": 3,
+      "preservationApplied": {
+        "kept": 12,
+        "total": 13,
+        "rate": 0.9230769230769231
+      },
+      "checks": [
+        {
+          "check": {
+            "type": "newPlaceType",
+            "types": [
+              "restaurant"
+            ]
+          },
+          "pass": true,
+          "detail": "all match"
+        },
+        {
+          "check": {
+            "type": "noKeyword",
+            "keywords": [
+              "臭鳜鱼"
+            ]
+          },
+          "pass": false,
+          "detail": "罍+小吃(罍街店), 四道菜·福建菜馆(天鹅湖万达店)"
+        }
+      ],
+      "outcomeMatches": true,
+      "promptTokens": 11996,
+      "completionTokens": 433,
+      "completions": 4,
+      "durationMs": 7208,
+      "geoapifyRequests": 0,
+      "fullRegeneration": {
+        "promptTokens": 102272,
+        "completionTokens": 4770,
+        "durationMs": 30928,
+        "steps": 7
+      }
+    },
+    {
+      "id": "hefei-zh-add-free-park-budget",
+      "fixture": "hefei",
+      "message": "第 1 天下午加一个免费的公园",
+      "plan": {
+        "intent": "add",
+        "targetSlots": [
+          {
+            "dayNumber": 1,
+            "period": "afternoon"
+          }
+        ],
+        "add": [
+          {
+            "what": "免费的公园",
+            "type": "attraction"
+          }
+        ],
+        "keep": [],
+        "instruction": "第 1 天下午加一个免费的公园"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "ok",
+      "result": {
+        "ok": false,
+        "reason": "invalid",
+        "issues": [
+          "day 1 totals ¥525 per person, over the ¥300 cap"
+        ],
+        "attempt": 2
+      },
+      "candidates": [
+        {
+          "attempt": 1,
+          "preservation": {
+            "kept": 11,
+            "total": 11,
+            "rate": 1
+          },
+          "issues": [
+            "day 1 totals ¥525 per person, over the ¥300 cap"
+          ]
+        },
+        {
+          "attempt": 2,
+          "preservation": {
+            "kept": 11,
+            "total": 11,
+            "rate": 1
+          },
+          "issues": [
+            "day 1 totals ¥525 per person, over the ¥300 cap"
+          ]
+        }
+      ],
+      "toolCalls": 10,
+      "steps": 6,
+      "outcomeMatches": false,
+      "promptTokens": 41706,
+      "completionTokens": 1462,
+      "completions": 7,
+      "durationMs": 25992,
+      "geoapifyRequests": 0,
+      "fullRegeneration": {
+        "promptTokens": 102272,
+        "completionTokens": 4770,
+        "durationMs": 30928,
+        "steps": 7
+      }
+    },
+    {
+      "id": "hefei-unclear",
+      "fixture": "hefei",
+      "message": "make it better",
+      "plan": {
+        "intent": "unclear",
+        "targetSlots": [],
+        "add": [],
+        "keep": [],
+        "instruction": "make it better",
+        "question": "Which day or stop would you like me to improve, and what kind of change do you have in mind (e.g., swap an attraction, add a restaurant, or adjust the pace)?"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "none",
+      "outcomeMatches": true,
+      "promptTokens": 921,
+      "completionTokens": 63,
+      "completions": 1,
+      "durationMs": 1176,
+      "geoapifyRequests": 0,
+      "fullRegeneration": {
+        "promptTokens": 102272,
+        "completionTokens": 4770,
+        "durationMs": 30928,
+        "steps": 7
+      }
+    }
+  ]
+}

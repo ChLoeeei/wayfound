@@ -45,7 +45,7 @@ export interface ReplanOptions {
   stepTrace?: AgentStepRecord[];
   usage?: AgentUsage;
   /** Eval hook: every model answer before validation, with its verdict. */
-  onCandidate?: (info: { attempt: number; candidate: Itinerary; validation: ValidationResult }) => void;
+  onCandidate?: (info: { attempt: number; candidate: Itinerary; validation: ValidationResult; rawAnswer: string }) => void;
 }
 
 export type ReplanResult =
@@ -329,7 +329,7 @@ export async function replanItinerary(req: ReplanRequest, opts: ReplanOptions): 
       const after = applyModelSlots(req, targets, answer, ctx);
       const poiIds = ctx.allPois().map(p => p.id);
       const v = validateReplan(req.itinerary, after, targets, { poiIds, avoid, budgetCap: req.budgetCap });
-      opts.onCandidate?.({ attempt, candidate: after, validation: v });
+      opts.onCandidate?.({ attempt, candidate: after, validation: v, rawAnswer: (msg.content || '').slice(0, 4000) });
       if (v.ok && v.changedPlaceIds.length === 0) {
         v.issues.push('no stop was changed');
       }

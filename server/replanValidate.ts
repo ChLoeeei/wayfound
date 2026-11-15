@@ -39,9 +39,13 @@ const TYPE_LABELS: Record<string, string[]> = Object.fromEntries(
   Object.keys(en.place.types).map(t => [t, [t, (en.place.types as any)[t], (zh.place.types as any)[t]].map(s => String(s).toLowerCase())]),
 );
 
-/** The first `avoid` phrase a stop violates, or null. Matches name, note, search query and the type's labels in both languages. */
+/**
+ * The first `avoid` phrase a stop violates, or null. Matches the stop's
+ * name, search query and the type's labels in both languages. The free-text
+ * note is not searched: "a bridge near Tenryu-ji temple" is not a temple.
+ */
 export function violatesAvoid(place: Pick<Place, 'name' | 'aiNote' | 'type' | 'searchQuery'>, avoid: string[]): string | null {
-  const hay = `${place.name} ${place.aiNote ?? ''} ${place.searchQuery ?? ''}`.toLowerCase();
+  const hay = `${place.name} ${place.searchQuery ?? ''}`.toLowerCase();
   const typeLabels = TYPE_LABELS[place.type] ?? [place.type];
   for (const raw of avoid) {
     const a = raw.trim().toLowerCase();
