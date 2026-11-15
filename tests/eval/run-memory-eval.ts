@@ -20,6 +20,7 @@
  * The agent itself is unchanged: memory only adds the same user-prompt block
  * the UI adds, and the eval harness in run-eval.ts never sets it.
  */
+import 'dotenv/config';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createDeepSeekClient } from '../../server/llm';

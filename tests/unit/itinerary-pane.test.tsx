@@ -164,3 +164,70 @@ describe('ItineraryPane lessons chip and grounding line', () => {
     expect(screen.getByTestId('source-attributions')).toHaveTextContent('Place data © OpenStreetMap contributors, ODbL · Something custom');
   });
 });
+
+describe('ItineraryPane partial replanning controls', () => {
+  const structured: Itinerary = {
+    ...itinerary,
+    days: [
+      {
+        dayNumber: 1,
+        theme: 'Temples',
+        slots: [
+          {
+            period: 'morning',
+            places: [
+              { ...place('a', 500), slotId: 'slot-a', start: '09:00', end: '10:00' },
+              { ...place('b', 700), slotId: 'slot-b', start: '10:15', end: '11:15', locked: true, travelFromPrev: { mode: 'walk', minutes: 15, distanceM: 1100, estimated: true } },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+  const renderWith = (over: Partial<React.ComponentProps<typeof ItineraryPane>> = {}) =>
+    render(
+      <ItineraryPane
+        itinerary={structured}
+        activeDay={1}
+        onChangeDay={() => {}}
+        selectedPlaceId={null}
+        onSelectPlace={() => {}}
+        onUpdateItinerary={() => {}}
+        onRequestDelete={() => {}}
+        onAddPlaceToSlot={() => {}}
+        {...over}
+      />,
+    );
+
+  it('shows estimated times and travel rows labelled as estimates', () => {
+    renderWith();
+    expect(screen.getByTestId('place-time-a')).toHaveTextContent('approx. 09:00–10:00');
+    expect(screen.getByTestId('travel-b')).toHaveTextContent('Walk about 15 min · 1.1 km · estimate');
+    expect(screen.queryByTestId('travel-a')).toBeNull();
+  });
+
+  it('wires lock, replace and undo, and marks changed stops', () => {
+    const calls: string[] = [];
+    renderWith({
+      changedPlaceIds: ['a'],
+      onToggleLock: id => calls.push(`lock:${id}`),
+      onReplace: (p, d, period) => calls.push(`replace:${p.id}:${d}:${period}`),
+      onUndoEdit: () => calls.push('undo'),
+      canUndoEdit: true,
+    });
+    expect(screen.getByTestId('place-card-a')).toHaveAttribute('data-changed', 'true');
+    expect(screen.getByTestId('place-updated-a')).toHaveTextContent('Updated');
+    expect(screen.getByTestId('place-locked-b')).toBeInTheDocument();
+    expect(screen.getByTestId('place-replace-b')).toBeDisabled();
+    fireEvent.click(screen.getByTestId('place-lock-a'));
+    fireEvent.click(screen.getByTestId('place-replace-a'));
+    fireEvent.click(screen.getByTestId('undo-edit'));
+    expect(calls).toEqual(['lock:a', 'replace:a:1:morning', 'undo']);
+  });
+
+  it('hides edit controls in read-only and whole-trip modes', () => {
+    renderWith({ readOnly: true, onToggleLock: () => {}, onReplace: () => {}, onUndoEdit: () => {}, canUndoEdit: true });
+    expect(screen.queryByTestId('place-lock-a')).toBeNull();
+    expect(screen.queryByTestId('undo-edit')).toBeNull();
+  });
+});

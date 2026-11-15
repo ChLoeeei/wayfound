@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Star, ExternalLink, Trash2, ChevronDown, GripVertical } from 'lucide-react';
+import { Star, ExternalLink, Trash2, ChevronDown, GripVertical, Lock, LockOpen, RefreshCw } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Place, SlotPeriod } from '../types';
@@ -19,13 +19,20 @@ interface PlaceCardProps {
   disableDrag?: boolean;
   /** Hide the button column (whole-trip export / print). */
   hideActions?: boolean;
+  /** Partial replanning (feature C): keep / replace this stop. Buttons hidden when absent. */
+  onToggleLock?: () => void;
+  onReplace?: () => void;
+  /** The last edit changed this stop: amber highlight and an "Updated" tag. */
+  changed?: boolean;
+  /** Disable replace while another edit is running. */
+  editBusy?: boolean;
 }
 
 /**
- * One stop in the day's list, laid out like the design's slot card: time
- * column, name + `type · cost` line, action buttons. Lock / replace arrive
- * with partial replanning (v2 feature C); until then the actions are the
- * existing delete and the expand toggle (note, slot picker, links).
+ * One stop in the day's list: number badge, name, `type · cost · stay`,
+ * estimated time (always shown as approximate), and the action buttons:
+ * lock / replace (feature C), drag, expand (note, slot picker, links),
+ * delete.
  */
 export default function PlaceCard({
   place,
@@ -37,6 +44,10 @@ export default function PlaceCard({
   onChangeSlot,
   disableDrag,
   hideActions,
+  onToggleLock,
+  onReplace,
+  changed,
+  editBusy,
 }: PlaceCardProps) {
   const t = useT();
   const [expanded, setExpanded] = useState(false);
@@ -54,21 +65,22 @@ export default function PlaceCard({
 
   const meta = [t(`place.types.${place.type}`), place.estimatedCost > 0 ? `¥${place.estimatedCost}` : t('place.free')];
   if (place.duration > 0) meta.push(t('place.hours', { hours: Math.round((place.duration / 60) * 10) / 10 }));
+  const border = isSelected ? 'border-accent shadow-sm' : changed ? 'border-updated-line' : place.locked ? 'border-border-strong' : 'border-border hover:border-border-strong';
 
   return (
     <article
       ref={setNodeRef}
       style={dragStyle}
       data-testid={`place-card-${place.id}`}
+      data-changed={changed ? 'true' : undefined}
+      data-locked={place.locked ? 'true' : undefined}
       aria-selected={isSelected}
-      className={`group flex gap-3 p-3 md:p-3.5 border rounded-xl bg-surface cursor-pointer transition-colors ${
-        isSelected ? 'border-accent shadow-sm' : 'border-border hover:border-border-strong'
-      }`}
+      className={`group flex gap-3 p-3 md:p-3.5 border rounded-xl cursor-pointer transition-colors ${changed ? 'bg-updated-tint' : 'bg-surface'} ${border}`}
       onClick={onSelect}
     >
       <div className="flex-none pt-0.5">
         <span
-          className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-white text-xs font-semibold ${isSelected ? 'bg-accent' : 'bg-text-main'}`}
+          className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-white text-xs font-semibold ${isSelected ? 'bg-accent' : changed ? 'bg-updated' : 'bg-text-main'}`}
           aria-hidden="true"
         >
           {index + 1}
@@ -89,6 +101,16 @@ export default function PlaceCard({
             />
           )}
           <h4 className="m-0 font-semibold leading-tight break-words min-w-0">{place.name}</h4>
+          {changed && (
+            <span className="text-xs font-semibold text-updated-text bg-updated-chip px-2 py-0.5 rounded-full" data-testid={`place-updated-${place.id}`}>
+              {t('itinerary.updated')}
+            </span>
+          )}
+          {place.locked && (
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-text-muted bg-bg-base px-2 py-0.5 rounded-full" data-testid={`place-locked-${place.id}`}>
+              <Lock size={10} /> {t('place.locked')}
+            </span>
+          )}
           {place.unverified && (
             <span
               className="text-xs font-semibold text-updated-text bg-updated-chip px-2 py-0.5 rounded-full"
@@ -100,6 +122,12 @@ export default function PlaceCard({
           )}
         </div>
         <div className="text-text-muted text-[13px] flex flex-wrap items-center gap-x-1.5">
+          {place.start && place.end && (
+            <span className="tabular-nums" data-testid={`place-time-${place.id}`} title={t('itinerary.travel.estimated')}>
+              {t('itinerary.approx', { time: `${place.start}–${place.end}` })}
+              {' ·'}
+            </span>
+          )}
           {place.rating != null && (
             <span className="inline-flex items-center gap-1 text-accent font-medium">
               <Star size={11} className="fill-current" />
@@ -138,13 +166,7 @@ export default function PlaceCard({
 
             <div className="flex items-center gap-3 text-xs">
               {place.externalUrl && (
-                <a
-                  href={place.externalUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={e => e.stopPropagation()}
-                  className="inline-flex items-center gap-1"
-                >
+                <a href={place.externalUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="inline-flex items-center gap-1">
                   {t('place.viewDetails')} <ExternalLink size={11} />
                 </a>
               )}
@@ -162,7 +184,41 @@ export default function PlaceCard({
         )}
       </div>
 
-      <div className={`flex gap-1.5 self-start ${hideActions ? 'hidden' : ''}`}>
+      <div className={`flex flex-wrap justify-end gap-1.5 self-start max-w-[96px] ${hideActions ? 'hidden' : ''}`}>
+        {onToggleLock && (
+          <button
+            type="button"
+            aria-label={place.locked ? t('place.unlock') : t('place.lock')}
+            title={place.locked ? t('place.unlock') : t('place.lock')}
+            aria-pressed={!!place.locked}
+            data-testid={`place-lock-${place.id}`}
+            onClick={e => {
+              e.stopPropagation();
+              onToggleLock();
+            }}
+            className={`w-9 h-9 rounded-lg border flex items-center justify-center ${
+              place.locked ? 'border-text-main bg-text-main text-white' : 'border-border-strong bg-surface text-text-muted hover:text-text-main'
+            }`}
+          >
+            {place.locked ? <Lock size={15} /> : <LockOpen size={15} />}
+          </button>
+        )}
+        {onReplace && (
+          <button
+            type="button"
+            aria-label={t('place.replace')}
+            title={t('place.replace')}
+            data-testid={`place-replace-${place.id}`}
+            disabled={!!place.locked || editBusy}
+            onClick={e => {
+              e.stopPropagation();
+              onReplace();
+            }}
+            className="w-9 h-9 rounded-lg border border-border-strong bg-surface flex items-center justify-center text-text-muted hover:text-accent hover:border-accent-line disabled:opacity-40 disabled:hover:text-text-muted disabled:hover:border-border-strong"
+          >
+            <RefreshCw size={15} />
+          </button>
+        )}
         {!disableDrag && (
           <button
             type="button"

@@ -12,6 +12,7 @@ import UndoSnack from './UndoSnack';
 import PlaceSearchModal from './PlaceSearchModal';
 import { diffDays } from './PlanningForm';
 import { insertPlace } from '../lib/itineraryOps';
+import { type ChatTurn, type EditPlan, type ReplanResponse, firstTargetDay, namesOfSlots, newTurn, pushHistory, replacePlan, toggleLock } from '../lib/editFlow';
 import { downloadAsPng } from '../lib/export';
 import { loginWithGoogle, logout, saveItinerary, shareItinerary, onAuthStateChanged } from '../supabase';
 import type { User } from '@supabase/supabase-js';
@@ -94,6 +95,15 @@ export default function ItineraryApp() {
   const [searchTarget, setSearchTarget] = useState<
     { dayNumber: number; period: SlotPeriod } | null
   >(null);
+
+  // Partial replanning (feature C): chat turns, previous versions for undo,
+  // and the stops the last edit changed (amber in the list and on the map).
+  const [messages, setMessages] = useState<ChatTurn[]>([]);
+  const [history, setHistory] = useState<Itinerary[]>([]);
+  const [changedPlaceIds, setChangedPlaceIds] = useState<string[]>([]);
+  const [editBusy, setEditBusy] = useState(false);
+  const itineraryRef = useRef<Itinerary | null>(null);
+  itineraryRef.current = itinerary;
 
   const [exporting, setExporting] = useState(false);
   // While true the itinerary pane renders every day, so the image export and
@@ -202,6 +212,9 @@ export default function ItineraryApp() {
       ensurePlaceIds(it);
       sanitiseItinerary(it);
       setItinerary(it);
+      setMessages([]);
+      setHistory([]);
+      setChangedPlaceIds([]);
       setActiveDay(it.days[0]?.dayNumber ?? 1);
       setStage('ready');
       setFormOpen(false);
@@ -239,6 +252,110 @@ export default function ItineraryApp() {
       console.error('[memory] extraction failed; the typed text stays as a note', err);
       setMemoryNotice(null);
     }
+  };
+
+  // ---- Partial replanning (feature C) ----
+  const say = (text: string, kind?: ChatTurn['kind']) => setMessages(prev => [...prev, newTurn('assistant', text, kind)]);
+  const periodName = (p: SlotPeriod) => t(`period.${p}`);
+
+  const runReplan = async (plan: EditPlan) => {
+    const current = itineraryRef.current;
+    if (!current) return;
+    setEditBusy(true);
+    try {
+      const res = await fetch(`${process.env.API_BASE_URL}/api/replan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          itinerary: current,
+          plan,
+          language: lang,
+          avoid: memoryRef.current.avoid,
+          budgetCap: pendingInput?.budget.max,
+          people: pendingInput?.people,
+          preferences: pendingInput?.vibes,
+          specialNeeds: pendingInput?.specialNeeds,
+        }),
+      });
+      const data = (await res.json()) as ReplanResponse & { error?: string };
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      if (data.ok === true) {
+        ensurePlaceIds(data.itinerary);
+        sanitiseItinerary(data.itinerary);
+        setHistory(h => pushHistory(h, current));
+        setItinerary(data.itinerary);
+        setChangedPlaceIds(data.changedPlaceIds);
+        setSelectedPlaceId(data.changedPlaceIds[0] ?? null);
+        const day = firstTargetDay(plan);
+        if (day) setActiveDay(day);
+        if (plan.intent === 'remove') say(t('conversation.editRemoved', { count: data.removedPlaceIds.length }), 'done');
+        else say(t('conversation.editDone', { count: data.changedPlaceIds.length, day: day ?? '' }), 'done');
+      } else if (data.reason === 'locked') {
+        say(t('conversation.editLocked', { names: namesOfSlots(current, data.lockedSlotIds).join(', ') }), 'error');
+      } else if (data.reason === 'invalid') {
+        say(t('conversation.editInvalid', { issues: data.issues.join(' ') }), 'error');
+      } else {
+        say(t('conversation.editFailed', { error: data.message }), 'error');
+      }
+    } catch (err: any) {
+      say(t('conversation.editFailed', { error: err?.message ?? String(err) }), 'error');
+    } finally {
+      setEditBusy(false);
+    }
+  };
+
+  const handleSendMessage = async (text: string) => {
+    const current = itineraryRef.current;
+    if (!current) return;
+    setMessages(prev => [...prev, newTurn('user', text)]);
+    setEditBusy(true);
+    let plan: EditPlan;
+    try {
+      const res = await fetch(`${process.env.API_BASE_URL}/api/parse-edit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itinerary: current, message: text, language: lang, activeDay }),
+      });
+      const data = (await res.json()) as { plan?: EditPlan; error?: string };
+      if (!res.ok || !data.plan) throw new Error(data.error || `HTTP ${res.status}`);
+      plan = data.plan;
+    } catch (err: any) {
+      setEditBusy(false);
+      say(t('conversation.editFailed', { error: err?.message ?? String(err) }), 'error');
+      return;
+    }
+    if (plan.intent === 'unclear') {
+      setEditBusy(false);
+      say(plan.question || t('conversation.editUnclear'), 'question');
+      return;
+    }
+    const targets = plan.targetSlots
+      .map(x => (x.slotId ? t('conversation.targetStop', { day: x.dayNumber, period: periodName(x.period) }) : t('conversation.targetPeriod', { day: x.dayNumber, period: periodName(x.period) })))
+      .join(', ');
+    say(t('conversation.replanning', { targets }), 'status');
+    await runReplan(plan);
+  };
+
+  const handleReplace = (place: Place, dayNumber: number, period: SlotPeriod) => {
+    const instruction = t('conversation.replaceRequest', { name: place.name });
+    setMessages(prev => [...prev, newTurn('user', instruction)]);
+    void runReplan(replacePlan(place, dayNumber, period, instruction));
+  };
+
+  const handleToggleLock = (placeId: string) => {
+    setItinerary(it => (it ? toggleLock(it, placeId) : it));
+  };
+
+  const handleUndoEdit = () => {
+    setHistory(h => {
+      const prev = h[h.length - 1];
+      if (prev) {
+        setItinerary(prev);
+        setChangedPlaceIds([]);
+        setSelectedPlaceId(null);
+      }
+      return h.slice(0, -1);
+    });
   };
 
   const handleFormSubmit = async (input: PlanningInput) => {
@@ -427,12 +544,15 @@ export default function ItineraryApp() {
           memory={memory}
           formOpen={formOpen}
           onToggleForm={() => setFormOpen(v => !v)}
+          messages={messages}
+          onSendMessage={handleSendMessage}
+          editBusy={editBusy}
         />
 
         <div className="[flex:2.6_1_520px] min-w-0 flex flex-col gap-4 print:block">
           <section aria-label={t('map.title')} className="bg-surface border border-border rounded-[14px] p-3 flex flex-col gap-2.5 print:hidden">
             <div className="relative h-[280px] md:h-[320px] rounded-[10px] overflow-hidden bg-[#E7ECE8]" data-testid="map-container">
-              <MapPane itinerary={itinerary} activeDay={activeDay} selectedPlaceId={selectedPlaceId} onSelectPlace={onSelectPlace} />
+              <MapPane itinerary={itinerary} activeDay={activeDay} selectedPlaceId={selectedPlaceId} onSelectPlace={onSelectPlace} changedPlaceIds={changedPlaceIds} />
               {!itinerary && (
                 <div className="absolute inset-0 flex items-center justify-center text-text-muted text-[13px] pointer-events-none">
                   {t('map.empty')}
@@ -450,6 +570,10 @@ export default function ItineraryApp() {
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-accent" />
                 {t('map.legendSelected')}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-updated" />
+                {t('map.legendChanged')}
               </span>
             </div>
           </section>
@@ -473,6 +597,12 @@ export default function ItineraryApp() {
                 headerActions={moreMenu}
                 allDays={exportAll}
                 onShowLessons={showUsedLessons}
+                changedPlaceIds={changedPlaceIds}
+                onToggleLock={handleToggleLock}
+                onReplace={handleReplace}
+                onUndoEdit={handleUndoEdit}
+                canUndoEdit={history.length > 0}
+                editBusy={editBusy}
               />
             ) : (
               <div className="min-h-[240px] h-full flex flex-col items-center justify-center text-center" data-testid="itinerary-empty">

@@ -10,10 +10,12 @@ export interface MapPaneProps {
   activeDay: number | null;
   selectedPlaceId: string | null;
   onSelectPlace: (id: string) => void;
+  /** Stops the last edit changed: drawn in amber (feature C). */
+  changedPlaceIds?: string[];
 }
 
 /** Marker colours, from the design reference: ink for a stop, accent for the selected one. */
-export const MARKER_COLORS = { stop: '#16181D', selected: '#0F6E66', route: '#0F6E66' } as const;
+export const MARKER_COLORS = { stop: '#16181D', selected: '#0F6E66', route: '#0F6E66', changed: '#B4570F' } as const;
 
 /**
  * Routes to the right map engine for the itinerary's destination — the

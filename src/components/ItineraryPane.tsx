@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldAlert, Loader2, RefreshCw, Plus, Info, Check, AlertTriangle, BookOpen, Search } from 'lucide-react';
+import { ShieldAlert, Loader2, RefreshCw, Plus, Info, Check, AlertTriangle, BookOpen, Search, Undo2, Footprints, TrainFront, Car } from 'lucide-react';
 import {
   DndContext,
   PointerSensor,
@@ -51,7 +51,16 @@ interface ItineraryPaneProps {
   allDays?: boolean;
   /** Opens the agent panel on the lessons this plan used (the "Used N lessons" chip). */
   onShowLessons?: () => void;
+  /** Partial replanning (feature C). */
+  changedPlaceIds?: string[];
+  onToggleLock?: (placeId: string) => void;
+  onReplace?: (place: Place, dayNumber: number, period: SlotPeriod) => void;
+  onUndoEdit?: () => void;
+  canUndoEdit?: boolean;
+  editBusy?: boolean;
 }
+
+const TRAVEL_ICON = { walk: Footprints, transit: TrainFront, drive: Car } as const;
 
 /** Server attribution strings (server/tools/attributions.ts) → locale keys. Unknown strings render as sent. */
 const ATTRIBUTION_KEYS: Record<string, string> = {
@@ -111,6 +120,12 @@ export default function ItineraryPane({
   headerActions,
   allDays,
   onShowLessons,
+  changedPlaceIds = [],
+  onToggleLock,
+  onReplace,
+  onUndoEdit,
+  canUndoEdit,
+  editBusy,
 }: ItineraryPaneProps) {
   const t = useT();
   // Whole-trip mode is for export and print, so it carries no edit controls.
@@ -287,6 +302,18 @@ export default function ItineraryPane({
         <h1 className="m-0 font-display text-2xl font-semibold min-w-0">{allDays || !day ? itinerary.title : dayTitle(day)}</h1>
         {lessonsChip}
         <div className="flex-1" />
+        {editable && canUndoEdit && onUndoEdit && (
+          <button
+            type="button"
+            onClick={onUndoEdit}
+            disabled={editBusy}
+            className="flex items-center gap-1.5 min-h-[34px] px-3 border border-updated-line bg-updated-tint text-updated-text rounded-full text-[13px] hover:bg-updated-chip disabled:opacity-50 print:hidden"
+            data-testid="undo-edit"
+          >
+            <Undo2 size={14} />
+            {t('itinerary.undoLast')}
+          </button>
+        )}
         {editable && (
           <button
             type="button"
@@ -353,19 +380,32 @@ export default function ItineraryPane({
 
                       {slot.places.map((place, placeIdx) => {
                         const idx = runningIndex++;
+                        const travel = place.travelFromPrev;
+                        const TravelIcon = travel ? TRAVEL_ICON[travel.mode] : null;
                         return (
-                          <PlaceCard
-                            key={place.id}
-                            place={place}
-                            index={idx}
-                            period={slot.period}
-                            isSelected={selectedPlaceId === place.id}
-                            onSelect={() => onSelectPlace(place.id)}
-                            onDelete={!editable ? undefined : () => handleDelete(place, d.dayNumber, slot.period, placeIdx)}
-                            onChangeSlot={!editable ? undefined : next => handleChangeSlot(place.id, next)}
-                            disableDrag={!editable}
-                            hideActions={allDays}
-                          />
+                          <React.Fragment key={place.id}>
+                            {travel && TravelIcon && (
+                              <div className="flex items-center gap-1.5 px-3 text-[12px] text-text-muted" data-testid={`travel-${place.id}`}>
+                                <TravelIcon size={13} className="shrink-0" />
+                                {t(`itinerary.travel.${travel.mode}`, { minutes: travel.minutes })} · {(travel.distanceM / 1000).toFixed(1)} km · {t('itinerary.travel.estimated')}
+                              </div>
+                            )}
+                            <PlaceCard
+                              place={place}
+                              index={idx}
+                              period={slot.period}
+                              isSelected={selectedPlaceId === place.id}
+                              onSelect={() => onSelectPlace(place.id)}
+                              onDelete={!editable ? undefined : () => handleDelete(place, d.dayNumber, slot.period, placeIdx)}
+                              onChangeSlot={!editable ? undefined : next => handleChangeSlot(place.id, next)}
+                              disableDrag={!editable}
+                              hideActions={allDays}
+                              onToggleLock={editable && onToggleLock ? () => onToggleLock(place.id) : undefined}
+                              onReplace={editable && onReplace ? () => onReplace(place, d.dayNumber, slot.period) : undefined}
+                              changed={changedPlaceIds.includes(place.id)}
+                              editBusy={editBusy}
+                            />
+                          </React.Fragment>
                         );
                       })}
 

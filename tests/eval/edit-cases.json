@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "comment": "Partial-replanning cases (v2 feature C) against the frozen base itineraries in tests/eval/edit-fixtures/. `expect` is what the edit parser must produce (a target matches when its day and period agree and, if `slotId` is given, the target names that stop or the whole period). `expectResult` is the replanner's outcome; `checks` run on the applied itinerary. `locks` lock stops before the edit; `avoid` is the user's memory avoid list.",
+  "cases": [
+    {
+      "id": "tokyo-replace-kappabashi-dessert",
+      "fixture": "tokyo",
+      "language": "en",
+      "message": "Swap Kappabashi kitchen street on day 1 for a dessert cafe nearby",
+      "expect": { "intent": "replace", "dayNumber": 1, "period": "afternoon", "slotId": "slot-tokyo-4" },
+      "expectResult": "ok",
+      "checks": [{ "type": "newPlaceType", "types": ["cafe", "restaurant"] }]
+    },
+    {
+      "id": "tokyo-zh-replace-ginza-kids",
+      "fixture": "tokyo",
+      "language": "zh",
+      "message": "第 3 天下午不想逛银座，换成一个适合小孩的地方",
+      "activeDay": 3,
+      "expect": { "intent": "replace", "dayNumber": 3, "period": "afternoon", "slotId": "slot-tokyo-15" },
+      "expectResult": "ok",
+      "checks": [{ "type": "noKeyword", "keywords": ["Ginza Six"] }]
+    },
+    {
+      "id": "tokyo-locked-tsukiji",
+      "fixture": "tokyo",
+      "language": "en",
+      "locks": ["slot-tokyo-12"],
+      "message": "Replace Tsukiji Outer Market with something less crowded",
+      "expect": { "intent": "replace", "dayNumber": 3, "period": "morning", "slotId": "slot-tokyo-12" },
+      "expectResult": "locked"
+    },
+    {
+      "id": "tokyo-move-skytree",
+      "fixture": "tokyo",
+      "language": "en",
+      "message": "Move Tokyo Skytree to the evening of day 2",
+      "expect": { "intent": "move", "dayNumber": 2, "period": "evening", "keep": "slot-tokyo-6" },
+      "expectResult": "ok",
+      "checks": [
+        { "type": "placeInPeriod", "name": "Tokyo Skytree", "dayNumber": 2, "period": "evening" },
+        { "type": "placeNotInPeriod", "name": "Tokyo Skytree", "dayNumber": 1, "period": "evening" }
+      ]
+    },
+    {
+      "id": "kyoto-remove-doutor",
+      "fixture": "kyoto",
+      "language": "en",
+      "message": "Remove Doutor Coffee Shop from day 3",
+      "expect": { "intent": "remove", "dayNumber": 3, "period": "evening", "slotId": "slot-kyoto-19" },
+      "expectResult": "ok",
+      "checks": [{ "type": "noKeyword", "keywords": ["Doutor"] }]
+    },
+    {
+      "id": "kyoto-zh-avoid-temples",
+      "fixture": "kyoto",
+      "language": "zh",
+      "avoid": ["temple", "寺庙"],
+      "message": "第 4 天上午的天龙寺换一个不是寺庙的地方",
+      "expect": { "intent": "replace", "dayNumber": 4, "period": "morning", "slotId": "slot-kyoto-22" },
+      "expectResult": "ok",
+      "checks": [{ "type": "noNewKeyword", "keywords": ["temple", "寺", "shrine", "神社", "-ji", " ji"] }]
+    },
+    {
+      "id": "kyoto-add-matcha",
+      "fixture": "kyoto",
+      "language": "en",
+      "message": "Add a matcha dessert place to the afternoon of day 5",
+      "expect": { "intent": "add", "dayNumber": 5, "period": "afternoon" },
+      "expectResult": "ok",
+      "checks": [
+        { "type": "minNewPlaces", "value": 1 },
+        { "type": "placeInPeriod", "name": "Nishiki Market", "dayNumber": 5, "period": "afternoon" },
+        { "type": "placeInPeriod", "name": "Ippodo Tea Co.", "dayNumber": 5, "period": "afternoon" }
+      ]
+    },
+    {
+      "id": "hefei-zh-replace-fish",
+      "fixture": "hefei",
+      "language": "zh",
+      "message": "把第 2 天晚上的臭鳜鱼换成清淡一点的餐厅",
+      "expect": { "intent": "replace", "dayNumber": 2, "period": "evening", "slotId": "slot-hefei-14" },
+      "expectResult": "ok",
+      "checks": [{ "type": "newPlaceType", "types": ["restaurant"] }, { "type": "noKeyword", "keywords": ["臭鳜鱼"] }]
+    },
+    {
+      "id": "hefei-zh-add-free-park-budget",
+      "fixture": "hefei",
+      "language": "zh",
+      "budgetCap": 300,
+      "message": "第 1 天下午加一个免费的公园",
+      "expect": { "intent": "add", "dayNumber": 1, "period": "afternoon" },
+      "expectResult": "ok",
+      "checks": [{ "type": "minNewPlaces", "value": 1 }, { "type": "maxNewPlaceCost", "value": 20 }, { "type": "maxDayCostPerPerson", "dayNumber": 1, "value": 330 }]
+    },
+    {
+      "id": "hefei-unclear",
+      "fixture": "hefei",
+      "language": "en",
+      "message": "make it better",
+      "expect": { "intent": "unclear" },
+      "expectResult": "none"
+    }
+  ]
+}

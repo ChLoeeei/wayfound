@@ -13,6 +13,10 @@ import { computeSourceAttributions, computeGroundingWarning } from "./server/too
 import { getLiveLibrary, lessonsForRequest } from "./server/experience/live";
 import { ungroundedPlaceNames } from "./server/grounding";
 import { extractPreferences } from "./server/preferences";
+import { structureItinerary } from "./server/structure";
+import type { Poi } from "./server/tools/provider";
+import { parseEdit } from "./server/editParse";
+import { replanItinerary, type ReplanRequest } from "./server/replan";
 
 // Persistent per-request trace files for the debug TraceViewer
 // (src/components/TraceViewer.tsx) — one JSON file per generation request,
@@ -187,6 +191,8 @@ async function startServer() {
     // the persistent per-request debug log + TraceViewer. Independent of
     // `trace` above (see AgentStepRecord's docstring in server/agent.ts).
     const stepTrace: AgentStepRecord[] = [];
+    // Every POI the tools returned, for poiId attachment (server/structure.ts).
+    const pois: Poi[] = [];
     let destinationForTrace = '';
 
     try {
@@ -218,7 +224,7 @@ async function startServer() {
           // Only 'en' / 'zh' reach the prompt; anything else is dropped.
           language: language === 'en' || language === 'zh' ? language : undefined,
         },
-        { client: deepseek, trace, stepTrace, lessons },
+        { client: deepseek, trace, stepTrace, lessons, pois },
       );
 
       // Shared with tests/eval/run-eval.ts so the eval harness's
@@ -265,8 +271,12 @@ async function startServer() {
         steps: stepTrace,
       });
 
+      // v2 structured state: slot ids, estimated times and travel, version
+      // (server/structure.ts). Outside the agent, so eval output is unchanged.
+      const structured = structureItinerary(itinerary as any, pois);
+
       res.json({
-        ...(itinerary as object),
+        ...(structured as object),
         ...(sourceAttributions.length > 0 ? { sourceAttributions } : {}),
         ...(groundingWarning ? { groundingWarning } : {}),
         usedLessonIds: lessons?.ids ?? [],
@@ -293,6 +303,62 @@ async function startServer() {
       } else {
         res.status(500).json({ error: "Failed to generate itinerary. Please try again." });
       }
+    }
+  });
+
+  // Partial replanning (v2 feature C), step 1: what does the user want to change?
+  app.post("/api/parse-edit", async (req, res) => {
+    try {
+      const { itinerary, message, language, activeDay } = req.body as { itinerary?: any; message?: unknown; language?: unknown; activeDay?: unknown };
+      if (!itinerary?.days || typeof message !== "string" || !message.trim()) {
+        return res.status(400).json({ error: "itinerary and message are required." });
+      }
+      const plan = await parseEdit(deepseek, itinerary, message.slice(0, 1000), language === "zh" ? "zh" : "en", Number(activeDay) || undefined);
+      res.json({ plan });
+    } catch (error: any) {
+      console.error("Error parsing edit:", error);
+      res.status(500).json({ error: "Failed to understand the edit." });
+    }
+  });
+
+  // Partial replanning, step 2: replan only the target slots and validate
+  // (server/replan.ts + replanValidate.ts). The user's avoid list comes from
+  // their own memory in the browser; the experience library is not used here.
+  app.post("/api/replan", async (req, res) => {
+    const requestId = randomUUID();
+    const startedAt = Date.now();
+    const trace: ToolCallRecord[] = [];
+    const stepTrace: AgentStepRecord[] = [];
+    try {
+      const body = req.body as Partial<ReplanRequest> & { language?: unknown };
+      if (!body.itinerary?.days || !body.plan?.targetSlots) {
+        return res.status(400).json({ error: "itinerary and plan are required." });
+      }
+      const result = await replanItinerary(
+        {
+          itinerary: body.itinerary,
+          plan: body.plan,
+          language: body.language === "zh" ? "zh" : "en",
+          avoid: Array.isArray(body.avoid) ? body.avoid.filter((a): a is string => typeof a === "string").slice(0, 20) : [],
+          budgetCap: typeof body.budgetCap === "number" ? body.budgetCap : undefined,
+          people: typeof body.people === "number" ? body.people : undefined,
+          preferences: Array.isArray(body.preferences) ? body.preferences : undefined,
+          specialNeeds: Array.isArray(body.specialNeeds) ? body.specialNeeds : undefined,
+        },
+        { client: deepseek, trace, stepTrace },
+      );
+      writeTraceFile(requestId, {
+        requestId,
+        destination: body.itinerary.destination ?? "",
+        createdAt: new Date(startedAt).toISOString(),
+        durationMs: Date.now() - startedAt,
+        error: 'reason' in result ? result.reason : null,
+        steps: stepTrace,
+      });
+      res.json({ ...result, requestId });
+    } catch (error: any) {
+      console.error("Error replanning:", error);
+      res.status(500).json({ error: "Failed to replan." });
     }
   });
 

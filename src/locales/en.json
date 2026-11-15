@@ -41,11 +41,26 @@
     "readyGrounded": "Every stop comes from search results.",
     "readyWarning": "Some details came from general knowledge; please verify addresses and hours before you travel.",
     "failed": "Planning failed: {error}",
-    "inputPlaceholder": "Message edits arrive with partial replanning",
+    "inputPlaceholder": "Change a stop or a period, e.g. \"swap the museum on day 2 for a ramen place\"",
     "inputDisabledHint": "Editing a day by message is coming in a later version",
     "photoDisabledHint": "Adding a place from a photo is coming in a later version",
     "send": "Send",
-    "addPhoto": "Add a photo or screenshot"
+    "addPhoto": "Add a photo or screenshot",
+    "inputHint": "Edits replan only the stops you name; the rest of the day stays as it is.",
+    "noPlanYet": "Generate a plan first, then edit it here.",
+    "thinking": "Working out what to change…",
+    "replanning": "Replanning {targets}…",
+    "targetStop": "day {day} {period} stop",
+    "targetPeriod": "day {day} {period}",
+    "editDone_one": "Done: {count} stop changed on day {day}. The rest of the day is untouched.",
+    "editDone_other": "Done: {count} stops changed on day {day}. The rest of the day is untouched.",
+    "editRemoved_one": "Removed {count} stop. Everything else stays.",
+    "editRemoved_other": "Removed {count} stops. Everything else stays.",
+    "editLocked": "That would change a locked stop ({names}). Unlock it first if you want it replanned.",
+    "editInvalid": "I could not find a change that passes the checks, so nothing was changed. {issues}",
+    "editFailed": "The edit failed: {error}. Nothing was changed.",
+    "editUnclear": "Could you say which day, period or stop you mean?",
+    "replaceRequest": "Replace \"{name}\" with something similar nearby"
   },
   "form": {
     "destination": "Destination",
@@ -122,7 +137,8 @@
     "tiles": "Map tiles: OpenStreetMap outside China, Amap inside",
     "legendUnchanged": "Stop",
     "legendSelected": "Selected stop",
-    "empty": "Your route appears here once a plan exists"
+    "empty": "Your route appears here once a plan exists",
+    "legendChanged": "Changed stop"
   },
   "itinerary": {
     "title": "Itinerary",
@@ -151,6 +167,15 @@
     "attribution": {
       "osm": "Place data © OpenStreetMap contributors, ODbL",
       "wikivoyage": "Destination context from Wikivoyage, CC BY-SA 4.0"
+    },
+    "undoLast": "Undo last edit",
+    "updated": "Updated",
+    "approx": "approx. {time}",
+    "travel": {
+      "walk": "Walk about {minutes} min",
+      "transit": "Transit about {minutes} min",
+      "drive": "Drive about {minutes} min",
+      "estimated": "estimate"
     }
   },
   "period": {
@@ -175,7 +200,11 @@
       "cafe": "Cafe",
       "nightlife": "Nightlife",
       "leisure": "Leisure"
-    }
+    },
+    "lock": "Keep this stop",
+    "unlock": "Unlock this stop",
+    "locked": "Kept",
+    "replace": "Replace this stop"
   },
   "search": {
     "title": "Add a place",

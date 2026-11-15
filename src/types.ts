@@ -93,6 +93,27 @@ export interface Place {
   searchQuery?: string;
   /** Set by the agent when the place matched no map-search result, even after a re-search: treat coordinates as approximate. */
   unverified?: boolean;
+  // ---- v2 structured fields (server/structure.ts), all estimates except slotId / poiId / locked ----
+  /** Stable id of the time slot this place occupies; survives edits and replanning. */
+  slotId?: string;
+  /** Estimated start, HH:MM, packed from the period window and durations. Shown as approximate. */
+  start?: string;
+  /** Estimated end, HH:MM. Shown as approximate. */
+  end?: string;
+  /** Provider POI id when the place matched a search result of the run that produced it. */
+  poiId?: string;
+  /** The user asked to keep this stop; partial replanning refuses targets that include it. */
+  locked?: boolean;
+  /** Estimated travel from the previous stop of the same day; absent on the first stop. */
+  travelFromPrev?: TravelEstimate;
+}
+
+/** Straight-line estimate between consecutive stops; never a routed, exact figure. */
+export interface TravelEstimate {
+  mode: 'walk' | 'transit' | 'drive';
+  minutes: number;
+  distanceM: number;
+  estimated: true;
 }
 
 export interface TimeSlot {
@@ -147,6 +168,8 @@ export interface Itinerary {
    * (not just false) when there's nothing to warn about.
    */
   groundingWarning?: boolean;
+  /** Bumped by every applied edit or replanning; the client keeps earlier versions for undo. */
+  version?: number;
   /**
    * Experience-library lesson ids injected into this plan's prompt (v2
    * Core 2); empty when the library was off. Set by server.ts.

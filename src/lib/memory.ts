@@ -343,6 +343,9 @@ export function buildMemoryPromptContext(mem: TravelMemory, currentDestination?:
   if (mem.groupType) {
     lines.push(`- Usually travels as: ${mem.groupType}`);
   }
+  if (mem.lastBudget) {
+    lines.push(`- Usual daily budget: ¥${mem.lastBudget.min}–${mem.lastBudget.max} per person`);
+  }
   if (mem.budgetLean) {
     lines.push(`- Budget lean: ${BUDGET_LEAN_TEXT[mem.budgetLean]}`);
   }

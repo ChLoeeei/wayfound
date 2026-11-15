@@ -1,0 +1,975 @@
+{
+  "title": "Tokyo Family Food & Culture Trail (6 Days, Baby-Friendly)",
+  "summary": "A relaxed six-day Tokyo plan for a family of four with a baby, balancing food and culture at a gentle pace. Days are grouped by neighbourhood to keep stroller travel short: old-town Asakusa and Ueno's museums and markets, the fish markets and Ginza's sushi counters, Meiji Shrine and Shibuya's neon, a modern-art and garden day in Aoyama and the waterfront, and a final day of Shinjuku gardens, samurai culture and yakitori alleys. Every day includes park or garden downtime, indoor backup options for naps and rain, and meals chosen to suit a per-person budget of roughly ¥500–1500 (about 25–75 RMB equivalent per meal tier).",
+  "destination": "Tokyo",
+  "startDate": "2025-04-05",
+  "endDate": "2025-04-10",
+  "days": [
+    {
+      "dayNumber": 1,
+      "theme": "Old Tokyo welcome: Sensō-ji, Nakamise snacks and a Sumida River cruise",
+      "slots": [
+        {
+          "period": "morning",
+          "places": [
+            {
+              "id": "d1p1",
+              "name": "Sensō-ji",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.7134032,
+                "lng": 139.7955265
+              },
+              "rating": 4.7,
+              "estimatedCost": 0,
+              "duration": 75,
+              "imageUrl": "",
+              "aiNote": "Tokyo's oldest temple and the perfect gentle start: flat, stroller-friendly grounds, incense cauldrons and a five-storey pagoda. Arrive before 9am to beat the crowds and let the baby nap in the quiet side courtyards.",
+              "externalUrl": "",
+              "searchQuery": "Sensoji Temple Asakusa",
+              "slotId": "slot-tokyo-1",
+              "start": "09:00",
+              "end": "10:15"
+            },
+            {
+              "id": "d1p2",
+              "name": "Nakamise Shopping Street",
+              "type": "shopping",
+              "coordinates": {
+                "lat": 35.7122821,
+                "lng": 139.7964856
+              },
+              "rating": 4.4,
+              "estimatedCost": 40,
+              "duration": 45,
+              "imageUrl": "",
+              "aiNote": "The approach lane to Sensō-ji lined with snack stalls — grab ningyo-yaki and melon pan for the kids; wide enough for a stroller outside peak hours.",
+              "externalUrl": "",
+              "searchQuery": "Nakamise shopping street",
+              "slotId": "slot-tokyo-2",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 5,
+                "distanceM": 197,
+                "estimated": true
+              },
+              "start": "10:20",
+              "end": "11:05"
+            }
+          ]
+        },
+        {
+          "period": "afternoon",
+          "places": [
+            {
+              "id": "d1p3",
+              "name": "Daikokuya Tempura",
+              "type": "restaurant",
+              "coordinates": {
+                "lat": 35.7127374,
+                "lng": 139.7955918
+              },
+              "rating": 4.3,
+              "estimatedCost": 90,
+              "duration": 60,
+              "imageUrl": "",
+              "aiNote": "Century-old Asakusa tempura house famous for its dark-sesame-oil ebi tendon. Tables are tatami-style but roomy; go right at 11:30 to avoid the queue with a baby.",
+              "externalUrl": "",
+              "searchQuery": "Asakusa restaurant tempura",
+              "slotId": "slot-tokyo-3",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 5,
+                "distanceM": 124,
+                "estimated": true
+              },
+              "start": "12:00",
+              "end": "13:00"
+            },
+            {
+              "id": "d1p4",
+              "name": "Kappabashi kitchen street",
+              "type": "shopping",
+              "coordinates": {
+                "lat": 35.7125201,
+                "lng": 139.7885498
+              },
+              "rating": 4.5,
+              "estimatedCost": 0,
+              "duration": 50,
+              "imageUrl": "",
+              "aiNote": "Tokyo's kitchenware street — plastic food samples, knives and ceramics make a fun, low-key browse, and the flat pavement is easy with a pram.",
+              "externalUrl": "",
+              "searchQuery": "Kappabashi kitchenware street",
+              "slotId": "slot-tokyo-4",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 15,
+                "distanceM": 827,
+                "estimated": true
+              },
+              "start": "13:15",
+              "end": "14:05"
+            }
+          ]
+        },
+        {
+          "period": "evening",
+          "places": [
+            {
+              "id": "d1p5",
+              "name": "TOKYO CRUISE",
+              "type": "leisure",
+              "coordinates": {
+                "lat": 35.7107932,
+                "lng": 139.7984917
+              },
+              "rating": 4.4,
+              "estimatedCost": 60,
+              "duration": 60,
+              "imageUrl": "",
+              "aiNote": "Sumida River boat from Asakusa — a seated, weatherproof hour that keeps a tired baby happy while you watch Skytree glide past.",
+              "externalUrl": "",
+              "searchQuery": "Sumida river cruise",
+              "slotId": "slot-tokyo-5",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 20,
+                "distanceM": 1193,
+                "estimated": true
+              },
+              "start": "18:00",
+              "end": "19:00"
+            },
+            {
+              "id": "d1p6",
+              "name": "Tokyo Skytree",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.7100543,
+                "lng": 139.8107141
+              },
+              "rating": 4.5,
+              "estimatedCost": 120,
+              "duration": 90,
+              "imageUrl": "",
+              "aiNote": "End the day at the Skytree's Solamachi mall: observation deck if skies are clear, otherwise the food floors and aquarium-level shops are a good rainy backup.",
+              "externalUrl": "",
+              "searchQuery": "Tokyo Skytree",
+              "slotId": "slot-tokyo-6",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 15,
+                "distanceM": 1439,
+                "estimated": true
+              },
+              "start": "19:15",
+              "end": "20:45"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dayNumber": 2,
+      "theme": "Museums, zoo and market grazing in the city's cultural quarter",
+      "slots": [
+        {
+          "period": "morning",
+          "places": [
+            {
+              "id": "d2p1",
+              "name": "Tokyo National Museum",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.7190448,
+                "lng": 139.7759676
+              },
+              "rating": 4.6,
+              "estimatedCost": 50,
+              "duration": 100,
+              "imageUrl": "",
+              "aiNote": "Japan's oldest and largest museum — samurai armour, ukiyo-e and ceramics in air-conditioned halls with lifts and benches, ideal for a nap-friendly morning.",
+              "externalUrl": "",
+              "searchQuery": "Tokyo National Museum Ueno",
+              "slotId": "slot-tokyo-7",
+              "start": "09:00",
+              "end": "10:40"
+            },
+            {
+              "id": "d2p2",
+              "name": "Ueno Park",
+              "type": "leisure",
+              "coordinates": {
+                "lat": 35.7152915,
+                "lng": 139.7738278
+              },
+              "rating": 4.4,
+              "estimatedCost": 0,
+              "duration": 40,
+              "imageUrl": "",
+              "aiNote": "Wide car-free paths and benches between the museums — a good stroller loop and snack stop before lunch.",
+              "externalUrl": "",
+              "searchQuery": "Ueno Park",
+              "slotId": "slot-tokyo-8",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 10,
+                "distanceM": 598,
+                "estimated": true
+              },
+              "start": "10:50",
+              "end": "11:30"
+            }
+          ]
+        },
+        {
+          "period": "afternoon",
+          "places": [
+            {
+              "id": "d2p3",
+              "name": "Teuchi Soba Miyagawa – Ueno PARCO_ya",
+              "type": "restaurant",
+              "coordinates": {
+                "lat": 35.7112145,
+                "lng": 139.7754226
+              },
+              "rating": 4.2,
+              "estimatedCost": 70,
+              "duration": 55,
+              "imageUrl": "",
+              "aiNote": "Handmade soba inside a mall food hall — high chairs, quick service and small portions that suit kids and a budget lunch.",
+              "externalUrl": "",
+              "searchQuery": "soba restaurant",
+              "slotId": "slot-tokyo-9",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 15,
+                "distanceM": 618,
+                "estimated": true
+              },
+              "start": "12:00",
+              "end": "12:55"
+            },
+            {
+              "id": "d2p4",
+              "name": "Ueno Zoo",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.7153426,
+                "lng": 139.768896
+              },
+              "rating": 4.3,
+              "estimatedCost": 30,
+              "duration": 90,
+              "imageUrl": "",
+              "aiNote": "Japan's oldest zoo, with giant pandas and a monorail — compact enough for a toddler-paced afternoon and cheap to enter.",
+              "externalUrl": "",
+              "searchQuery": "Ueno Zoo",
+              "slotId": "slot-tokyo-10",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 15,
+                "distanceM": 971,
+                "estimated": true
+              },
+              "start": "13:10",
+              "end": "14:40"
+            }
+          ]
+        },
+        {
+          "period": "evening",
+          "places": [
+            {
+              "id": "d2p5",
+              "name": "Ameyoko Market",
+              "type": "shopping",
+              "coordinates": {
+                "lat": 35.7089093,
+                "lng": 139.7747832
+              },
+              "rating": 4.3,
+              "estimatedCost": 60,
+              "duration": 60,
+              "imageUrl": "",
+              "aiNote": "Bustling market street under the JR tracks — grilled skewers, fruit sticks and sweets for a casual family dinner; go before 6pm when it's calmer with a pram.",
+              "externalUrl": "",
+              "searchQuery": "Ueno Ameyoko market",
+              "slotId": "slot-tokyo-11",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 20,
+                "distanceM": 1159,
+                "estimated": true
+              },
+              "start": "18:00",
+              "end": "19:00"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dayNumber": 3,
+      "theme": "Market breakfast and sushi culture, then Ginza food halls and gardens",
+      "slots": [
+        {
+          "period": "morning",
+          "places": [
+            {
+              "id": "d3p1",
+              "name": "Tsukiji Outer Market",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.6653884,
+                "lng": 139.7704732
+              },
+              "rating": 4.5,
+              "estimatedCost": 80,
+              "duration": 90,
+              "imageUrl": "",
+              "aiNote": "Graze your way through tamagoyaki, grilled scallops and strawberry daifuku — narrow lanes, so carry the baby and take turns browsing.",
+              "externalUrl": "",
+              "searchQuery": "Tsukiji Outer Market",
+              "slotId": "slot-tokyo-12",
+              "start": "09:00",
+              "end": "10:30"
+            },
+            {
+              "id": "d3p2",
+              "name": "Sushi Zanmai",
+              "type": "restaurant",
+              "coordinates": {
+                "lat": 35.665492,
+                "lng": 139.770113
+              },
+              "rating": 4.1,
+              "estimatedCost": 110,
+              "duration": 60,
+              "imageUrl": "",
+              "aiNote": "24-hour Tsukiji sushi counter with table seating and English menus — reliable, mid-priced and easy with kids.",
+              "externalUrl": "",
+              "searchQuery": "restaurant sushi Tokyo Ginza",
+              "slotId": "slot-tokyo-13",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 5,
+                "distanceM": 45,
+                "estimated": true
+              },
+              "start": "10:35",
+              "end": "11:35"
+            }
+          ]
+        },
+        {
+          "period": "afternoon",
+          "places": [
+            {
+              "id": "d3p3",
+              "name": "Hamarikyu Gardens",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.66025,
+                "lng": 139.76345
+              },
+              "rating": 4.5,
+              "estimatedCost": 20,
+              "duration": 75,
+              "imageUrl": "",
+              "aiNote": "Former shogunate garden with tidal ponds and a tea house — flat gravel paths, plenty of shade and space to let the baby crawl.",
+              "externalUrl": "",
+              "searchQuery": "Hamarikyu Gardens",
+              "slotId": "slot-tokyo-14",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 20,
+                "distanceM": 1089,
+                "estimated": true
+              },
+              "start": "12:00",
+              "end": "13:15"
+            },
+            {
+              "id": "d3p4",
+              "name": "Ginza Six",
+              "type": "shopping",
+              "coordinates": {
+                "lat": 35.6695326,
+                "lng": 139.764049
+              },
+              "rating": 4.4,
+              "estimatedCost": 50,
+              "duration": 70,
+              "imageUrl": "",
+              "aiNote": "Ginza's flagship mall: rooftop garden for a breather, excellent basement food hall (depachika) for dinner supplies, and clean nursing rooms.",
+              "externalUrl": "",
+              "searchQuery": "Ginza Six",
+              "slotId": "slot-tokyo-15",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 15,
+                "distanceM": 1344,
+                "estimated": true
+              },
+              "start": "13:30",
+              "end": "14:40"
+            }
+          ]
+        },
+        {
+          "period": "evening",
+          "places": [
+            {
+              "id": "d3p5",
+              "name": "Tempura Tendon Tenya",
+              "type": "restaurant",
+              "coordinates": {
+                "lat": 35.6718819,
+                "lng": 139.7682433
+              },
+              "rating": 3.9,
+              "estimatedCost": 55,
+              "duration": 45,
+              "imageUrl": "",
+              "aiNote": "Fast, cheap tendon bowls — the budget-friendly Ginza dinner that keeps the day's per-person spend well inside range.",
+              "externalUrl": "",
+              "searchQuery": "Ginza restaurant tempura",
+              "slotId": "slot-tokyo-16",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 10,
+                "distanceM": 598,
+                "estimated": true
+              },
+              "start": "18:00",
+              "end": "18:45"
+            },
+            {
+              "id": "d3p6",
+              "name": "Kura Sushi",
+              "type": "restaurant",
+              "coordinates": {
+                "lat": 35.6737565,
+                "lng": 139.7654169
+              },
+              "rating": 4,
+              "estimatedCost": 70,
+              "duration": 50,
+              "imageUrl": "",
+              "aiNote": "Conveyor-belt sushi with a tablet ordering game that delights kids; booths fit a family of four plus a stroller.",
+              "externalUrl": "",
+              "searchQuery": "restaurant sushi Tokyo Ginza",
+              "slotId": "slot-tokyo-17",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 10,
+                "distanceM": 428,
+                "estimated": true
+              },
+              "start": "18:55",
+              "end": "19:45"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dayNumber": 4,
+      "theme": "Shrine forest calm, Harajuku backstreets and Shibuya neon",
+      "slots": [
+        {
+          "period": "morning",
+          "places": [
+            {
+              "id": "d4m1",
+              "name": "Meiji Jingu Main Shrine",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.6748417,
+                "lng": 139.6996266
+              },
+              "rating": 4.6,
+              "estimatedCost": 0,
+              "duration": 75,
+              "imageUrl": "",
+              "aiNote": "Start early under the giant torii — the gravel approach is stroller-friendly and shaded, and the quiet forest is the easiest place in Tokyo to let a baby nap in the carrier. Free entry; the shrine museum next door is a small paid add-on if the little one sleeps long.",
+              "externalUrl": "",
+              "searchQuery": "Meiji Jingu Shrine Tokyo",
+              "slotId": "slot-tokyo-18",
+              "start": "09:00",
+              "end": "10:15"
+            },
+            {
+              "id": "d4m2",
+              "name": "Yoyogi Park",
+              "type": "leisure",
+              "coordinates": {
+                "lat": 35.6714052,
+                "lng": 139.6951716
+              },
+              "rating": 4.4,
+              "estimatedCost": 0,
+              "duration": 60,
+              "imageUrl": "",
+              "aiNote": "Directly beside the shrine — wide lawns, benches and toilets with changing space. Perfect mid-morning crawl-and-run break for kids before lunch, and a shaded pram-pushing loop for the adults.",
+              "externalUrl": "",
+              "searchQuery": "Yoyogi Park Tokyo",
+              "slotId": "slot-tokyo-19",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 15,
+                "distanceM": 721,
+                "estimated": true
+              },
+              "start": "10:30",
+              "end": "11:30"
+            }
+          ]
+        },
+        {
+          "period": "afternoon",
+          "places": [
+            {
+              "id": "d4a1",
+              "name": "Ishi-usubiki Nihachi Soba Sobashiki Shibuya Mark City",
+              "type": "restaurant",
+              "coordinates": {
+                "lat": 35.6584613,
+                "lng": 139.6981571
+              },
+              "rating": 4.1,
+              "estimatedCost": 70,
+              "duration": 60,
+              "imageUrl": "",
+              "aiNote": "Handmade soba inside Shibuya Mark City — indoor, air-conditioned, lift access and high chairs, which matters with a baby. Order a tempura-soba set; portions are easy to share with kids and the bill stays well inside budget.",
+              "externalUrl": "",
+              "searchQuery": "soba restaurant Shibuya Mark City",
+              "slotId": "slot-tokyo-20",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 20,
+                "distanceM": 1904,
+                "estimated": true
+              },
+              "start": "12:00",
+              "end": "13:00"
+            },
+            {
+              "id": "d4a2",
+              "name": "Shibuya Scramble Crossing",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.6594951,
+                "lng": 139.7004982
+              },
+              "rating": 4.5,
+              "estimatedCost": 0,
+              "duration": 30,
+              "imageUrl": "",
+              "aiNote": "Cross once with the crowd for the photo, then watch from the station-side windows instead of fighting the surge with a pram. Best light is late afternoon; keep the baby in a carrier rather than the stroller for the crossing itself.",
+              "externalUrl": "",
+              "searchQuery": "Shibuya Crossing Tokyo",
+              "slotId": "slot-tokyo-21",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 10,
+                "distanceM": 313,
+                "estimated": true
+              },
+              "start": "13:10",
+              "end": "13:40"
+            },
+            {
+              "id": "d4a3",
+              "name": "Sega Store Tokyo",
+              "type": "leisure",
+              "coordinates": {
+                "lat": 35.6618972,
+                "lng": 139.6988969
+              },
+              "rating": 4.2,
+              "estimatedCost": 60,
+              "duration": 60,
+              "imageUrl": "",
+              "aiNote": "Multi-floor arcade in Shibuya — a reliable indoor escape if it rains or the kids need a break. Stick to the lower floors with the baby; the crane games are the family favourite and cheap per play.",
+              "externalUrl": "",
+              "searchQuery": "Sega Store Tokyo Shibuya",
+              "slotId": "slot-tokyo-22",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 10,
+                "distanceM": 395,
+                "estimated": true
+              },
+              "start": "13:50",
+              "end": "14:50"
+            }
+          ]
+        },
+        {
+          "period": "evening",
+          "places": [
+            {
+              "id": "d4e1",
+              "name": "Ishi-usubiki Nihachi Soba Sobashiki Yotsuya",
+              "type": "restaurant",
+              "coordinates": {
+                "lat": 35.6877379,
+                "lng": 139.7285537
+              },
+              "rating": 4,
+              "estimatedCost": 80,
+              "duration": 75,
+              "imageUrl": "",
+              "aiNote": "Quiet, family-tolerant soba shop away from the Shibuya crush — good for an early dinner before the baby's bedtime. Ask for the cold soba and a shared tempura plate; service is fast, which helps with tired kids.",
+              "externalUrl": "",
+              "searchQuery": "soba restaurant Yotsuya Tokyo",
+              "slotId": "slot-tokyo-23",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 30,
+                "distanceM": 5107,
+                "estimated": true
+              },
+              "start": "18:00",
+              "end": "19:15"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dayNumber": 5,
+      "theme": "Art, gardens and waterfront play on the bay",
+      "slots": [
+        {
+          "period": "morning",
+          "places": [
+            {
+              "id": "d5m1",
+              "name": "Nezu Museum",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.6622429,
+                "lng": 139.7172555
+              },
+              "rating": 4.5,
+              "estimatedCost": 60,
+              "duration": 90,
+              "imageUrl": "",
+              "aiNote": "Small, calm private museum in Minami-Aoyama with Asian antiquities and a beautiful strolling garden behind it. Compact enough for a baby's attention span, and the garden path is pram-accessible — a genuinely peaceful culture stop.",
+              "externalUrl": "",
+              "searchQuery": "Nezu Museum Tokyo",
+              "slotId": "slot-tokyo-24",
+              "start": "09:00",
+              "end": "10:30"
+            },
+            {
+              "id": "d5m2",
+              "name": "Leica Store Omotesando",
+              "type": "shopping",
+              "coordinates": {
+                "lat": 35.6661678,
+                "lng": 139.7063455
+              },
+              "rating": 4.2,
+              "estimatedCost": 0,
+              "duration": 30,
+              "imageUrl": "",
+              "aiNote": "A short, free browse on the Omotesando walk between Aoyama and the station — the architecture and photo gallery upstairs are the draw, and it's an easy stop with a stroller.",
+              "externalUrl": "",
+              "searchQuery": "Omotesando Tokyo",
+              "slotId": "slot-tokyo-25",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 15,
+                "distanceM": 1401,
+                "estimated": true
+              },
+              "start": "10:45",
+              "end": "11:15"
+            }
+          ]
+        },
+        {
+          "period": "afternoon",
+          "places": [
+            {
+              "id": "d5a1",
+              "name": "teamLab Planets",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.64938,
+                "lng": 139.789728
+              },
+              "rating": 4.6,
+              "estimatedCost": 180,
+              "duration": 120,
+              "imageUrl": "",
+              "aiNote": "Barefoot immersive art in Toyosu — the water rooms are shallow and warm, and children genuinely love it. Book a timed slot online in advance; strollers must be left at the entrance, so bring a carrier for the baby.",
+              "externalUrl": "",
+              "searchQuery": "teamLab Planets Toyosu",
+              "slotId": "slot-tokyo-26",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 45,
+                "distanceM": 10090,
+                "estimated": true
+              },
+              "start": "12:00",
+              "end": "14:00"
+            },
+            {
+              "id": "d5a2",
+              "name": "Toyosu Market",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.6450476,
+                "lng": 139.7846072
+              },
+              "rating": 4.3,
+              "estimatedCost": 80,
+              "duration": 75,
+              "imageUrl": "",
+              "aiNote": "Next door to teamLab — the observation decks are free and the ground-floor food stalls serve cheap, excellent sushi and grilled seafood. A low-cost, high-reward afternoon snack stop with kids.",
+              "externalUrl": "",
+              "searchQuery": "Toyosu Market Tokyo",
+              "slotId": "slot-tokyo-27",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 15,
+                "distanceM": 868,
+                "estimated": true
+              },
+              "start": "14:15",
+              "end": "15:30"
+            }
+          ]
+        },
+        {
+          "period": "evening",
+          "places": [
+            {
+              "id": "d5e1",
+              "name": "Odaiba Marine Park",
+              "type": "leisure",
+              "coordinates": {
+                "lat": 35.631084,
+                "lng": 139.7773535
+              },
+              "rating": 4.3,
+              "estimatedCost": 0,
+              "duration": 75,
+              "imageUrl": "",
+              "aiNote": "Seaside promenade with a sand beach, Rainbow Bridge views and plenty of space to let a toddler run. Sunset is the best time; there are benches and toilets nearby for a calm end to the day.",
+              "externalUrl": "",
+              "searchQuery": "Odaiba Marine Park Tokyo",
+              "slotId": "slot-tokyo-28",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 20,
+                "distanceM": 2191,
+                "estimated": true
+              },
+              "start": "18:00",
+              "end": "19:15"
+            },
+            {
+              "id": "d5e2",
+              "name": "Doraemon Future Department Store",
+              "type": "shopping",
+              "coordinates": {
+                "lat": 35.6258421,
+                "lng": 139.7763864
+              },
+              "rating": 4.2,
+              "estimatedCost": 90,
+              "duration": 45,
+              "imageUrl": "",
+              "aiNote": "Inside DiverCity Odaiba — a small, bright Doraemon shop that is a guaranteed hit with children and a good indoor finish if the sea breeze turns cold. Budget a modest souvenir allowance.",
+              "externalUrl": "",
+              "searchQuery": "Doraemon Future Department Store Odaiba",
+              "slotId": "slot-tokyo-29",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 15,
+                "distanceM": 766,
+                "estimated": true
+              },
+              "start": "19:30",
+              "end": "20:15"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dayNumber": 6,
+      "theme": "Shinjuku gardens, samurai culture and yakitori alley farewell",
+      "slots": [
+        {
+          "period": "morning",
+          "places": [
+            {
+              "id": "d6m1",
+              "name": "Shinjuku Gyoen National Garden",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.6850716,
+                "lng": 139.7095466
+              },
+              "rating": 4.7,
+              "estimatedCost": 25,
+              "duration": 120,
+              "imageUrl": "",
+              "aiNote": "Tokyo's loveliest big garden — lawns for the kids, wide gravel paths for the pram, and a greenhouse and teahouse for a slow morning. Entry is cheap and there are clean facilities throughout; go early for quiet.",
+              "externalUrl": "",
+              "searchQuery": "Shinjuku Gyoen National Garden",
+              "slotId": "slot-tokyo-30",
+              "start": "09:00",
+              "end": "11:00"
+            },
+            {
+              "id": "d6m2",
+              "name": "Samurai Museum",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.6955176,
+                "lng": 139.7035629
+              },
+              "rating": 4.4,
+              "estimatedCost": 120,
+              "duration": 75,
+              "imageUrl": "",
+              "aiNote": "Compact Kabukicho museum with real armour, swords and a short sword-drawing demonstration — the right length for children. Indoor and air-conditioned, so it doubles as a rain or heat backup.",
+              "externalUrl": "",
+              "searchQuery": "Samurai Museum Shinjuku",
+              "slotId": "slot-tokyo-31",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 15,
+                "distanceM": 1665,
+                "estimated": true
+              },
+              "start": "11:15",
+              "end": "12:30"
+            }
+          ]
+        },
+        {
+          "period": "afternoon",
+          "places": [
+            {
+              "id": "d6a1",
+              "name": "Kyourakutei Soba",
+              "type": "restaurant",
+              "coordinates": {
+                "lat": 35.7007594,
+                "lng": 139.7394615
+              },
+              "rating": 4.5,
+              "estimatedCost": 90,
+              "duration": 75,
+              "imageUrl": "",
+              "aiNote": "Well-regarded handmade soba in the Kagurazaka backstreets — a proper food-lover's lunch that still welcomes families at off-peak times. Go right at opening to avoid the queue with a baby.",
+              "externalUrl": "",
+              "searchQuery": "Kyourakutei Soba Kagurazaka",
+              "slotId": "slot-tokyo-32",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 25,
+                "distanceM": 4282,
+                "estimated": true
+              },
+              "start": "12:55",
+              "end": "14:10"
+            },
+            {
+              "id": "d6a2",
+              "name": "Kagurazaka",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.7010851,
+                "lng": 139.7412287
+              },
+              "rating": 4.4,
+              "estimatedCost": 0,
+              "duration": 60,
+              "imageUrl": "",
+              "aiNote": "Stone-paved lanes that feel like old Tokyo, with tiny shops and a French-Japanese food culture. Gentle strolling with the pram, and plenty of cafes to duck into if the baby needs a feed.",
+              "externalUrl": "",
+              "searchQuery": "Kagurazaka Tokyo",
+              "slotId": "slot-tokyo-33",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 5,
+                "distanceM": 213,
+                "estimated": true
+              },
+              "start": "14:15",
+              "end": "15:15"
+            }
+          ]
+        },
+        {
+          "period": "evening",
+          "places": [
+            {
+              "id": "d6e1",
+              "name": "Omoide-yokochō",
+              "type": "nightlife",
+              "coordinates": {
+                "lat": 35.6930689,
+                "lng": 139.6995016
+              },
+              "rating": 4.4,
+              "estimatedCost": 120,
+              "duration": 90,
+              "imageUrl": "",
+              "aiNote": "The famous lantern-lit yakitori alley by Shinjuku Station — smoky, tiny and atmospheric. With a baby, come early (around 5pm) and pick a counter with outdoor seating; it's a memorable, inexpensive farewell dinner of skewers and beer.",
+              "externalUrl": "",
+              "searchQuery": "Omoide Yokocho Shinjuku",
+              "slotId": "slot-tokyo-34",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 30,
+                "distanceM": 5034,
+                "estimated": true
+              },
+              "start": "18:00",
+              "end": "19:30"
+            },
+            {
+              "id": "d6e2",
+              "name": "Keio Department Store Shinjuku",
+              "type": "shopping",
+              "coordinates": {
+                "lat": 35.6901804,
+                "lng": 139.6993455
+              },
+              "rating": 4.1,
+              "estimatedCost": 80,
+              "duration": 45,
+              "imageUrl": "",
+              "aiNote": "Finish with the basement food hall — pick up wagashi, bento and snacks for the trip home. Bright, lift-served and easy to navigate with a stroller, and a good last-minute souvenir stop.",
+              "externalUrl": "",
+              "searchQuery": "Keio Department Store Shinjuku",
+              "slotId": "slot-tokyo-35",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 10,
+                "distanceM": 418,
+                "estimated": true
+              },
+              "start": "19:40",
+              "end": "20:25"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "version": 1
+}

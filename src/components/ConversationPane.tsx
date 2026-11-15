@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Camera, ArrowRight, Loader2 } from 'lucide-react';
 import type { ClarificationQuestion, Itinerary, PlanningInput } from '../types';
 import type { TravelMemory } from '../lib/memory';
+import type { ChatTurn } from '../lib/editFlow';
 import { useT } from '../i18n';
 import PlanningForm, { diffDays } from './PlanningForm';
 import AIClarification from './AIClarification';
@@ -20,16 +21,27 @@ interface ConversationPaneProps {
   memory: TravelMemory;
   formOpen: boolean;
   onToggleForm: () => void;
+  /** Edit conversation after the plan exists (feature C). */
+  messages?: ChatTurn[];
+  onSendMessage?: (text: string) => void;
+  /** True while an edit is being parsed or replanned. */
+  editBusy?: boolean;
 }
 
 const USER_BUBBLE = 'self-end max-w-[88%] bg-text-main text-white px-3 py-2.5 rounded-[12px_12px_4px_12px]';
 const ASSISTANT_BUBBLE = 'max-w-[92%] bg-bg-base px-3 py-2.5 rounded-[12px_12px_12px_4px]';
+const BUBBLE_BY_KIND: Record<NonNullable<ChatTurn['kind']>, string> = {
+  question: 'max-w-[92%] bg-accent-soft border border-accent-line px-3 py-2.5 rounded-[12px_12px_12px_4px]',
+  error: 'max-w-[92%] bg-delete-tint border border-delete-line text-delete px-3 py-2.5 rounded-[12px_12px_12px_4px]',
+  done: 'max-w-[92%] bg-updated-tint border border-updated-line px-3 py-2.5 rounded-[12px_12px_12px_4px]',
+  status: ASSISTANT_BUBBLE,
+};
 
 /**
  * Left column: the planning request as the first turn, clarification
- * questions and status as assistant turns. The message box and photo
- * button are rendered but disabled until partial replanning (feature C)
- * and photo input (feature D) exist; nothing here pretends to work.
+ * questions and status as assistant turns, then the edit conversation.
+ * The message box replans only the stops the user names (feature C); the
+ * photo button stays disabled until photo input (feature D) exists.
  */
 export default function ConversationPane({
   stage,
@@ -42,10 +54,22 @@ export default function ConversationPane({
   memory,
   formOpen,
   onToggleForm,
+  messages = [],
+  onSendMessage,
+  editBusy = false,
 }: ConversationPaneProps) {
   const t = useT();
+  const [draft, setDraft] = useState('');
   const generating = stage === 'generating' || (stage === 'clarifying' && clarifyQuestions.length === 0);
   const showForm = !input || formOpen;
+  const canEdit = !!itinerary && stage === 'ready' && !!onSendMessage;
+
+  const send = () => {
+    const text = draft.trim();
+    if (!text || !canEdit || editBusy) return;
+    onSendMessage!(text);
+    setDraft('');
+  };
 
   return (
     <section
@@ -95,9 +119,7 @@ export default function ConversationPane({
         </div>
       )}
 
-      {stage === 'clarifying' && clarifyQuestions.length > 0 && (
-        <AIClarification questions={clarifyQuestions} onResolve={onClarifyResolve} />
-      )}
+      {stage === 'clarifying' && clarifyQuestions.length > 0 && <AIClarification questions={clarifyQuestions} onResolve={onClarifyResolve} />}
 
       {generating && (
         <div className={`${ASSISTANT_BUBBLE} flex items-center gap-2`} data-testid="generating-bubble">
@@ -108,8 +130,7 @@ export default function ConversationPane({
 
       {stage === 'ready' && itinerary && (
         <div className={ASSISTANT_BUBBLE} data-testid="ready-bubble">
-          {t('conversation.ready', { title: itinerary.title })}{' '}
-          {itinerary.groundingWarning ? t('conversation.readyWarning') : t('conversation.readyGrounded')}
+          {t('conversation.ready', { title: itinerary.title })} {itinerary.groundingWarning ? t('conversation.readyWarning') : t('conversation.readyGrounded')}
         </div>
       )}
 
@@ -119,12 +140,32 @@ export default function ConversationPane({
         </div>
       )}
 
+      {messages.length > 0 && (
+        <ol className="m-0 p-0 list-none flex flex-col gap-2" data-testid="edit-messages">
+          {messages.map(m => (
+            <li key={m.id} className={m.role === 'user' ? USER_BUBBLE : BUBBLE_BY_KIND[m.kind ?? 'status']} data-testid={`turn-${m.role}`} data-kind={m.kind}>
+              {m.text}
+            </li>
+          ))}
+        </ol>
+      )}
+
+      {editBusy && (
+        <div className={`${ASSISTANT_BUBBLE} flex items-center gap-2`} data-testid="edit-busy">
+          <Loader2 size={14} className="animate-spin shrink-0" />
+          {t('conversation.thinking')}
+        </div>
+      )}
+
       <div className="flex-1" />
 
       <form
-        className="flex items-center gap-2 border border-border-strong rounded-xl p-1.5 opacity-70"
-        onSubmit={e => e.preventDefault()}
-        title={t('conversation.inputDisabledHint')}
+        className={`flex items-center gap-2 border border-border-strong rounded-xl p-1.5 ${canEdit ? '' : 'opacity-70'}`}
+        onSubmit={e => {
+          e.preventDefault();
+          send();
+        }}
+        title={canEdit ? t('conversation.inputHint') : t('conversation.noPlanYet')}
       >
         <button
           type="button"
@@ -138,18 +179,20 @@ export default function ConversationPane({
         </button>
         <input
           type="text"
-          disabled
-          placeholder={t('conversation.inputPlaceholder')}
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          disabled={!canEdit || editBusy}
+          placeholder={canEdit ? t('conversation.inputPlaceholder') : t('conversation.noPlanYet')}
           aria-label={t('conversation.inputPlaceholder')}
           data-testid="message-input"
           className="flex-1 min-w-0 border-0 bg-transparent p-2 outline-none disabled:cursor-not-allowed"
         />
         <button
           type="submit"
-          disabled
+          disabled={!canEdit || editBusy || !draft.trim()}
           aria-label={t('conversation.send')}
           data-testid="send-button"
-          className="w-10 h-10 rounded-lg bg-text-main flex items-center justify-center text-white disabled:cursor-not-allowed"
+          className="w-10 h-10 rounded-lg bg-text-main flex items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           <ArrowRight size={18} />
         </button>

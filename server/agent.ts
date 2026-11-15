@@ -238,6 +238,13 @@ export interface RunAgentOptions {
    * a library, so library-off runs stay comparable with the baselines.
    */
   lessons?: { block: string; ids: string[] };
+  /**
+   * When provided, every POI any tool returned this run is pushed here when
+   * the run ends (first-seen order). Side-channel only, like `trace`:
+   * server.ts uses it to attach `poiId`s to the itinerary (server/structure.ts).
+   * The eval harness never passes it.
+   */
+  pois?: Poi[];
 }
 
 export interface AgentUsage {
@@ -276,15 +283,13 @@ function summariseToolResult(name: string, args: Record<string, any>, result: un
   }
 }
 
-export async function generateItinerary(
-  req: PlanningRequest,
-  opts: RunAgentOptions,
-): Promise<unknown> {
+async function generateItineraryCore(req: PlanningRequest, opts: RunAgentOptions, onContext?: (ctx: ToolContext) => void): Promise<unknown> {
   const { client, model = 'deepseek-chat', maxSteps = 8, temperature = 0.6 } = opts;
 
   const segmented = isSegmented(req);
   const userPrompt = buildUserPrompt(req);
   const ctx = new ToolContext(req.destination);
+  onContext?.(ctx);
   const lessonBlock = opts.lessons?.block?.trim() ? opts.lessons.block.trim() : '';
   const systemPrompt = buildSystemPrompt(RECOVERY_DISABLED) + (lessonBlock ? `\n\n${lessonBlock}` : '');
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
@@ -730,4 +735,22 @@ function stripJsonFences(text: string): string {
       .trim();
   }
   return trimmed;
+}
+
+/**
+ * Runs the planning agent. Identical to the core loop; the wrapper only
+ * flushes the opt-in `opts.pois` side channel when the run ends.
+ */
+export async function generateItinerary(req: PlanningRequest, opts: RunAgentOptions): Promise<unknown> {
+  let ctxRef: ToolContext | null = null;
+  try {
+    return await generateItineraryCore(req, opts, ctx => {
+      ctxRef = ctx;
+    });
+  } finally {
+    if (opts.pois && ctxRef) {
+      const seen = new Set(opts.pois.map(p => p.id));
+      for (const p of (ctxRef as ToolContext).allPois()) if (!seen.has(p.id)) opts.pois.push(p);
+    }
+  }
 }

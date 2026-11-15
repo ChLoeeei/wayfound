@@ -1,0 +1,390 @@
+{
+  "title": "合肥两日慢食漫游｜包公故里 · 徽味与湖光（无障碍友好版）",
+  "summary": "为两人情侣设计的合肥2日休闲美食行程，全程优先选择地铁直达、平路步道、电梯与无障碍卫生间齐全的景点，避免长距离爬坡与台阶。Day 1 集中在老城区庐阳：古逍遥津公园（平坦环湖步道）→ 李鸿章故居（一层展厅+无障碍坡道）→ 包公园（沿包河平缓步道，可坐观光车）→ 罍街夜市（地面平整、餐饮集中），晚餐在罍街一次吃遍徽菜小吃。Day 2 转往蜀山天鹅湖片区：安徽博物院新馆（全馆无障碍电梯、免费轮椅借用）→ 天鹅湖公园湖畔咖啡与环湖慢走 → 合肥大剧院外观与天鹅湖万达广场（室内空调、无障碍设施完善）。人均每日花费约 ¥330–480，落在 ¥250–700 区间内，含一晚四星标准酒店。合肥整体适合作为安徽门户慢游一两日，老城与新城各取一半，节奏轻松不赶路。",
+  "destination": "合肥",
+  "startDate": "2025-06-14",
+  "endDate": "2025-06-15",
+  "days": [
+    {
+      "dayNumber": 1,
+      "theme": "老城庐阳·包公故里与罍街烟火",
+      "slots": [
+        {
+          "period": "morning",
+          "places": [
+            {
+              "id": "d1m1",
+              "name": "古逍遥津",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 31.86898,
+                "lng": 117.295084
+              },
+              "rating": 4.8,
+              "estimatedCost": 0,
+              "duration": 90,
+              "imageUrl": "/api/image-proxy?url=http%3A%2F%2Fstore.is.autonavi.com%2Fshowpic%2F778f95bdf4deee93ab15b67146646539",
+              "aiNote": "免费开放的三国古战场遗址公园，张辽威震逍遥津的故事就发生在此。园区主环路平坦宽敞、无台阶，轮椅与婴儿车都能顺畅通行，湖畔有大量长椅可随时休息，非常适合情侣清晨慢走。",
+              "externalUrl": "https://www.amap.com/place/B022702VYA",
+              "searchQuery": "古逍遥津 合肥",
+              "slotId": "slot-hefei-1",
+              "start": "09:00",
+              "end": "10:30"
+            },
+            {
+              "id": "d1m2",
+              "name": "李鸿章故居",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 31.864515,
+                "lng": 117.291221
+              },
+              "rating": 4.6,
+              "estimatedCost": 30,
+              "duration": 60,
+              "imageUrl": "/api/image-proxy?url=https%3A%2F%2Fstore.is.autonavi.com%2Fshowpic%2Fa9529b98fc9626990000003581884561%3Ftype%3Dpic",
+              "aiNote": "淮河路步行街中段的晚清重臣宅邸，江淮民居格局完整。主展厅位于一层、入口设坡道，馆内有母婴室与休息区；从逍遥津步行约1公里即到，中途全是平路。门票约¥30/人。",
+              "externalUrl": "https://www.amap.com/place/B022702OO1",
+              "searchQuery": "李鸿章故居 合肥",
+              "slotId": "slot-hefei-2",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 15,
+                "distanceM": 801,
+                "estimated": true
+              },
+              "start": "10:45",
+              "end": "11:45"
+            }
+          ]
+        },
+        {
+          "period": "afternoon",
+          "places": [
+            {
+              "id": "d1a1",
+              "name": "庐州烤鸭店(总店)",
+              "type": "restaurant",
+              "coordinates": {
+                "lat": 31.864858,
+                "lng": 117.289336
+              },
+              "rating": 4.6,
+              "estimatedCost": 70,
+              "duration": 60,
+              "imageUrl": "/api/image-proxy?url=https%3A%2F%2Faos-comment.amap.com%2FB0H6MSFPXF%2Fcomment%2F28BCDE9A_3933_43D1_BB07_F29B3982A1D7_L0_001_1179_80_1759219893981_52601975.jpg",
+              "aiNote": "合肥人从小吃到大的老字号，招牌庐州烤鸭皮脆肉嫩，配一碗鸭油烧饼和赤豆糊就是地道午餐。店内有电梯与无障碍通道，两人点一份烤鸭加两个小菜约¥140。",
+              "externalUrl": "https://www.amap.com/place/B0H6MSFPXF",
+              "searchQuery": "庐州烤鸭店 总店 合肥",
+              "slotId": "slot-hefei-3",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 10,
+                "distanceM": 237,
+                "estimated": true
+              },
+              "start": "12:00",
+              "end": "13:00"
+            },
+            {
+              "id": "d1a2",
+              "name": "包公园",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 31.856782,
+                "lng": 117.294805
+              },
+              "rating": 4.8,
+              "estimatedCost": 50,
+              "duration": 120,
+              "imageUrl": "/api/image-proxy?url=http%3A%2F%2Fstore.is.autonavi.com%2Fshowpic%2F82f427dd5004b5b952fe733242a6a6e5",
+              "aiNote": "纪念包拯的国家级景区，由包公祠、包公墓园、清风阁等组成。沿包河一圈是平缓石板步道，园内提供观光车与无障碍坡道，清风阁设电梯可上高层看老城天际线。联票约¥50/人，慢慢逛两小时刚好。",
+              "externalUrl": "https://www.amap.com/place/B02270I1AV",
+              "searchQuery": "包公园 合肥",
+              "slotId": "slot-hefei-4",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 15,
+                "distanceM": 1347,
+                "estimated": true
+              },
+              "start": "13:15",
+              "end": "15:15"
+            },
+            {
+              "id": "d1a3",
+              "name": "合意咖啡",
+              "type": "cafe",
+              "coordinates": {
+                "lat": 31.814626,
+                "lng": 117.221077
+              },
+              "rating": 4.6,
+              "estimatedCost": 35,
+              "duration": 45,
+              "imageUrl": "/api/image-proxy?url=https%3A%2F%2Fstore.is.autonavi.com%2Fshowpic%2F5e43a5c1883ad0160000003237640445%3Ftype%3Dpic",
+              "aiNote": "若下午想歇脚，可换到天鹅湖大剧院地铁站旁的这家安静咖啡馆，落地窗采光好、门口无台阶。作为弹性备选，不想喝咖啡可直接回酒店休息。",
+              "externalUrl": "https://www.amap.com/place/B0LBPXH5OC",
+              "searchQuery": "合意咖啡 合肥",
+              "slotId": "slot-hefei-5",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 45,
+                "distanceM": 10914,
+                "estimated": true
+              },
+              "start": "16:00",
+              "end": "16:45"
+            }
+          ]
+        },
+        {
+          "period": "evening",
+          "places": [
+            {
+              "id": "d1e1",
+              "name": "罍街",
+              "type": "shopping",
+              "coordinates": {
+                "lat": 31.819892,
+                "lng": 117.293509
+              },
+              "rating": 4.8,
+              "estimatedCost": 0,
+              "duration": 60,
+              "imageUrl": "/api/image-proxy?url=https%3A%2F%2Fstore.is.autonavi.com%2Fshowpic%2Fac0dfd6672a757e2c4d44dcdaf4c7d39",
+              "aiNote": "合肥最有人气的徽味夜市街区，青砖马头墙的仿古建筑里塞满小吃与酒馆。街区地面全平、通道宽阔，轮椅通行无压力，傍晚亮灯后拍照最好看。",
+              "externalUrl": "https://www.amap.com/place/B0G2MKUDL6",
+              "searchQuery": "罍街 合肥",
+              "slotId": "slot-hefei-6",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 40,
+                "distanceM": 8929,
+                "estimated": true
+              },
+              "start": "18:00",
+              "end": "19:00"
+            },
+            {
+              "id": "d1e2",
+              "name": "罍+小吃(罍街店)",
+              "type": "restaurant",
+              "coordinates": {
+                "lat": 31.821323,
+                "lng": 117.293145
+              },
+              "rating": 4.7,
+              "estimatedCost": 80,
+              "duration": 90,
+              "imageUrl": "/api/image-proxy?url=https%3A%2F%2Faos-comment.amap.com%2FB0FFF70DME%2Fcomment%2Fe205e1310bf984fb1b33c7086845018f_2048_2048_80.jpg",
+              "aiNote": "把安徽各地小吃集中在一层的档口集合店：臭鳜鱼、毛豆腐、下塘烧饼、淮南牛肉汤都能一次尝到。座位区宽敞、有电梯，两人各点几样约¥160，是这趟美食主题的重头戏。",
+              "externalUrl": "https://www.amap.com/place/B0FFF70DME",
+              "searchQuery": "罍+小吃 罍街店",
+              "slotId": "slot-hefei-7",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 5,
+                "distanceM": 212,
+                "estimated": true
+              },
+              "start": "19:05",
+              "end": "20:35"
+            },
+            {
+              "id": "d1e3",
+              "name": "合肥淮河路步行街城际酒店",
+              "type": "hotel",
+              "coordinates": {
+                "lat": 31.862535,
+                "lng": 117.284351
+              },
+              "rating": 4.7,
+              "estimatedCost": 260,
+              "duration": 0,
+              "imageUrl": "/api/image-proxy?url=https%3A%2F%2Fstore.is.autonavi.com%2Fshowpic%2F66a0180c933e0e721f5221bfbbb497d3",
+              "aiNote": "位于长江中路、四牌楼地铁站D口步行约470米，去老城各景点都在2公里内。房间隔音好、有电梯与无障碍客房可提前申请，双人间约¥520/晚，即人均¥260。",
+              "externalUrl": "https://www.amap.com/place/B0J2759EQ6",
+              "searchQuery": "合肥淮河路步行街城际酒店",
+              "slotId": "slot-hefei-8",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 30,
+                "distanceM": 6054,
+                "estimated": true
+              },
+              "start": "21:05",
+              "end": "22:35"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dayNumber": 2,
+      "theme": "新城蜀山·博物院与天鹅湖慢时光",
+      "slots": [
+        {
+          "period": "morning",
+          "places": [
+            {
+              "id": "d2m1",
+              "name": "安徽博物院",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 31.802102,
+                "lng": 117.220595
+              },
+              "rating": 4.8,
+              "estimatedCost": 0,
+              "duration": 150,
+              "imageUrl": "/api/image-proxy?url=http%3A%2F%2Fstore.is.autonavi.com%2Fshowpic%2F4b19ff0a50a896e0ccc5e3ff30e026b2",
+              "aiNote": "新馆免费开放（需线上预约），徽州古建筑、青铜器与文房四宝展厅是精华。全馆电梯直达各层、提供免费轮椅与无障碍卫生间，馆内一层还有咖啡厅可中场休息，是雨天或高温天的完美选择。",
+              "externalUrl": "https://www.amap.com/place/B022716AQJ",
+              "searchQuery": "安徽博物院 合肥",
+              "slotId": "slot-hefei-9",
+              "start": "09:00",
+              "end": "11:30"
+            },
+            {
+              "id": "d2m2",
+              "name": "天鹅湖公园",
+              "type": "leisure",
+              "coordinates": {
+                "lat": 31.815183,
+                "lng": 117.230912
+              },
+              "rating": 4.6,
+              "estimatedCost": 0,
+              "duration": 60,
+              "imageUrl": "/api/image-proxy?url=https%3A%2F%2Faos-comment.amap.com%2FB0LAPUIW27%2Fcomment%2F2F3DF0E9_048B_44E3_BB0A_5A8129641410_L0_001_2000_150_1763686830482_37555841.jpg",
+              "aiNote": "合肥新城的城市客厅，环湖步道平坦无台阶，湖对岸就是安徽广播电视塔。从博物院步行约3.8公里或打车10分钟即到，适合牵手散步吹风。",
+              "externalUrl": "https://www.amap.com/place/B0LAPUIW27",
+              "searchQuery": "天鹅湖公园 合肥",
+              "slotId": "slot-hefei-10",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 20,
+                "distanceM": 2276,
+                "estimated": true
+              },
+              "start": "11:50",
+              "end": "12:50"
+            }
+          ]
+        },
+        {
+          "period": "afternoon",
+          "places": [
+            {
+              "id": "d2a1",
+              "name": "Manner Coffee(天鹅湖公园店)",
+              "type": "cafe",
+              "coordinates": {
+                "lat": 31.815187,
+                "lng": 117.230912
+              },
+              "rating": 4.6,
+              "estimatedCost": 30,
+              "duration": 45,
+              "imageUrl": "/api/image-proxy?url=https%3A%2F%2Fstore.is.autonavi.com%2Fshowpic%2Fc6eb6dd7a67184450000003388626329%3Ftype%3Dpic",
+              "aiNote": "就在天鹅湖公园西南角一层，门口无台阶、有户外座位正对湖面。点两杯手冲坐一下午，是这趟行程里最松弛的一段。",
+              "externalUrl": "https://www.amap.com/place/B0LA3SDRG1",
+              "searchQuery": "Manner Coffee 天鹅湖公园店",
+              "slotId": "slot-hefei-11",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 5,
+                "distanceM": 1,
+                "estimated": true
+              },
+              "start": "12:55",
+              "end": "13:40"
+            },
+            {
+              "id": "d2a2",
+              "name": "合肥大剧院",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 31.815883,
+                "lng": 117.224483
+              },
+              "rating": 4.8,
+              "estimatedCost": 0,
+              "duration": 45,
+              "imageUrl": "/api/image-proxy?url=http%3A%2F%2Fstore.is.autonavi.com%2Fshowpic%2F77234ba9265a795070cc198fe8118d25",
+              "aiNote": "天鹅湖畔的白色曲面建筑，被称作“天鹅湖畔的贝壳”。外广场完全平整、有无障碍坡道与电梯，即使不看演出也值得来拍建筑。若时间合适可加购晚间演出票。",
+              "externalUrl": "https://www.amap.com/place/B02270JLSR",
+              "searchQuery": "合肥大剧院",
+              "slotId": "slot-hefei-12",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 15,
+                "distanceM": 796,
+                "estimated": true
+              },
+              "start": "13:55",
+              "end": "14:40"
+            },
+            {
+              "id": "d2a3",
+              "name": "万达广场(合肥天鹅湖店)",
+              "type": "shopping",
+              "coordinates": {
+                "lat": 31.819893,
+                "lng": 117.221275
+              },
+              "rating": 4.8,
+              "estimatedCost": 0,
+              "duration": 90,
+              "imageUrl": "/api/image-proxy?url=http%3A%2F%2Fstore.is.autonavi.com%2Fshowpic%2F561c84f0a310dc9d3de90d48",
+              "aiNote": "离大剧院约1.1公里，室内商场全程无障碍、有无障碍卫生间与电梯。可在此吃晚餐、买安徽特产（宣纸、徽墨、黄山毛峰）带回家，也方便打车或坐地铁返程。",
+              "externalUrl": "https://www.amap.com/place/B0227163WK",
+              "searchQuery": "万达广场 合肥天鹅湖店",
+              "slotId": "slot-hefei-13",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 15,
+                "distanceM": 701,
+                "estimated": true
+              },
+              "start": "14:55",
+              "end": "16:25"
+            }
+          ]
+        },
+        {
+          "period": "evening",
+          "places": [
+            {
+              "id": "d2e1",
+              "name": "木桶记臭鳜鱼·徽菜餐厅(南七店)",
+              "type": "restaurant",
+              "coordinates": {
+                "lat": 31.829306,
+                "lng": 117.259421
+              },
+              "rating": 4.7,
+              "estimatedCost": 110,
+              "duration": 90,
+              "imageUrl": "/api/image-proxy?url=http%3A%2F%2Fstore.is.autonavi.com%2Fquery_pic%3Fid%3Dst629acc8d-1d70-4012-8998-400945b3977b%26user%3Dsearch%26operate%3Doriginal",
+              "aiNote": "合肥口碑最好的臭鳜鱼专门店之一，木桶上桌、汤汁拌饭一绝，另有毛豆腐和胡适一品锅。餐厅在商场内、有电梯与无障碍入口，两人点招牌鱼加两菜约¥220，作为告别晚餐很圆满。",
+              "externalUrl": "https://www.amap.com/place/B0I23HV29U",
+              "searchQuery": "木桶记臭鳜鱼 徽菜餐厅 南七店",
+              "slotId": "slot-hefei-14",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 25,
+                "distanceM": 4879,
+                "estimated": true
+              },
+              "start": "18:00",
+              "end": "19:30"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "version": 1
+}

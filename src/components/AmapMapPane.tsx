@@ -8,7 +8,7 @@ import { MARKER_COLORS, type MapPaneProps } from './MapPane';
  * LeafletMapPane.tsx for the international counterpart and MapPane.tsx's
  * module docstring for why the app has two of these instead of one.
  */
-export default function AmapMapPane({ itinerary, activeDay, selectedPlaceId, onSelectPlace }: MapPaneProps) {
+export default function AmapMapPane({ itinerary, activeDay, selectedPlaceId, onSelectPlace, changedPlaceIds }: MapPaneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [mapInstance, setMapInstance] = useState<any>(null);
   const markersRef = useRef<Record<string, any>>({});
@@ -87,7 +87,7 @@ export default function AmapMapPane({ itinerary, activeDay, selectedPlaceId, onS
         const size = isSelected ? 34 : 28;
 
         const el = document.createElement('div');
-        el.style.background = isSelected ? MARKER_COLORS.selected : MARKER_COLORS.stop;
+        el.style.background = isSelected ? MARKER_COLORS.selected : changedPlaceIds?.includes(place.id) ? MARKER_COLORS.changed : MARKER_COLORS.stop;
         el.style.color = '#FFFFFF';
         el.style.border = '2px solid #FFFFFF';
         el.style.borderRadius = '50%';
@@ -145,7 +145,7 @@ export default function AmapMapPane({ itinerary, activeDay, selectedPlaceId, onS
     } catch (err) {
       console.error('[AmapMapPane] failed to render markers:', err);
     }
-  }, [itinerary, activeDay, selectedPlaceId, mapInstance, AMap, onSelectPlace]);
+  }, [itinerary, activeDay, selectedPlaceId, mapInstance, AMap, onSelectPlace, changedPlaceIds]);
 
   return <div ref={containerRef} className="w-full h-full relative" />;
 }

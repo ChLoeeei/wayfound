@@ -41,11 +41,26 @@
     "readyGrounded": "每个地点都来自搜索结果。",
     "readyWarning": "部分内容来自通用知识，出行前请核实地址和开放时间。",
     "failed": "生成失败：{error}",
-    "inputPlaceholder": "用消息修改行程会在后续版本提供",
+    "inputPlaceholder": "修改某个地点或时段，例如“把第 2 天的博物馆换成一家拉面店”",
     "inputDisabledHint": "按时段修改行程将在后续版本提供",
     "photoDisabledHint": "通过照片添加地点将在后续版本提供",
     "send": "发送",
-    "addPhoto": "添加照片或截图"
+    "addPhoto": "添加照片或截图",
+    "inputHint": "修改只会重新规划你提到的地点，当天其余安排保持不变。",
+    "noPlanYet": "先生成行程，再在这里修改。",
+    "thinking": "正在理解你要改什么…",
+    "replanning": "正在重新规划{targets}…",
+    "targetStop": "第 {day} 天{period}的一个地点",
+    "targetPeriod": "第 {day} 天{period}",
+    "editDone_one": "已完成：第 {day} 天改了 {count} 个地点，当天其余安排没有变。",
+    "editDone_other": "已完成：第 {day} 天改了 {count} 个地点，当天其余安排没有变。",
+    "editRemoved_one": "已删除 {count} 个地点，其余保持不变。",
+    "editRemoved_other": "已删除 {count} 个地点，其余保持不变。",
+    "editLocked": "这会改到已锁定的地点（{names}）。想重新规划的话请先解锁。",
+    "editInvalid": "没有找到能通过校验的改法，所以什么都没有改。{issues}",
+    "editFailed": "修改失败：{error}。行程没有变化。",
+    "editUnclear": "能说一下是哪一天、哪个时段或哪个地点吗？",
+    "replaceRequest": "把“{name}”换成附近类似的地方"
   },
   "form": {
     "destination": "目的地",
@@ -122,7 +137,8 @@
     "tiles": "地图底图：中国大陆用高德，其他地区用 OpenStreetMap",
     "legendUnchanged": "地点",
     "legendSelected": "选中的地点",
-    "empty": "生成行程后，路线会显示在这里"
+    "empty": "生成行程后，路线会显示在这里",
+    "legendChanged": "被修改的地点"
   },
   "itinerary": {
     "title": "行程",
@@ -151,6 +167,15 @@
     "attribution": {
       "osm": "地点数据 © OpenStreetMap 贡献者，ODbL 许可",
       "wikivoyage": "目的地介绍来自 Wikivoyage，CC BY-SA 4.0"
+    },
+    "undoLast": "撤销上次修改",
+    "updated": "已更新",
+    "approx": "约 {time}",
+    "travel": {
+      "walk": "步行约 {minutes} 分钟",
+      "transit": "公共交通约 {minutes} 分钟",
+      "drive": "打车约 {minutes} 分钟",
+      "estimated": "估算"
     }
   },
   "period": {
@@ -175,7 +200,11 @@
       "cafe": "咖啡馆",
       "nightlife": "夜生活",
       "leisure": "休闲"
-    }
+    },
+    "lock": "锁定这个地点",
+    "unlock": "解锁这个地点",
+    "locked": "已锁定",
+    "replace": "替换这个地点"
   },
   "search": {
     "title": "添加地点",

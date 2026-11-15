@@ -12,10 +12,11 @@ const OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright
 const DEFAULT_CENTER: [number, number] = [20, 0]; // world view until real places arrive
 const DEFAULT_ZOOM = 2;
 
-function numberedDivIcon(label: string, selected: boolean): L.DivIcon {
+function numberedDivIcon(label: string, selected: boolean, changed = false): L.DivIcon {
   const size = selected ? 34 : 28;
+  const color = selected ? MARKER_COLORS.selected : changed ? MARKER_COLORS.changed : MARKER_COLORS.stop;
   return L.divIcon({
-    html: `<div style="background:${selected ? MARKER_COLORS.selected : MARKER_COLORS.stop};color:#FFFFFF;border:2px solid #FFFFFF;border-radius:50%;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,0.25);">${label}</div>`,
+    html: `<div style="background:${color};color:#FFFFFF;border:2px solid #FFFFFF;border-radius:50%;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,0.25);">${label}</div>`,
     className: '',
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
@@ -32,7 +33,7 @@ function numberedDivIcon(label: string, selected: boolean): L.DivIcon {
  * the two libraries' APIs allow, sharing sanitiseMapCoord with it so both
  * engines agree on what counts as a plottable point.
  */
-export default function LeafletMapPane({ itinerary, activeDay, selectedPlaceId, onSelectPlace }: MapPaneProps) {
+export default function LeafletMapPane({ itinerary, activeDay, selectedPlaceId, onSelectPlace, changedPlaceIds }: MapPaneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
   const markersRef = useRef<Record<string, L.Marker>>({});
@@ -86,7 +87,7 @@ export default function LeafletMapPane({ itinerary, activeDay, selectedPlaceId, 
         const isSelected = selectedPlaceId === place.id;
 
         const marker = L.marker([coord.lat, coord.lng], {
-          icon: numberedDivIcon(String(idx + 1), isSelected),
+          icon: numberedDivIcon(String(idx + 1), isSelected, changedPlaceIds?.includes(place.id)),
           zIndexOffset: isSelected ? 1000 : idx,
           title: place.name,
         });
@@ -119,7 +120,7 @@ export default function LeafletMapPane({ itinerary, activeDay, selectedPlaceId, 
     } catch (err) {
       console.error('[LeafletMapPane] failed to render markers:', err);
     }
-  }, [itinerary, activeDay, selectedPlaceId, mapInstance, onSelectPlace]);
+  }, [itinerary, activeDay, selectedPlaceId, mapInstance, onSelectPlace, changedPlaceIds]);
 
   return <div ref={containerRef} className="w-full h-full relative" />;
 }

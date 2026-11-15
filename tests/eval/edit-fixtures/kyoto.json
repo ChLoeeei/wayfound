@@ -1,0 +1,885 @@
+{
+  "title": "Kyoto in Five Days: Temples, Bamboo & Slow Nature",
+  "summary": "A culture-and-nature loop through Kyoto for two, built around the city's great temple gardens and forested hillsides. Days are grouped by geography so you walk rather than commute: the southern Inari-Toji axis, the Higashiyama lanes, the northern Zen gardens, the Arashiyama riverside, and finally the quiet eastern hills. Kyoto rewards early starts — the Fushimi torii gates and the bamboo grove are near-empty before 8am and unbearable by 11am. Budget assumes a mid-range machiya-style ryokan or business hotel (roughly ¥500-700 per person per night shared), temple entries at ¥300-500 each, and one sit-down meal plus market or izakaya grazing per day. Wikivoyage's warning holds true: the beauty is in the ring of temples and parks around the modern core, so plan to walk a lot and carry cash for small entries.",
+  "destination": "Kyoto",
+  "startDate": "2025-04-07",
+  "endDate": "2025-04-11",
+  "days": [
+    {
+      "dayNumber": 1,
+      "theme": "Southern Kyoto: Torii Gates & the Old Capital's Edge",
+      "slots": [
+        {
+          "period": "morning",
+          "places": [
+            {
+              "id": "k1a",
+              "name": "Fushimi Inari-taisha",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 34.9675192,
+                "lng": 135.7797101
+              },
+              "rating": 4.8,
+              "estimatedCost": 0,
+              "duration": 150,
+              "imageUrl": "",
+              "aiNote": "Arrive by 7:30am — the thousand vermilion torii are genuinely empty at that hour and the forested Mount Inari trail behind them is the closest thing to wilderness inside the city. Free to enter; climb at least to the Yotsutsuji junction for the city view.",
+              "externalUrl": "https://en.wikivoyage.org/wiki/Kyoto",
+              "searchQuery": "Fushimi Inari Taisha Kyoto",
+              "slotId": "slot-kyoto-1",
+              "start": "09:00",
+              "end": "11:30"
+            },
+            {
+              "id": "k1b",
+              "name": "Vegan Izakaya Masaka Kyoto",
+              "type": "restaurant",
+              "coordinates": {
+                "lat": 34.9998856,
+                "lng": 135.7512375
+              },
+              "rating": 4.4,
+              "estimatedCost": 110,
+              "duration": 75,
+              "imageUrl": "",
+              "aiNote": "A relaxed lunch stop on the way back north — plant-based takes on izakaya classics, useful if you want a lighter midday meal before an afternoon of walking.",
+              "externalUrl": "",
+              "searchQuery": "izakaya Kyoto",
+              "slotId": "slot-kyoto-2",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 30,
+                "distanceM": 5767,
+                "estimated": true
+              },
+              "start": "12:00",
+              "end": "13:15"
+            }
+          ]
+        },
+        {
+          "period": "afternoon",
+          "places": [
+            {
+              "id": "k1c",
+              "name": "Toji Higashimon-mae (Toji Temple)",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 34.981862,
+                "lng": 135.7498016
+              },
+              "rating": 4.6,
+              "estimatedCost": 35,
+              "duration": 90,
+              "imageUrl": "",
+              "aiNote": "About 6km north of Inari by train. The five-storey pagoda is Japan's tallest and the Kondō and Miei-dō halls are original 8th-century survivors — a good counterpoint to Inari's shinto forest. Entry to the pagoda area is a small separate fee.",
+              "externalUrl": "",
+              "searchQuery": "Toji Temple Kyoto",
+              "slotId": "slot-kyoto-3",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 20,
+                "distanceM": 2611,
+                "estimated": true
+              },
+              "start": "13:35",
+              "end": "15:05"
+            },
+            {
+              "id": "k1d",
+              "name": "Nishi-Hongan-ji",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 34.9918325,
+                "lng": 135.7510462
+              },
+              "rating": 4.5,
+              "estimatedCost": 0,
+              "duration": 60,
+              "imageUrl": "",
+              "aiNote": "Five minutes' walk from Toji and free. The Amida Hall's vast tatami interior and the Karamon gate are worth the detour; it is one of the least crowded major temples in the city.",
+              "externalUrl": "",
+              "searchQuery": "Nishi-Hongan-ji Kyoto",
+              "slotId": "slot-kyoto-4",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 15,
+                "distanceM": 1449,
+                "estimated": true
+              },
+              "start": "15:20",
+              "end": "16:20"
+            }
+          ]
+        },
+        {
+          "period": "evening",
+          "places": [
+            {
+              "id": "k1e",
+              "name": "Ryokan Nakajimaya",
+              "type": "hotel",
+              "coordinates": {
+                "lat": 35.0022552,
+                "lng": 135.7625827
+              },
+              "rating": 4.3,
+              "estimatedCost": 480,
+              "duration": 0,
+              "imageUrl": "",
+              "aiNote": "Central Shimogyo base for all five nights — walkable to Nishiki Market and the Karasuma subway, which makes the day trips north and west easy. Traditional rooms, shared baths, breakfast included.",
+              "externalUrl": "",
+              "searchQuery": "ryokan hotel Kyoto",
+              "slotId": "slot-kyoto-5",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 20,
+                "distanceM": 2034,
+                "estimated": true
+              },
+              "start": "18:00",
+              "end": "19:30"
+            },
+            {
+              "id": "k1f",
+              "name": "Yumedokoro Gyoshi meshi Zakkyoya (Izakaya)",
+              "type": "restaurant",
+              "coordinates": {
+                "lat": 35.0074431,
+                "lng": 135.7587905
+              },
+              "rating": 4.2,
+              "estimatedCost": 150,
+              "duration": 90,
+              "imageUrl": "",
+              "aiNote": "Casual counter izakaya near Rokkaku — order the day's fish and a few small plates to share. Good first-night introduction to Kyoto's low-key dining scene without a reservation.",
+              "externalUrl": "",
+              "searchQuery": "izakaya Kyoto",
+              "slotId": "slot-kyoto-6",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 15,
+                "distanceM": 874,
+                "estimated": true
+              },
+              "start": "19:45",
+              "end": "21:15"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dayNumber": 2,
+      "theme": "Higashiyama: Temple Lanes and Lantern-Lit Alleys",
+      "slots": [
+        {
+          "period": "morning",
+          "places": [
+            {
+              "id": "k2a",
+              "name": "Kiyomizu-dera Temple",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 34.9978412,
+                "lng": 135.7771061
+              },
+              "rating": 4.8,
+              "estimatedCost": 35,
+              "duration": 120,
+              "imageUrl": "",
+              "aiNote": "Go at opening (6am) or by 8am to have the great wooden veranda before the tour groups. The hillside walk up through Sannenzaka's stone steps is half the experience — allow extra time for the approach.",
+              "externalUrl": "",
+              "searchQuery": "Kiyomizu-dera Temple Kyoto",
+              "slotId": "slot-kyoto-7",
+              "start": "09:00",
+              "end": "11:00"
+            },
+            {
+              "id": "k2b",
+              "name": "Kōdai-ji",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.0003033,
+                "lng": 135.7805956
+              },
+              "rating": 4.6,
+              "estimatedCost": 35,
+              "duration": 75,
+              "imageUrl": "",
+              "aiNote": "A 10-minute walk from Kiyomizu and far quieter. Toyotomi Hideyoshi's memorial temple has a raked-gravel garden, a small bamboo grove behind it, and a hillside tea house view over the city.",
+              "externalUrl": "",
+              "searchQuery": "Kodai-ji Temple Kyoto",
+              "slotId": "slot-kyoto-8",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 10,
+                "distanceM": 545,
+                "estimated": true
+              },
+              "start": "11:10",
+              "end": "12:25"
+            }
+          ]
+        },
+        {
+          "period": "afternoon",
+          "places": [
+            {
+              "id": "k2c",
+              "name": "Hokan-ji Temple (Yasaka Pagode)",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 34.99859,
+                "lng": 135.77919
+              },
+              "rating": 4.5,
+              "estimatedCost": 25,
+              "duration": 45,
+              "imageUrl": "",
+              "aiNote": "The Yasaka pagoda framed at the end of a sloping stone lane is Kyoto's most photographed view. Entry to the pagoda itself is limited but the lane and temple grounds are the point.",
+              "externalUrl": "",
+              "searchQuery": "Hokan-ji Temple Yasaka Pagoda Kyoto",
+              "slotId": "slot-kyoto-9",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 10,
+                "distanceM": 298,
+                "estimated": true
+              },
+              "start": "12:35",
+              "end": "13:20"
+            },
+            {
+              "id": "k2d",
+              "name": "Camellia Tea Ceremony",
+              "type": "cafe",
+              "coordinates": {
+                "lat": 34.998533,
+                "lng": 135.7805489
+              },
+              "rating": 4.7,
+              "estimatedCost": 180,
+              "duration": 60,
+              "imageUrl": "",
+              "aiNote": "A proper tatami-room matcha ceremony in a Higashiyama machiya — whisk your own bowl, learn the etiquette, and sit in a garden-facing room. Book ahead; it is the best value cultural experience in this district.",
+              "externalUrl": "",
+              "searchQuery": "matcha tea house Kyoto",
+              "slotId": "slot-kyoto-10",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 5,
+                "distanceM": 161,
+                "estimated": true
+              },
+              "start": "13:25",
+              "end": "14:25"
+            },
+            {
+              "id": "k2e",
+              "name": "Yasaka Shrine",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.0036027,
+                "lng": 135.7782611
+              },
+              "rating": 4.5,
+              "estimatedCost": 0,
+              "duration": 45,
+              "imageUrl": "",
+              "aiNote": "Free, and the natural end of the Higashiyama walk — its vermilion west gate opens directly onto the Gion lanes. Hundreds of lanterns are lit at dusk.",
+              "externalUrl": "",
+              "searchQuery": "Yasaka Shrine Kyoto",
+              "slotId": "slot-kyoto-11",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 15,
+                "distanceM": 781,
+                "estimated": true
+              },
+              "start": "14:40",
+              "end": "15:25"
+            }
+          ]
+        },
+        {
+          "period": "evening",
+          "places": [
+            {
+              "id": "k2f",
+              "name": "Gion",
+              "type": "leisure",
+              "coordinates": {
+                "lat": 35.00392,
+                "lng": 135.77557
+              },
+              "rating": 4.6,
+              "estimatedCost": 0,
+              "duration": 60,
+              "imageUrl": "",
+              "aiNote": "Wander Hanami-koji and Shirakawa's willow-lined canal after dark. Be respectful — no photography of geiko and maiko in the private lanes, and keep voices low in the residential alleys.",
+              "externalUrl": "",
+              "searchQuery": "Gion district Kyoto",
+              "slotId": "slot-kyoto-12",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 10,
+                "distanceM": 322,
+                "estimated": true
+              },
+              "start": "18:00",
+              "end": "19:00"
+            },
+            {
+              "id": "k2g",
+              "name": "Izakaya Maumu",
+              "type": "restaurant",
+              "coordinates": {
+                "lat": 35.0042932,
+                "lng": 135.7751777
+              },
+              "rating": 4.3,
+              "estimatedCost": 160,
+              "duration": 90,
+              "imageUrl": "",
+              "aiNote": "Small Gion izakaya on Hanami-koji — seasonal Kyoto obanzai small plates and local sake. Reserve or arrive right at opening; it seats very few.",
+              "externalUrl": "",
+              "searchQuery": "izakaya Kyoto",
+              "slotId": "slot-kyoto-13",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 5,
+                "distanceM": 71,
+                "estimated": true
+              },
+              "start": "19:05",
+              "end": "20:35"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dayNumber": 3,
+      "theme": "Northern Zen: Golden Pavilion, Rock Gardens & Philosopher's Path",
+      "slots": [
+        {
+          "period": "morning",
+          "places": [
+            {
+              "id": "k3a",
+              "name": "Kinkaku-ji",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.0395293,
+                "lng": 135.7295373
+              },
+              "rating": 4.7,
+              "estimatedCost": 35,
+              "duration": 75,
+              "imageUrl": "",
+              "aiNote": "Be at the gate for the 9am opening — by 10am the narrow pond circuit is a slow-moving queue. The gold-leaf pavilion reflected in Kyōko-chi pond is best in morning light.",
+              "externalUrl": "",
+              "searchQuery": "Kinkakuji Kyoto",
+              "slotId": "slot-kyoto-14",
+              "start": "09:00",
+              "end": "10:15"
+            },
+            {
+              "id": "k3b",
+              "name": "Ryōanji",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.027868,
+                "lng": 135.7213031
+              },
+              "rating": 4.6,
+              "estimatedCost": 35,
+              "duration": 75,
+              "imageUrl": "",
+              "aiNote": "About 2km south of Kinkaku-ji. Fifteen stones in raked white gravel, and no explanation given — sit on the veranda edge for a while rather than photographing and leaving. The moss garden pond below is often skipped and shouldn't be.",
+              "externalUrl": "",
+              "searchQuery": "Ryoanji rock garden Kyoto",
+              "slotId": "slot-kyoto-15",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 20,
+                "distanceM": 1947,
+                "estimated": true
+              },
+              "start": "10:35",
+              "end": "11:50"
+            }
+          ]
+        },
+        {
+          "period": "afternoon",
+          "places": [
+            {
+              "id": "k3c",
+              "name": "Nanzen-ji",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.01142,
+                "lng": 135.79441
+              },
+              "rating": 4.7,
+              "estimatedCost": 35,
+              "duration": 90,
+              "imageUrl": "",
+              "aiNote": "Head east to the temple's sub-temples: the aqueduct running through the grounds is a strange and beautiful Meiji-era intrusion, and the hillside walk up to the small waterfall is genuinely forested.",
+              "externalUrl": "",
+              "searchQuery": "Nanzen-ji Temple Kyoto",
+              "slotId": "slot-kyoto-16",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 40,
+                "distanceM": 8975,
+                "estimated": true
+              },
+              "start": "12:30",
+              "end": "14:00"
+            },
+            {
+              "id": "k3d",
+              "name": "Philosopher's Walk",
+              "type": "leisure",
+              "coordinates": {
+                "lat": 35.027531,
+                "lng": 135.793749
+              },
+              "rating": 4.6,
+              "estimatedCost": 0,
+              "duration": 60,
+              "imageUrl": "",
+              "aiNote": "A canal-side stone path linking Nanzen-ji to Ginkaku-ji, named for Nishida Tetsugaku's daily commute. In cherry season it is a tunnel of blossom; any time it is the calmest 2km in Kyoto.",
+              "externalUrl": "",
+              "searchQuery": "Philosopher's Path Kyoto",
+              "slotId": "slot-kyoto-17",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 20,
+                "distanceM": 2330,
+                "estimated": true
+              },
+              "start": "14:20",
+              "end": "15:20"
+            },
+            {
+              "id": "k3e",
+              "name": "Silver Pavilion",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.0265387,
+                "lng": 135.7980434
+              },
+              "rating": 4.6,
+              "estimatedCost": 35,
+              "duration": 75,
+              "imageUrl": "",
+              "aiNote": "Ginkaku-ji — never actually silvered, which is part of its wabi-sabi charm. The raked sand cone and the moss garden climbing the hillside behind are the highlights; the upper path gives a view over the whole compound.",
+              "externalUrl": "",
+              "searchQuery": "Ginkaku-ji Silver Pavilion Kyoto",
+              "slotId": "slot-kyoto-18",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 10,
+                "distanceM": 528,
+                "estimated": true
+              },
+              "start": "15:30",
+              "end": "16:45"
+            }
+          ]
+        },
+        {
+          "period": "evening",
+          "places": [
+            {
+              "id": "k3f",
+              "name": "Doutor Coffee Shop",
+              "type": "cafe",
+              "coordinates": {
+                "lat": 35.0171398,
+                "lng": 135.7906557
+              },
+              "rating": 3.9,
+              "estimatedCost": 35,
+              "duration": 45,
+              "imageUrl": "",
+              "aiNote": "Practical stop near Okazaki after the Philosopher's Walk — cheap coffee and a seat before heading back into town. Not a destination, but a welcome one after a long walking day.",
+              "externalUrl": "",
+              "searchQuery": "coffee shop Kyoto",
+              "slotId": "slot-kyoto-19",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 15,
+                "distanceM": 1616,
+                "estimated": true
+              },
+              "start": "18:00",
+              "end": "18:45"
+            },
+            {
+              "id": "k3g",
+              "name": "restaurant shin",
+              "type": "restaurant",
+              "coordinates": {
+                "lat": 35.016131,
+                "lng": 135.767139
+              },
+              "rating": 4.4,
+              "estimatedCost": 220,
+              "duration": 90,
+              "imageUrl": "",
+              "aiNote": "A quiet neighbourhood restaurant north of the imperial palace — seasonal Kyoto cooking in a small room. A good splurge night that still sits comfortably inside the daily budget.",
+              "externalUrl": "",
+              "searchQuery": "restaurant Kyoto Japanese cuisine",
+              "slotId": "slot-kyoto-20",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 20,
+                "distanceM": 2788,
+                "estimated": true
+              },
+              "start": "19:05",
+              "end": "20:35"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dayNumber": 4,
+      "theme": "Arashiyama: Bamboo, River & Mountain Temple",
+      "slots": [
+        {
+          "period": "morning",
+          "places": [
+            {
+              "id": "k4a",
+              "name": "Arashiyama Bamboo Grove",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.0167419,
+                "lng": 135.6711482
+              },
+              "rating": 4.6,
+              "estimatedCost": 0,
+              "duration": 75,
+              "imageUrl": "",
+              "aiNote": "Non-negotiable: be here before 8am. The grove is free and open, and the difference between 7:30 and 10:00 is the difference between a forest and a queue. Walk the full loop up past Okochi Sanso.",
+              "externalUrl": "",
+              "searchQuery": "Arashiyama Bamboo Grove Kyoto",
+              "slotId": "slot-kyoto-21",
+              "start": "09:00",
+              "end": "10:15"
+            },
+            {
+              "id": "k4b",
+              "name": "Tenryuji temple",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.01575,
+                "lng": 135.67403
+              },
+              "rating": 4.7,
+              "estimatedCost": 35,
+              "duration": 90,
+              "imageUrl": "",
+              "aiNote": "Right at the grove's south exit. Its Sōgenchi pond garden is Japan's oldest landscape garden and a UNESCO site — the borrowed scenery of the Arashiyama hills is the whole design. Add the small extra fee for the cloud-dragon ceiling in the Hatto hall.",
+              "externalUrl": "",
+              "searchQuery": "Tenryu-ji Temple Arashiyama Kyoto",
+              "slotId": "slot-kyoto-22",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 10,
+                "distanceM": 370,
+                "estimated": true
+              },
+              "start": "10:25",
+              "end": "11:55"
+            }
+          ]
+        },
+        {
+          "period": "afternoon",
+          "places": [
+            {
+              "id": "k4c",
+              "name": "Sushi Naritaya",
+              "type": "restaurant",
+              "coordinates": {
+                "lat": 35.0145399,
+                "lng": 135.6770354
+              },
+              "rating": 4.3,
+              "estimatedCost": 180,
+              "duration": 75,
+              "imageUrl": "",
+              "aiNote": "Lunch near the Arashiyama riverside — straightforward sushi sets at a fair price, useful before an afternoon on the water.",
+              "externalUrl": "",
+              "searchQuery": "sushi restaurant Kyoto",
+              "slotId": "slot-kyoto-23",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 10,
+                "distanceM": 396,
+                "estimated": true
+              },
+              "start": "12:05",
+              "end": "13:20"
+            },
+            {
+              "id": "k4d",
+              "name": "Ryokan Yamazaki",
+              "type": "leisure",
+              "coordinates": {
+                "lat": 35.0344001,
+                "lng": 135.6987063
+              },
+              "rating": 4.2,
+              "estimatedCost": 0,
+              "duration": 60,
+              "imageUrl": "",
+              "aiNote": "Use the Ukyō district as a slow afternoon: the Katsura riverbank and the lanes north of Arashiyama are quiet, residential, and full of small gardens. A good place to simply walk without a checklist.",
+              "externalUrl": "",
+              "searchQuery": "ryokan hotel Kyoto",
+              "slotId": "slot-kyoto-24",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 25,
+                "distanceM": 3850,
+                "estimated": true
+              },
+              "start": "13:45",
+              "end": "14:45"
+            }
+          ]
+        },
+        {
+          "period": "evening",
+          "places": [
+            {
+              "id": "k4e",
+              "name": "Sushi Tetsu Pontocho",
+              "type": "restaurant",
+              "coordinates": {
+                "lat": 35.0082182,
+                "lng": 135.7713113
+              },
+              "rating": 4.4,
+              "estimatedCost": 250,
+              "duration": 90,
+              "imageUrl": "",
+              "aiNote": "Back in central Kyoto for the best meal of the trip — a Pontocho counter with the chef working in front of you. Book ahead; the alley is narrow and the rooms are tiny.",
+              "externalUrl": "",
+              "searchQuery": "sushi restaurant Kyoto",
+              "slotId": "slot-kyoto-25",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 40,
+                "distanceM": 9391,
+                "estimated": true
+              },
+              "start": "18:00",
+              "end": "19:30"
+            },
+            {
+              "id": "k4f",
+              "name": "Pontochō Alley",
+              "type": "nightlife",
+              "coordinates": {
+                "lat": 35.0059797,
+                "lng": 135.7710884
+              },
+              "rating": 4.6,
+              "estimatedCost": 0,
+              "duration": 45,
+              "imageUrl": "",
+              "aiNote": "Walk the full length of the alley after dinner — one lantern-lit lane wide, running between Shijō and Sanjō with the Kamo river on one side. Best after 8pm when the teahouse doors are lit.",
+              "externalUrl": "",
+              "searchQuery": "Pontocho alley Kyoto",
+              "slotId": "slot-kyoto-26",
+              "travelFromPrev": {
+                "mode": "walk",
+                "minutes": 10,
+                "distanceM": 325,
+                "estimated": true
+              },
+              "start": "19:40",
+              "end": "20:25"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dayNumber": 5,
+      "theme": "Eastern Hills & the Imperial Axis",
+      "slots": [
+        {
+          "period": "morning",
+          "places": [
+            {
+              "id": "k5a",
+              "name": "Heian Shrine",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.0160683,
+                "lng": 135.7828961
+              },
+              "rating": 4.5,
+              "estimatedCost": 35,
+              "duration": 75,
+              "imageUrl": "",
+              "aiNote": "Built in 1895 for the city's 1100th anniversary, its huge vermilion torii and symmetrical courtyard are a deliberate echo of the Heian capital. The stroll garden behind — ponds, bridges, weeping cherries — is the reason to come.",
+              "externalUrl": "",
+              "searchQuery": "Heian Jingu Kyoto",
+              "slotId": "slot-kyoto-27",
+              "start": "09:00",
+              "end": "10:15"
+            },
+            {
+              "id": "k5b",
+              "name": "Nijō Castle",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 35.013878,
+                "lng": 135.748636
+              },
+              "rating": 4.6,
+              "estimatedCost": 70,
+              "duration": 100,
+              "imageUrl": "",
+              "aiNote": "The shogun's Kyoto residence: the nightingale floors that squeak underfoot as an intruder alarm, and the screen paintings in the Ninomaru Palace. Allow real time here — it is the best interior in the city.",
+              "externalUrl": "",
+              "searchQuery": "Nijo Castle Kyoto",
+              "slotId": "slot-kyoto-28",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 25,
+                "distanceM": 4068,
+                "estimated": true
+              },
+              "start": "10:40",
+              "end": "12:20"
+            }
+          ]
+        },
+        {
+          "period": "afternoon",
+          "places": [
+            {
+              "id": "k5c",
+              "name": "Nishiki Market",
+              "type": "shopping",
+              "coordinates": {
+                "lat": 35.0050244,
+                "lng": 135.7655699
+              },
+              "rating": 4.4,
+              "estimatedCost": 120,
+              "duration": 75,
+              "imageUrl": "",
+              "aiNote": "Five blocks of narrow covered market — graze rather than sit: tamagoyaki on a stick, pickles, yuba, and a bowl of matcha soft-serve. Cash is easier than card in most stalls.",
+              "externalUrl": "",
+              "searchQuery": "Nishiki Market Kyoto",
+              "slotId": "slot-kyoto-29",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 20,
+                "distanceM": 2379,
+                "estimated": true
+              },
+              "start": "12:40",
+              "end": "13:55"
+            },
+            {
+              "id": "k5d",
+              "name": "Ippodo Tea Co.",
+              "type": "cafe",
+              "coordinates": {
+                "lat": 35.0144549,
+                "lng": 135.7675573
+              },
+              "rating": 4.7,
+              "estimatedCost": 80,
+              "duration": 45,
+              "imageUrl": "",
+              "aiNote": "A 300-year-old tea merchant on Teramachi. Sit in the back room for a pot of properly brewed gyokuro and buy a small tin to take home — the best souvenir in Kyoto and it weighs nothing.",
+              "externalUrl": "",
+              "searchQuery": "matcha tea house Kyoto",
+              "slotId": "slot-kyoto-30",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 15,
+                "distanceM": 1383,
+                "estimated": true
+              },
+              "start": "14:10",
+              "end": "14:55"
+            }
+          ]
+        },
+        {
+          "period": "evening",
+          "places": [
+            {
+              "id": "k5e",
+              "name": "Kyoto Station",
+              "type": "attraction",
+              "coordinates": {
+                "lat": 34.9865692,
+                "lng": 135.758579
+              },
+              "rating": 4.3,
+              "estimatedCost": 0,
+              "duration": 60,
+              "imageUrl": "",
+              "aiNote": "End the trip here — Hara Hiroshi's glass-and-steel canyon is the modern counterpoint to everything you have walked through, and the Sky Garden on the 15th floor is free with a view over the whole city at dusk.",
+              "externalUrl": "",
+              "searchQuery": "Kyoto Station",
+              "slotId": "slot-kyoto-31",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 25,
+                "distanceM": 4169,
+                "estimated": true
+              },
+              "start": "18:00",
+              "end": "19:00"
+            },
+            {
+              "id": "k5f",
+              "name": "Higashi Sushi",
+              "type": "restaurant",
+              "coordinates": {
+                "lat": 34.9918593,
+                "lng": 135.7692378
+              },
+              "rating": 4.2,
+              "estimatedCost": 170,
+              "duration": 75,
+              "imageUrl": "",
+              "aiNote": "A low-key final dinner near the station — no-fuss sushi, easy to reach with luggage, and a calm end to five days of walking.",
+              "externalUrl": "",
+              "searchQuery": "sushi restaurant Kyoto",
+              "slotId": "slot-kyoto-32",
+              "travelFromPrev": {
+                "mode": "transit",
+                "minutes": 15,
+                "distanceM": 1476,
+                "estimated": true
+              },
+              "start": "19:15",
+              "end": "20:30"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "version": 1
+}
