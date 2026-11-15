@@ -72,6 +72,9 @@
         "expect": {
           "avoid": [
             "购物"
+          ],
+          "notes": [
+            "吃素"
           ]
         },
         "forbid": [
@@ -279,10 +282,19 @@
             "trail",
             "garden",
             "mountain",
+            "mount",
             "beach",
             "forest",
             "hike",
             "seawall",
+            "lookout",
+            "jardin",
+            "parc",
+            "plage",
+            "île",
+            "island",
+            "river",
+            "canal",
             "公园",
             "山",
             "海滩",

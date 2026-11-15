@@ -19,7 +19,7 @@ import type { Itinerary, Place, PlaceType, SlotPeriod } from '../src/types';
 import { PERIOD_ORDER } from '../src/lib/itineraryOps';
 import { ToolContext, runTool, toolDefinitions } from './tools/index';
 import { parseLngLat } from './tools/provider';
-import { type AgentStepRecord, type AgentUsage, type ToolCallRecord, MAX_OUTPUT_TOKENS, addUsage, nameMatches, parseJsonLoose } from './agent';
+import { type AgentStepRecord, type AgentUsage, type ToolCallRecord, MAX_OUTPUT_TOKENS, addUsage, parseJsonLoose } from './agent';
 import { type EditPlan, type EditTarget, lockedTargets } from './editParse';
 import { structureItinerary } from './structure';
 import { type ValidationResult, validateReplan, violatesAvoid } from './replanValidate';
@@ -75,6 +75,7 @@ const REPLAN_SCHEMA = `Return JSON in EXACTLY this shape:
       "places": [
         {
           "id": string,                 // keep the id of a FIXED stop exactly; new stops: any new id
+          "poiId": string,              // NEW stops: the "id" field of the search_places result you chose (required)
           "name": string,               // exactly as search_places returned it
           "type": "attraction" | "restaurant" | "hotel" | "shopping" | "cafe" | "nightlife" | "leisure",
           "coordinates": { "lat": number, "lng": number },   // from the search result
@@ -95,7 +96,7 @@ function buildSystemPrompt(): string {
     '',
     'Rules:',
     '1. Change ONLY the target stops or periods. Every stop marked FIXED is copied back exactly as given (same id, name, coordinates, cost, duration, note); never add, drop or reorder fixed stops.',
-    '2. Every NEW stop must come from a `search_places` result in this conversation: use its exact name and coordinates. If you cannot find a suitable real place, say so by returning the fixed stops only.',
+    '2. Every NEW stop must be one of this conversation\'s `search_places` results: copy that result\'s id into "poiId" and use its exact name and coordinates. A new stop without a poiId from the results is rejected. If you cannot find a suitable real place, return the fixed stops only.',
     '3. Respect the avoid list absolutely, the budget cap, the special needs, and keep new stops close to their neighbours (walking or a short ride).',
     '4. Use Chinese names for places inside mainland China, local/English names elsewhere.',
     '5. After tool calls, emit the final JSON in your last message. No markdown fences.',
@@ -188,12 +189,13 @@ function applyModelSlots(req: ReplanRequest, targets: EditTarget[], answer: unkn
   const slotsOut: any[] = Array.isArray((answer as any)?.slots) ? (answer as any).slots : [];
   const knownIds = new Set<string>();
   for (const d of req.itinerary.days) for (const s of d.slots) for (const p of s.places) knownIds.add(p.id);
-  const pois = ctx.allPois();
-
   const normalise = (raw: any): Place | null => {
     const name = String(raw?.name ?? '').trim();
     if (!name) return null;
-    const poi = pois.find(p => nameMatches(p.name, name));
+    // Grounding is by id: the model must hand back the search result's id.
+    // A name that merely looks like a result is not enough (validateReplan rejects it).
+    const poiId = String(raw?.poiId ?? '').trim();
+    const poi = poiId ? ctx.getPoi(poiId) : undefined;
     const loc = poi ? parseLngLat(poi.location) : null;
     const lat = loc?.lat ?? Number(raw?.coordinates?.lat);
     const lng = loc?.lng ?? Number(raw?.coordinates?.lng);
@@ -274,9 +276,8 @@ export async function replanItinerary(req: ReplanRequest, opts: ReplanOptions): 
   if (plan.intent === 'remove' || plan.intent === 'move') {
     if (plan.intent === 'move' && plan.keep.length === 0) return { ok: false, reason: 'error', message: 'move needs the stop to move' };
     const after = applyDeterministic(req, targets);
-    // Moved stops already existed, so they are grounded by definition; pass their names through.
-    const names = after.days.flatMap(d => d.slots.flatMap(s => s.places.map(p => p.name)));
-    const v = validateReplan(req.itinerary, after, plan.intent === 'move' ? [...targets, ...sourceTargets(req.itinerary, plan.keep)] : targets, { poiNames: names, avoid: [], budgetCap: req.budgetCap });
+    // Moved stops already existed, so nothing new needs a POI id here.
+    const v = validateReplan(req.itinerary, after, plan.intent === 'move' ? [...targets, ...sourceTargets(req.itinerary, plan.keep)] : targets, { poiIds: [], avoid: [], budgetCap: req.budgetCap });
     if (!v.ok) return { ok: false, reason: 'invalid', issues: v.issues, attempt: 1 };
     return finish(after, v, 1, false, []);
   }
@@ -326,8 +327,8 @@ export async function replanItinerary(req: ReplanRequest, opts: ReplanOptions): 
       step++;
       const answer = parseJsonLoose(msg.content || '{}');
       const after = applyModelSlots(req, targets, answer, ctx);
-      const poiNames = ctx.allPois().map(p => p.name);
-      const v = validateReplan(req.itinerary, after, targets, { poiNames, avoid, budgetCap: req.budgetCap });
+      const poiIds = ctx.allPois().map(p => p.id);
+      const v = validateReplan(req.itinerary, after, targets, { poiIds, avoid, budgetCap: req.budgetCap });
       opts.onCandidate?.({ attempt, candidate: after, validation: v });
       if (v.ok && v.changedPlaceIds.length === 0) {
         v.issues.push('no stop was changed');

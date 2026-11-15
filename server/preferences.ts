@@ -56,11 +56,18 @@ Fields:
 
 Rules:
 - "quote" is copied verbatim from the user's text: the exact words that state the preference. No paraphrase.
-- Include an item only if the user stated it. Never infer from the destination, the group, the season or general knowledge. Never add anything the quote does not say.
-- Preferences about this one trip only (dates, a specific city, "this time") are not remembered: skip them.
-- If nothing qualifies, return {"items": []}.`;
+- Include an item only if the user stated it as something about themselves that will still be true on a future trip. Never infer from the destination, the group, the season or general knowledge. Never add anything the quote does not say.
+- Skip anything scoped to this one trip: who is coming along this time, dates, a specific city, the reason for this trip (work, a wedding), "this time" / "这次". Example to skip: "Travelling with my parents this time" — that is about one trip, not a preference. Example to keep: "I don't eat seafood".
+- When in doubt, leave it out. Returning {"items": []} is the right answer for a message with no durable preference.`;
 
 const squash = (s: string) => s.toLowerCase().replace(/\s+/g, '');
+
+/** Statements scoped to one trip are never remembered, whatever the model says. */
+export const TRIP_SCOPED = /\b(this time|this trip|on this trip|for this trip|this visit|this once|business trip|work trip)\b|这次|本次|这趟|这回|这一次|出差|顺便|这个假期|这周|下周|这个月/i;
+
+export function isTripScoped(text: string): boolean {
+  return TRIP_SCOPED.test(text);
+}
 
 /** Parses the model's reply and keeps only items whose quote appears in the user's text. */
 export function parseExtraction(raw: string, texts: string[]): ExtractionResult {
@@ -80,6 +87,12 @@ export function parseExtraction(raw: string, texts: string[]): ExtractionResult 
     const quote = typeof it?.quote === 'string' ? it.quote.trim() : '';
     const field = it?.field;
     if (!quote || !haystack.includes(squash(quote))) {
+      dropped++;
+      continue;
+    }
+    // The quote (or the sentence it sits in) talks about this one trip: not a preference.
+    const sentence = texts.find(t => squash(t).includes(squash(quote))) ?? quote;
+    if (isTripScoped(quote) || isTripScoped(sentence) || (typeof it.value === 'string' && isTripScoped(it.value))) {
       dropped++;
       continue;
     }

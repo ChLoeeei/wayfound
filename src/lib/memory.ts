@@ -319,44 +319,48 @@ const BUDGET_LEAN_TEXT: Record<BudgetLean, string> = {
 };
 
 const PACE_TEXT: Record<Pace, string> = {
-  relaxed: 'relaxed (fewer stops per day, no early starts, time to linger)',
-  moderate: 'moderate',
-  packed: 'packed (happy to start early and fit in more stops)',
+  relaxed: 'relaxed: at most 3 stops per day, nothing scheduled before 10:00, longer stays. This overrides the usual 3-5 stops per day.',
+  moderate: 'moderate: 3-4 stops per day.',
+  packed: 'packed: 5 or more stops per day, early starts are welcome.',
 };
 
 /**
- * Render memory as a compact block to append to the agent's user prompt.
- * Framed explicitly as soft/secondary so the model treats the current
- * request's explicit fields as authoritative. Returns '' when there's
- * nothing worth injecting (first-time users, or after clearMemory()).
+ * Render memory as a block appended to the agent's user prompt. The
+ * request's explicit fields still win on a direct conflict, but otherwise
+ * the profile is to be applied, not merely considered: the avoid list is
+ * a hard exclusion and a stated pace replaces the default stops-per-day
+ * rule. Returns '' when there's nothing to say (first-time users, or after
+ * clearMemory()).
  */
 export function buildMemoryPromptContext(mem: TravelMemory, currentDestination?: string): string {
   if (isMemoryEmpty(mem)) return '';
 
   const lines: string[] = [
-    'Returning user context (from past sessions — soft preferences only; the explicit fields above always take priority when they conflict):',
+    'Returning user profile (what this traveller told us in earlier sessions). Apply it unless the request above says otherwise:',
   ];
 
-  if (mem.preferredVibes.length > 0) {
-    lines.push(`- Frequently interested in: ${mem.preferredVibes.join(', ')}`);
+  if (mem.avoid.length > 0) {
+    lines.push(
+      `- MUST AVOID: ${mem.avoid.map(a => `"${a}"`).join('; ')}. Do not schedule any stop that is one of these, do not pick restaurants or markets built around them, and do not recommend them in notes.`,
+    );
   }
-  if (mem.groupType) {
-    lines.push(`- Usually travels as: ${mem.groupType}`);
+  if (mem.pace) {
+    lines.push(`- Pace: ${PACE_TEXT[mem.pace]}`);
   }
   if (mem.lastBudget) {
-    lines.push(`- Usual daily budget: ¥${mem.lastBudget.min}–${mem.lastBudget.max} per person`);
+    lines.push(`- Usual daily budget: ¥${mem.lastBudget.min}–${mem.lastBudget.max} per person; keep every day's total under ¥${mem.lastBudget.max} unless the request above gives a different budget.`);
   }
   if (mem.budgetLean) {
     lines.push(`- Budget lean: ${BUDGET_LEAN_TEXT[mem.budgetLean]}`);
   }
-  if (mem.pace) {
-    lines.push(`- Preferred pace: ${PACE_TEXT[mem.pace]}`);
-  }
-  if (mem.avoid.length > 0) {
-    lines.push(`- Asked to avoid: ${mem.avoid.map(a => `"${a}"`).join('; ')}`);
+  if (mem.preferredVibes.length > 0) {
+    lines.push(`- Interests: ${mem.preferredVibes.join(', ')}. Favour stops of these kinds when choosing between options.`);
   }
   if (mem.specialNeeds.length > 0) {
-    lines.push(`- Special needs previously mentioned: ${mem.specialNeeds.join(', ')}`);
+    lines.push(`- Special needs previously stated: ${mem.specialNeeds.join(', ')}`);
+  }
+  if (mem.groupType) {
+    lines.push(`- Usually travels as: ${mem.groupType}`);
   }
   const pastDestinations = mem.visitedDestinations.filter(d => d.trim().toLowerCase() !== (currentDestination ?? '').trim().toLowerCase());
   if (pastDestinations.length > 0) {
@@ -367,10 +371,10 @@ export function buildMemoryPromptContext(mem: TravelMemory, currentDestination?:
     .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
     .map(([type]) => type);
   if (dislikedTypes.length > 0) {
-    lines.push(`- Has repeatedly removed these place types from past itineraries: ${dislikedTypes.join(', ')}`);
+    lines.push(`- Has repeatedly removed these place types from past itineraries, so leave them out: ${dislikedTypes.join(', ')}`);
   }
   if (mem.notes.length > 0) {
-    lines.push(`- Notes from past clarifications: ${mem.notes.map(n => `"${n}"`).join('; ')}`);
+    lines.push(`- Other things they said: ${mem.notes.map(n => `"${n}"`).join('; ')}`);
   }
 
   return lines.join('\n');

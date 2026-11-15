@@ -31,7 +31,7 @@ const base: Itinerary = {
   ],
 };
 const clone = (x: Itinerary): Itinerary => JSON.parse(JSON.stringify(x));
-const ctx = { poiNames: ['Nishiki Market', 'Gion Karyo Kaiseki', 'Fushimi Inari-taisha'], avoid: [] as string[], budgetCap: 1000 };
+const ctx = { poiIds: ['poi-nishiki', 'poi-karyo', 'poi-inari'], avoid: [] as string[], budgetCap: 1000 };
 
 describe('violatesAvoid', () => {
   it('matches names, notes and type labels in both languages', () => {
@@ -46,7 +46,7 @@ describe('violatesAvoid', () => {
 describe('validateReplan', () => {
   it('accepts a stop-level replacement from the search results and reports the change', () => {
     const after = clone(base);
-    after.days[0].slots[1].places = [place('n1', 'Nishiki Market', 35.005, 135.7649, { type: 'attraction', slotId: undefined })];
+    after.days[0].slots[1].places = [place('n1', 'Nishiki Market', 35.005, 135.7649, { type: 'attraction', slotId: undefined, poiId: 'poi-nishiki' })];
     const v = validateReplan(base, after, [{ dayNumber: 1, period: 'afternoon', slotId: 'slot-c' }], ctx);
     expect(v.ok).toBe(true);
     expect(v.changedPlaceIds).toEqual(['n1']);
@@ -55,12 +55,12 @@ describe('validateReplan', () => {
 
   it('rejects any change outside the targets, including removals and reorders', () => {
     const touched = clone(base);
-    touched.days[0].slots[1].places = [place('n1', 'Nishiki Market', 35.005, 135.7649)];
+    touched.days[0].slots[1].places = [place('n1', 'Nishiki Market', 35.005, 135.7649, { poiId: 'poi-nishiki' })];
     touched.days[1].slots[0].places[0].estimatedCost = 5;
     expect(validateReplan(base, touched, [{ dayNumber: 1, period: 'afternoon' }], ctx).issues).toEqual(['day 2 changed although it was not a target']);
 
     const dropped = clone(base);
-    dropped.days[0].slots[1].places = [place('n1', 'Nishiki Market', 35.005, 135.7649)];
+    dropped.days[0].slots[1].places = [place('n1', 'Nishiki Market', 35.005, 135.7649, { poiId: 'poi-nishiki' })];
     dropped.days[0].slots[0].places.pop();
     const v = validateReplan(base, dropped, [{ dayNumber: 1, period: 'afternoon' }], ctx);
     expect(v.ok).toBe(false);
@@ -68,11 +68,11 @@ describe('validateReplan', () => {
 
     const reordered = clone(base);
     reordered.days[0].slots[0].places.reverse();
-    reordered.days[0].slots[1].places = [place('n1', 'Nishiki Market', 35.005, 135.7649)];
+    reordered.days[0].slots[1].places = [place('n1', 'Nishiki Market', 35.005, 135.7649, { poiId: 'poi-nishiki' })];
     expect(validateReplan(base, reordered, [{ dayNumber: 1, period: 'afternoon' }], ctx).ok).toBe(false);
 
     const sibling = clone(base);
-    sibling.days[0].slots[0].places = [place('a', 'Kiyomizu-dera', 34.9949, 135.785), place('n2', 'Fushimi Inari-taisha', 34.9671, 135.7727)];
+    sibling.days[0].slots[0].places = [place('a', 'Kiyomizu-dera', 34.9949, 135.785), place('n2', 'Fushimi Inari-taisha', 34.9671, 135.7727, { poiId: 'poi-inari' })];
     sibling.days[0].slots[0].places[0].duration = 999;
     const v2 = validateReplan(base, sibling, [{ dayNumber: 1, period: 'morning', slotId: 'slot-b' }], ctx);
     expect(v2.issues.join(' ')).toContain('outside the target changed');
@@ -81,18 +81,25 @@ describe('validateReplan', () => {
   it('rejects ungrounded, avoided, far and over-budget new stops', () => {
     const after = clone(base);
     after.days[0].slots[1].places = [place('x', 'Imaginary Palace', 34.99, 135.77)];
-    expect(validateReplan(base, after, [{ dayNumber: 1, period: 'afternoon' }], ctx).issues[0]).toContain('not in this replanning');
+    expect(validateReplan(base, after, [{ dayNumber: 1, period: 'afternoon' }], ctx).issues[0]).toContain('poiId missing or unknown');
+    // A name that matches a result is not enough without the id; an id outside this run's results is rejected too.
+    const nameOnly = clone(base);
+    nameOnly.days[0].slots[1].places = [place('x', 'Nishiki Market', 35.005, 135.7649)];
+    expect(validateReplan(base, nameOnly, [{ dayNumber: 1, period: 'afternoon' }], ctx).ok).toBe(false);
+    const foreignId = clone(base);
+    foreignId.days[0].slots[1].places = [place('x', 'Nishiki Market', 35.005, 135.7649, { poiId: 'poi-from-last-week' })];
+    expect(validateReplan(base, foreignId, [{ dayNumber: 1, period: 'afternoon' }], ctx).ok).toBe(false);
 
     const avoided = clone(base);
-    avoided.days[0].slots[1].places = [place('x', 'Nishiki Market', 35.005, 135.7649, { type: 'shopping' })];
+    avoided.days[0].slots[1].places = [place('x', 'Nishiki Market', 35.005, 135.7649, { type: 'shopping', poiId: 'poi-nishiki' })];
     expect(validateReplan(base, avoided, [{ dayNumber: 1, period: 'afternoon' }], { ...ctx, avoid: ['购物'] }).issues[0]).toContain('avoid preference "购物"');
 
     const far = clone(base);
-    far.days[0].slots[1].places = [place('x', 'Fushimi Inari-taisha', 35.3, 135.7727)];
+    far.days[0].slots[1].places = [place('x', 'Fushimi Inari-taisha', 35.3, 135.7727, { poiId: 'poi-inari' })];
     expect(validateReplan(base, far, [{ dayNumber: 1, period: 'afternoon' }], ctx).issues.some(i => i.includes('min from'))).toBe(true);
 
     const pricey = clone(base);
-    pricey.days[0].slots[1].places = [place('x', 'Gion Karyo Kaiseki', 34.99, 135.77, { estimatedCost: 900 })];
+    pricey.days[0].slots[1].places = [place('x', 'Gion Karyo Kaiseki', 34.99, 135.77, { estimatedCost: 900, poiId: 'poi-karyo' })];
     expect(validateReplan(base, pricey, [{ dayNumber: 1, period: 'afternoon' }], ctx).issues.some(i => i.includes('over the ¥1000 cap'))).toBe(true);
     expect(validateReplan(base, pricey, [{ dayNumber: 1, period: 'afternoon' }], { ...ctx, budgetCap: undefined }).ok).toBe(true);
   });
@@ -100,7 +107,7 @@ describe('validateReplan', () => {
   it('ignores the derived time and travel fields when comparing fixed stops', () => {
     const after = clone(base);
     for (const d of after.days) for (const s of d.slots) for (const p of s.places) Object.assign(p, { start: '10:00', end: '11:00', travelFromPrev: { mode: 'walk', minutes: 5, distanceM: 300, estimated: true } });
-    after.days[0].slots[1].places = [place('n1', 'Nishiki Market', 35.005, 135.7649)];
+    after.days[0].slots[1].places = [place('n1', 'Nishiki Market', 35.005, 135.7649, { poiId: 'poi-nishiki' })];
     expect(validateReplan(base, after, [{ dayNumber: 1, period: 'afternoon' }], ctx).ok).toBe(true);
   });
 });

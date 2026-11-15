@@ -217,8 +217,8 @@ describe('memory v2: pace, avoid, extraction merge and per-item edits', () => {
     expect(next.preferredVibes[0]).toBe('nature');
     expect(next.notes).toEqual([]);
     const ctx = buildMemoryPromptContext(next);
-    expect(ctx).toContain('Preferred pace: relaxed');
-    expect(ctx).toContain('Asked to avoid: "early mornings"; "seafood"');
+    expect(ctx).toContain('Pace: relaxed: at most 3 stops per day');
+    expect(ctx).toContain('MUST AVOID: "early mornings"; "seafood"');
   });
 
   it('edits and removes single items', () => {

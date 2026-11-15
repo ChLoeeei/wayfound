@@ -3,7 +3,7 @@
  *
  * A result is applied only if:
  *  1. every stop outside the targets is unchanged (deep-equal, same order);
- *  2. every new stop's name matches a POI that this replanning searched;
+ *  2. every new stop carries the id of a POI this replanning searched (`poiId`), not just a matching name;
  *  3. no new stop violates the user's `avoid` list;
  *  4. estimated travel between a new stop and its neighbours is reasonable;
  *  5. the day's per-person total stays within the budget cap (+10%).
@@ -12,15 +12,14 @@ import type { Itinerary, Place, SlotPeriod } from '../src/types';
 import { DAILY_BUDGET_TOLERANCE, PERIOD_ORDER, dayCostPerPerson } from '../src/lib/itineraryOps';
 import en from '../src/locales/en.json';
 import zh from '../src/locales/zh.json';
-import { nameMatches } from './agent';
 import { estimateTravel } from './structure';
 import type { EditTarget } from './editParse';
 
 export const MAX_TRAVEL_MINUTES = 60;
 
 export interface ValidateContext {
-  /** Names of every POI the replanning run searched. */
-  poiNames: string[];
+  /** Ids of every POI the replanning run searched; a new stop must carry one of them as `poiId`. */
+  poiIds: string[];
   avoid: string[];
   budgetCap?: number;
   maxTravelMinutes?: number;
@@ -124,7 +123,7 @@ export function validateReplan(before: Itinerary, after: Itinerary, targets: Edi
     const ordered = [...d.slots].sort((a, b) => PERIOD_ORDER.indexOf(a.period) - PERIOD_ORDER.indexOf(b.period)).flatMap(s => s.places);
     ordered.forEach((p, i) => {
       if (!changedPlaceIds.includes(p.id)) return;
-      if (!ctx.poiNames.some(n => nameMatches(n, p.name))) issues.push(`"${p.name}" is not in this replanning's search results`);
+      if (!p.poiId || !ctx.poiIds.includes(p.poiId)) issues.push(`"${p.name}" does not carry the id of a search_places result from this replanning (poiId missing or unknown)`);
       const hit = violatesAvoid(p, ctx.avoid);
       if (hit) issues.push(`"${p.name}" goes against the user's avoid preference "${hit}"`);
       for (const nb of [ordered[i - 1], ordered[i + 1]]) {

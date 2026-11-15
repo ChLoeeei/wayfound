@@ -13,6 +13,9 @@ vi.mock('../../server/tools/index', () => {
     allPois() {
       return [...this.pois.values()];
     }
+    getPoi(id: string) {
+      return this.pois.get(id);
+    }
   }
   return {
     ToolContext,
@@ -109,7 +112,7 @@ describe('replanItinerary', () => {
   it('replaces one stop with a searched place, keeps the rest byte-identical, re-packs times', async () => {
     const { client } = clientReplying(
       { tool: 'search_places', args: { keywords: 'market', region: 'Kyoto' } },
-      JSON.stringify({ slots: [{ dayNumber: 1, period: 'afternoon', places: [{ id: 'new', name: 'Nishiki Market', type: 'shopping', coordinates: { lat: 1, lng: 1 }, estimatedCost: 50, duration: 90, aiNote: 'Food street' }] }] }),
+      JSON.stringify({ slots: [{ dayNumber: 1, period: 'afternoon', places: [{ id: 'new', poiId: 'poi-nishiki', name: 'Nishiki Market', type: 'shopping', coordinates: { lat: 1, lng: 1 }, estimatedCost: 50, duration: 90, aiNote: 'Food street' }] }] }),
     );
     const trace: any[] = [];
     const r = await replanItinerary(
@@ -140,7 +143,7 @@ describe('replanItinerary', () => {
   });
 
   it('rejects a result that violates the avoid list, retries once with the issues, then gives up', async () => {
-    const bad = JSON.stringify({ slots: [{ dayNumber: 1, period: 'afternoon', places: [{ id: 'n', name: 'Nishiki Market', type: 'shopping', coordinates: { lat: 1, lng: 1 }, estimatedCost: 50, duration: 90 }] }] });
+    const bad = JSON.stringify({ slots: [{ dayNumber: 1, period: 'afternoon', places: [{ id: 'n', poiId: 'poi-nishiki', name: 'Nishiki Market', type: 'shopping', coordinates: { lat: 1, lng: 1 }, estimatedCost: 50, duration: 90 }] }] });
     const { client, create } = clientReplying({ tool: 'search_places', args: { keywords: 'market' } }, bad, bad);
     const r = await replanItinerary({ itinerary: base, plan: plan({ targetSlots: [{ dayNumber: 1, period: 'afternoon' }] }), avoid: ['购物'] }, { client });
     expect(r.ok).toBe(false);
@@ -152,6 +155,15 @@ describe('replanItinerary', () => {
     expect(lastUser.content).toContain('rejected for these reasons');
   });
 
+  it('rejects a stop that only matches a result by name, without its id', async () => {
+    const nameOnly = JSON.stringify({ slots: [{ dayNumber: 1, period: 'afternoon', places: [{ id: 'n', name: 'Nishiki Market', type: 'shopping', coordinates: { lat: 35.005, lng: 135.7649 }, estimatedCost: 50, duration: 90 }] }] });
+    const { client } = clientReplying({ tool: 'search_places', args: { keywords: 'market' } }, nameOnly, nameOnly);
+    const r = await replanItinerary({ itinerary: base, plan: plan({ targetSlots: [{ dayNumber: 1, period: 'afternoon' }] }) }, { client });
+    expect(r.ok).toBe(false);
+    if (!('reason' in r) || r.reason !== 'invalid') throw new Error(JSON.stringify(r));
+    expect(r.issues.join(' ')).toContain('poiId missing or unknown');
+  });
+
   it('rejects an invented place that no search returned', async () => {
     const { client } = clientReplying(
       JSON.stringify({ slots: [{ dayNumber: 1, period: 'afternoon', places: [{ id: 'n', name: 'Imaginary Palace', type: 'attraction', coordinates: { lat: 34.99, lng: 135.77 }, estimatedCost: 0, duration: 60 }] }] }),
@@ -160,6 +172,6 @@ describe('replanItinerary', () => {
     const r = await replanItinerary({ itinerary: base, plan: plan({ targetSlots: [{ dayNumber: 1, period: 'afternoon' }] }) }, { client });
     expect(r.ok).toBe(false);
     if (!('reason' in r) || r.reason !== 'invalid') throw new Error(JSON.stringify(r));
-    expect(r.issues.join(' ')).toContain('not in this replanning');
+    expect(r.issues.join(' ')).toContain('poiId missing or unknown');
   });
 });

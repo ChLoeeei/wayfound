@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { EXTRACTION_SYSTEM_PROMPT, buildExtractionUserPrompt, extractPreferences, parseExtraction } from '../../server/preferences';
+import { EXTRACTION_SYSTEM_PROMPT, buildExtractionUserPrompt, extractPreferences, isTripScoped, parseExtraction } from '../../server/preferences';
 
 const texts = ['I hate early mornings and I do not eat seafood.', '我们喜欢慢慢逛，一天两三个地方就够了', 'Budget about 200 to 400 a day per person'];
 
@@ -84,3 +84,28 @@ describe('extractPreferences', () => {
     expect(EXTRACTION_SYSTEM_PROMPT).toMatch(/Never infer/);
   });
 });
+
+describe('trip-scoped statements are never remembered', () => {
+  it('recognises one-trip markers in both languages', () => {
+    expect(isTripScoped('Travelling with my parents this time')).toBe(true);
+    expect(isTripScoped('这次去上海主要是出差')).toBe(true);
+    expect(isTripScoped("I don't eat seafood")).toBe(false);
+    expect(isTripScoped('我吃素')).toBe(false);
+  });
+
+  it('drops items whose quote or sentence is about this trip, even with a valid quote', () => {
+    const texts = ['Travelling with my parents this time, they are in their 70s.', 'I never eat seafood.'];
+    const raw = JSON.stringify({
+      items: [
+        { field: 'note', value: 'travels with parents in their 70s', quote: 'they are in their 70s' },
+        { field: 'pace', value: 'relaxed', quote: 'Travelling with my parents this time' },
+        { field: 'avoid', value: 'seafood', quote: 'I never eat seafood' },
+      ],
+    });
+    const r = parseExtraction(raw, texts);
+    expect(r.items.map(i => i.field)).toEqual(['avoid']);
+    expect(r.dropped).toBe(2);
+    expect(EXTRACTION_SYSTEM_PROMPT).toMatch(/Skip anything scoped to this one trip/);
+  });
+});
+
