@@ -70,4 +70,21 @@ describe('ConversationPane edits', () => {
     expect(screen.getByTestId('edit-busy')).toBeInTheDocument();
     expect(screen.getByTestId('message-input')).toBeDisabled();
   });
+
+  it('enables the photo button only once a plan exists and a handler is given, and forwards the file', () => {
+    const files: string[] = [];
+    renderPane({ onSendMessage: () => {}, onPhotoFile: f => files.push(f.name) });
+    const button = screen.getByTestId('photo-button');
+    expect(button).not.toBeDisabled();
+    const input = screen.getByTestId('photo-input') as HTMLInputElement;
+    expect(input.accept).toContain('image/jpeg');
+    const file = new File(['x'], 'temple.jpg', { type: 'image/jpeg' });
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(files).toEqual(['temple.jpg']);
+  });
+
+  it('renders the photo card when a photo is in progress', () => {
+    renderPane({ onSendMessage: () => {}, onPhotoFile: () => {}, photo: { status: 'identifying', preview: 'x' } });
+    expect(screen.getByTestId('photo-card')).toBeInTheDocument();
+  });
 });

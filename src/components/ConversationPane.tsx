@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Camera, ArrowRight, Loader2 } from 'lucide-react';
-import type { ClarificationQuestion, Itinerary, PlanningInput } from '../types';
+import type { ClarificationQuestion, Itinerary, PlanningInput, SlotPeriod } from '../types';
 import type { TravelMemory } from '../lib/memory';
 import type { ChatTurn } from '../lib/editFlow';
+import type { PhotoCandidate, PhotoState } from '../lib/photoTypes';
+import { ACCEPTED_TYPES } from '../lib/photo';
+import PhotoCandidatesCard from './PhotoCandidatesCard';
 import { useT } from '../i18n';
 import PlanningForm, { diffDays } from './PlanningForm';
 import AIClarification from './AIClarification';
@@ -26,6 +29,12 @@ interface ConversationPaneProps {
   onSendMessage?: (text: string) => void;
   /** True while an edit is being parsed or replanned. */
   editBusy?: boolean;
+  /** Photo input (feature D). */
+  photo?: PhotoState | null;
+  onPhotoFile?: (file: File) => void;
+  onPhotoAdd?: (candidate: PhotoCandidate, dayNumber: number, period: SlotPeriod) => void;
+  onPhotoDismiss?: () => void;
+  activeDay?: number;
 }
 
 const USER_BUBBLE = 'self-end max-w-[88%] bg-text-main text-white px-3 py-2.5 rounded-[12px_12px_4px_12px]';
@@ -57,9 +66,16 @@ export default function ConversationPane({
   messages = [],
   onSendMessage,
   editBusy = false,
+  photo,
+  onPhotoFile,
+  onPhotoAdd,
+  onPhotoDismiss,
+  activeDay,
 }: ConversationPaneProps) {
   const t = useT();
   const [draft, setDraft] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+  const canPhoto = !!itinerary && stage === 'ready' && !!onPhotoFile;
   const generating = stage === 'generating' || (stage === 'clarifying' && clarifyQuestions.length === 0);
   const showForm = !input || formOpen;
   const canEdit = !!itinerary && stage === 'ready' && !!onSendMessage;
@@ -150,6 +166,17 @@ export default function ConversationPane({
         </ol>
       )}
 
+      {photo && itinerary && (
+        <PhotoCandidatesCard
+          photo={photo}
+          availableDays={itinerary.days.map(d => d.dayNumber)}
+          defaultDay={activeDay ?? itinerary.days[0]?.dayNumber ?? 1}
+          onAdd={(c, d, p) => onPhotoAdd?.(c, d, p)}
+          onDismiss={() => onPhotoDismiss?.()}
+          busy={editBusy}
+        />
+      )}
+
       {editBusy && (
         <div className={`${ASSISTANT_BUBBLE} flex items-center gap-2`} data-testid="edit-busy">
           <Loader2 size={14} className="animate-spin shrink-0" />
@@ -167,13 +194,26 @@ export default function ConversationPane({
         }}
         title={canEdit ? t('conversation.inputHint') : t('conversation.noPlanYet')}
       >
+        <input
+          ref={fileRef}
+          type="file"
+          accept={ACCEPTED_TYPES.join(',')}
+          className="hidden"
+          data-testid="photo-input"
+          onChange={e => {
+            const f = e.target.files?.[0];
+            if (f && onPhotoFile) onPhotoFile(f);
+            e.target.value = '';
+          }}
+        />
         <button
           type="button"
-          disabled
+          disabled={!canPhoto || editBusy || photo?.status === 'preparing' || photo?.status === 'identifying'}
           aria-label={t('conversation.addPhoto')}
-          title={t('conversation.photoDisabledHint')}
+          title={canPhoto ? t('conversation.addPhoto') : t('conversation.photoDisabledHint')}
           data-testid="photo-button"
-          className="w-10 h-10 rounded-lg bg-bg-base flex items-center justify-center text-text-main disabled:cursor-not-allowed"
+          onClick={() => fileRef.current?.click()}
+          className="w-10 h-10 rounded-lg bg-bg-base flex items-center justify-center text-text-main hover:bg-border disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Camera size={18} />
         </button>

@@ -28,7 +28,8 @@
     "eval:library:single": "EVAL_SETUP=single-lessons EVAL_LIBRARY=server/experience/data/library.single.json DISABLE_GEOAPIFY_SIMPLIFIED_RETRY=true TOOL_CACHE_DIR=tests/eval/.tool-cache npm run eval:test",
     "eval:compare-examples": "tsx tests/eval/build-compare-examples.ts",
     "eval:memory": "TOOL_CACHE_DIR=tests/eval/.tool-cache tsx tests/eval/run-memory-eval.ts",
-    "eval:edit": "TOOL_CACHE_DIR=tests/eval/.tool-cache tsx tests/eval/run-edit-eval.ts"
+    "eval:edit": "TOOL_CACHE_DIR=tests/eval/.tool-cache tsx tests/eval/run-edit-eval.ts",
+    "eval:photo": "TOOL_CACHE_DIR=tests/eval/.tool-cache tsx tests/eval/run-photo-eval.ts"
   },
   "dependencies": {
     "@amap/amap-jsapi-loader": "^1.0.1",

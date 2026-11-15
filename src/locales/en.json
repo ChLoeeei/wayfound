@@ -43,9 +43,9 @@
     "failed": "Planning failed: {error}",
     "inputPlaceholder": "Change a stop or a period, e.g. \"swap the museum on day 2 for a ramen place\"",
     "inputDisabledHint": "Editing a day by message is coming in a later version",
-    "photoDisabledHint": "Adding a place from a photo is coming in a later version",
+    "photoDisabledHint": "Add a photo once a plan exists",
     "send": "Send",
-    "addPhoto": "Add a photo or screenshot",
+    "addPhoto": "Add a photo or screenshot of a place",
     "inputHint": "Edits replan only the stops you name; the rest of the day stays as it is.",
     "noPlanYet": "Generate a plan first, then edit it here.",
     "thinking": "Working out what to change…",
@@ -385,5 +385,25 @@
     "unknown": "An unknown error was thrown while rendering",
     "retry": "Retry",
     "reload": "Reload page"
+  },
+  "photo": {
+    "preparing": "Preparing the image…",
+    "identifying": "Looking at the photo and checking the map…",
+    "seen": "Looks like {name} ({confidence}% sure)",
+    "nothingSeen": "I could not name a specific place in this image.",
+    "visibleText": "Text in the image",
+    "matched": "Matched to a search result. Confirm where to add it.",
+    "pickOne": "Pick the right one from these verified places, or dismiss.",
+    "noCandidates": "No map search result confirms this place, so nothing can be added.",
+    "exactMatch": "Name matches",
+    "addToDay": "Add to day {n}",
+    "verifiedNote": "Only places confirmed by a map search can be added; the photo itself is not stored.",
+    "added": "Added {name} to day {day} {period}.",
+    "errors": {
+      "type": "Please choose a JPEG, PNG or WebP image.",
+      "size": "That image is over 8 MB.",
+      "decode": "The image could not be read.",
+      "request": "Photo check failed: {error}"
+    }
   }
 }

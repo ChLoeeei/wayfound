@@ -43,9 +43,9 @@
     "failed": "生成失败：{error}",
     "inputPlaceholder": "修改某个地点或时段，例如“把第 2 天的博物馆换成一家拉面店”",
     "inputDisabledHint": "按时段修改行程将在后续版本提供",
-    "photoDisabledHint": "通过照片添加地点将在后续版本提供",
+    "photoDisabledHint": "生成行程后可以添加照片",
     "send": "发送",
-    "addPhoto": "添加照片或截图",
+    "addPhoto": "添加地点的照片或截图",
     "inputHint": "修改只会重新规划你提到的地点，当天其余安排保持不变。",
     "noPlanYet": "先生成行程，再在这里修改。",
     "thinking": "正在理解你要改什么…",
@@ -385,5 +385,25 @@
     "unknown": "渲染时抛出了未知错误",
     "retry": "重试",
     "reload": "重新加载页面"
+  },
+  "photo": {
+    "preparing": "正在处理图片…",
+    "identifying": "正在识别照片并核对地图…",
+    "seen": "看起来是 {name}（置信度 {confidence}%）",
+    "nothingSeen": "没能从这张图里认出具体的地点。",
+    "visibleText": "图中文字",
+    "matched": "已匹配到搜索结果，确认加到哪一天。",
+    "pickOne": "从这些核实过的地点里选一个，或者关闭。",
+    "noCandidates": "地图搜索没有核实到这个地点，无法加入行程。",
+    "exactMatch": "名称一致",
+    "addToDay": "加入第 {n} 天",
+    "verifiedNote": "只有地图搜索核实过的地点才能加入；照片本身不会被保存。",
+    "added": "已把 {name} 加入第 {day} 天{period}。",
+    "errors": {
+      "type": "请选择 JPEG、PNG 或 WebP 图片。",
+      "size": "图片超过 8 MB。",
+      "decode": "无法读取这张图片。",
+      "request": "照片识别失败：{error}"
+    }
   }
 }

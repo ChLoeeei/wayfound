@@ -14,6 +14,8 @@ import { diffDays } from './PlanningForm';
 import { insertPlace } from '../lib/itineraryOps';
 import { type ChatTurn, type EditPlan, type ReplanResponse, firstTargetDay, namesOfSlots, newTurn, pushHistory, replacePlan, toggleLock } from '../lib/editFlow';
 import { downloadAsPng } from '../lib/export';
+import { identifyPhotoRequest, placeFromCandidate, prepareImage } from '../lib/photo';
+import type { PhotoCandidate, PhotoState } from '../lib/photoTypes';
 import { loginWithGoogle, logout, saveItinerary, shareItinerary, onAuthStateChanged } from '../supabase';
 import type { User } from '@supabase/supabase-js';
 import {
@@ -102,6 +104,7 @@ export default function ItineraryApp() {
   const [history, setHistory] = useState<Itinerary[]>([]);
   const [changedPlaceIds, setChangedPlaceIds] = useState<string[]>([]);
   const [editBusy, setEditBusy] = useState(false);
+  const [photo, setPhoto] = useState<PhotoState | null>(null);
   const itineraryRef = useRef<Itinerary | null>(null);
   itineraryRef.current = itinerary;
 
@@ -358,6 +361,54 @@ export default function ItineraryApp() {
     });
   };
 
+  // ---- Photo input (feature D) ----
+  const handlePhotoFile = async (file: File) => {
+    const current = itineraryRef.current;
+    if (!current) return;
+    const preview = URL.createObjectURL(file);
+    setPhoto({ status: 'preparing', preview });
+    let image: string;
+    try {
+      image = await prepareImage(file);
+    } catch (err: any) {
+      const code = ['type', 'size', 'decode'].includes(err?.message) ? err.message : 'decode';
+      setPhoto({ status: 'failed', preview, error: t(`photo.errors.${code}`) });
+      return;
+    }
+    setPhoto({ status: 'identifying', preview: image });
+    try {
+      const result = await identifyPhotoRequest(image, current.destination, lang);
+      setPhoto({ status: 'ready', preview: image, result });
+    } catch (err: any) {
+      setPhoto({ status: 'failed', preview: image, error: t('photo.errors.request', { error: err?.message ?? String(err) }) });
+    }
+  };
+
+  const handlePhotoAdd = async (candidate: PhotoCandidate, dayNumber: number, period: SlotPeriod) => {
+    const current = itineraryRef.current;
+    if (!current) return;
+    const place = placeFromCandidate(candidate, photo?.result?.identified?.placeType);
+    const inserted = insertPlace(current, place, dayNumber, period);
+    setEditBusy(true);
+    try {
+      const res = await fetch(`${process.env.API_BASE_URL}/api/restructure`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itinerary: inserted }),
+      });
+      const next = (res.ok ? await res.json() : inserted) as Itinerary;
+      setHistory(h => pushHistory(h, current));
+      setItinerary(next);
+      setChangedPlaceIds([place.id]);
+      setSelectedPlaceId(place.id);
+      setActiveDay(dayNumber);
+      say(t('photo.added', { name: candidate.name, day: dayNumber, period: t(`period.${period}`) }), 'done');
+      setPhoto(null);
+    } finally {
+      setEditBusy(false);
+    }
+  };
+
   const handleFormSubmit = async (input: PlanningInput) => {
     setPendingInput(input);
     setStage('clarifying');
@@ -547,6 +598,11 @@ export default function ItineraryApp() {
           messages={messages}
           onSendMessage={handleSendMessage}
           editBusy={editBusy}
+          photo={photo}
+          onPhotoFile={handlePhotoFile}
+          onPhotoAdd={handlePhotoAdd}
+          onPhotoDismiss={() => setPhoto(null)}
+          activeDay={activeDay}
         />
 
         <div className="[flex:2.6_1_520px] min-w-0 flex flex-col gap-4 print:block">

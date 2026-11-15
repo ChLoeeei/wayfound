@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Search, X, Star, MapPin, Loader2 } from 'lucide-react';
 import type { Place, SlotPeriod } from '../types';
 import { PERIOD_ORDER } from '../lib/itineraryOps';
+import { inferPlaceType } from '../lib/photo';
 import { useT } from '../i18n';
 
 interface SearchResult {
@@ -22,21 +23,6 @@ interface PlaceSearchModalProps {
   availableDays: number[];
   onClose: () => void;
   onAdd: (place: Place, dayNumber: number, period: SlotPeriod) => void;
-}
-
-const TYPE_TO_PLACE_TYPE: Record<string, Place['type']> = {
-  '餐饮': 'restaurant',
-  '风景': 'attraction',
-  '住宿': 'hotel',
-  '购物': 'shopping',
-  '休闲': 'leisure',
-};
-
-function inferPlaceType(amapType: string): Place['type'] {
-  for (const [k, v] of Object.entries(TYPE_TO_PLACE_TYPE)) {
-    if (amapType.includes(k)) return v;
-  }
-  return 'attraction';
 }
 
 export default function PlaceSearchModal({
@@ -102,6 +88,7 @@ export default function PlaceSearchModal({
       aiNote: '',
       externalUrl: `https://ditu.amap.com/search?query=${encodeURIComponent(r.name)}`,
       searchQuery: r.name,
+      poiId: r.id,
     };
     onAdd(place, dayNumber, period);
     onClose();

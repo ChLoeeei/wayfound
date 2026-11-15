@@ -9,6 +9,7 @@ coverage/
 playwright-report/
 test-results/
 tests/eval/reports/
+tests/eval/.photo-cache/
 server/logs/
 .claude/settings.local.json
 {{pkgetc}}/

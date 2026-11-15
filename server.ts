@@ -17,6 +17,7 @@ import { structureItinerary } from "./server/structure";
 import type { Poi } from "./server/tools/provider";
 import { parseEdit } from "./server/editParse";
 import { replanItinerary, type ReplanRequest } from "./server/replan";
+import { identifyPhoto, PhotoInputError } from "./server/photo";
 
 // Persistent per-request trace files for the debug TraceViewer
 // (src/components/TraceViewer.tsx) — one JSON file per generation request,
@@ -360,6 +361,36 @@ async function startServer() {
       console.error("Error replanning:", error);
       res.status(500).json({ error: "Failed to replan." });
     }
+  });
+
+  // Photo / screenshot input (v2 feature D). The body carries one downscaled
+  // JPEG data URL, so this route alone gets a larger JSON limit. The image
+  // is checked by its bytes, stripped of metadata, shown to the vision
+  // model, and the name is verified with search_places; only search results
+  // come back as candidates. Nothing is written to disk.
+  app.post("/api/identify-photo", express.json({ limit: "9mb" }), async (req, res) => {
+    try {
+      const { image, destination, language } = req.body as { image?: unknown; destination?: unknown; language?: unknown };
+      if (typeof image !== "string" || typeof destination !== "string" || !destination.trim()) {
+        return res.status(400).json({ error: "image and destination are required." });
+      }
+      const result = await identifyPhoto(deepseek, image, destination.trim(), language === "zh" ? "zh" : "en");
+      res.json(result);
+    } catch (error: any) {
+      if (error instanceof PhotoInputError) return res.status(400).json({ error: error.message, code: error.code });
+      console.error("Error identifying photo:", error);
+      res.status(500).json({ error: "Failed to identify the photo." });
+    }
+  });
+
+  // Re-pack slot ids, estimated times and travel after a client-side edit
+  // (adding a verified photo candidate). Pure; see server/structure.ts.
+  app.post("/api/restructure", (req, res) => {
+    const { itinerary } = req.body as { itinerary?: any };
+    if (!itinerary?.days) return res.status(400).json({ error: "itinerary is required." });
+    const structured = structureItinerary(itinerary);
+    structured.version = (Number(itinerary.version) || 1) + 1;
+    res.json(structured);
   });
 
   // Preference extraction (v2 feature A): the free text a user typed in a
