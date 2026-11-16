@@ -1,0 +1,87 @@
+{
+  "stamp": "2026-11-15T12-32-01-272Z",
+  "summary": {
+    "cases": 1,
+    "extraction": {
+      "expected": 1,
+      "found": 1,
+      "recall": 1,
+      "inferred": 0
+    },
+    "adherenceWithMemory": 1,
+    "adherenceWithoutMemory": 0,
+    "runs": {
+      "withMemory": 1,
+      "withoutMemory": 1
+    },
+    "promptTokens": 64860,
+    "geoapifyRequests": 17
+  },
+  "records": [
+    {
+      "id": "zh-relaxed-pace",
+      "extraction": {
+        "items": [
+          {
+            "field": "pace",
+            "value": "relaxed",
+            "quote": "节奏慢一点，一天最多安排三个地方就好。"
+          }
+        ],
+        "dropped": 0,
+        "score": {
+          "expected": 1,
+          "found": 1,
+          "inferred": 0,
+          "missing": [],
+          "inferredItems": []
+        },
+        "promptTokens": 468,
+        "completionTokens": 35
+      },
+      "memoryContext": "Returning user profile (what this traveller told us in earlier sessions). Apply it unless the request above says otherwise:\n- Pace: relaxed: at most 3 stops per day, nothing scheduled before 10:00, longer stays. This overrides the usual 3-5 stops per day.",
+      "withMemory": {
+        "memoryContext": "Returning user profile (what this traveller told us in earlier sessions). Apply it unless the request above says otherwise:\n- Pace: relaxed: at most 3 stops per day, nothing scheduled before 10:00, longer stays. This overrides the usual 3-5 stops per day.",
+        "steps": 6,
+        "promptTokens": 31226,
+        "completionTokens": 2474,
+        "geoapifyRequests": 9,
+        "durationMs": 45418,
+        "places": 6,
+        "ungrounded": 1,
+        "checks": [
+          {
+            "check": {
+              "type": "maxPlacesPerDay",
+              "value": 3
+            },
+            "pass": true,
+            "detail": "per day: 3/3"
+          }
+        ],
+        "adherence": 1
+      },
+      "withoutMemory": {
+        "memoryContext": null,
+        "steps": 6,
+        "promptTokens": 33166,
+        "completionTokens": 3817,
+        "geoapifyRequests": 8,
+        "durationMs": 27171,
+        "places": 10,
+        "ungrounded": 4,
+        "checks": [
+          {
+            "check": {
+              "type": "maxPlacesPerDay",
+              "value": 3
+            },
+            "pass": false,
+            "detail": "per day: 5/5"
+          }
+        ],
+        "adherence": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,245 @@
+{
+  "stamp": "2026-11-15T12-30-18-349Z",
+  "summary": {
+    "cases": 3,
+    "parseIntentAccuracy": 1,
+    "parseTargetAccuracy": 1,
+    "outcomeAccuracy": 0.6666666666666666,
+    "editSuccess": 0.6666666666666666,
+    "checkPassRate": 0.3333333333333333,
+    "rawPreservationFirstAttempt": 1,
+    "rawPreservationLastAttempt": 1,
+    "appliedPreservation": 0.9454094292803971,
+    "meanPromptTokensWithModel": 11117.5,
+    "meanDurationMsWithModel": 7056.5,
+    "meanFullRegenerationPromptTokens": 133390,
+    "meanFullRegenerationDurationMs": 84786,
+    "geoapifyRequests": 13
+  },
+  "records": [
+    {
+      "id": "tokyo-replace-kappabashi-dessert",
+      "fixture": "tokyo",
+      "message": "Swap Kappabashi kitchen street on day 1 for a dessert cafe nearby",
+      "plan": {
+        "intent": "replace",
+        "targetSlots": [
+          {
+            "dayNumber": 1,
+            "period": "afternoon",
+            "slotId": "slot-tokyo-4"
+          }
+        ],
+        "add": [
+          {
+            "what": "dessert cafe nearby",
+            "type": "cafe"
+          }
+        ],
+        "keep": [],
+        "instruction": "Swap Kappabashi kitchen street on day 1 for a dessert cafe nearby"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "ok",
+      "result": {
+        "ok": false,
+        "reason": "invalid",
+        "issues": [
+          "the replanner ran out of steps"
+        ],
+        "attempt": 1
+      },
+      "candidates": [],
+      "toolCalls": 9,
+      "steps": 6,
+      "outcomeMatches": false,
+      "promptTokens": 29407,
+      "completionTokens": 1274,
+      "completions": 7,
+      "durationMs": 88259,
+      "geoapifyRequests": 13,
+      "fullRegeneration": {
+        "promptTokens": 179455,
+        "completionTokens": 8025,
+        "durationMs": 116222,
+        "steps": 8
+      }
+    },
+    {
+      "id": "kyoto-zh-avoid-temples",
+      "fixture": "kyoto",
+      "message": "第 4 天上午的天龙寺换一个不是寺庙的地方",
+      "plan": {
+        "intent": "replace",
+        "targetSlots": [
+          {
+            "dayNumber": 4,
+            "period": "morning",
+            "slotId": "slot-kyoto-22"
+          }
+        ],
+        "add": [
+          {
+            "what": "不是寺庙的地方",
+            "type": "attraction"
+          }
+        ],
+        "keep": [
+          "slot-kyoto-21"
+        ],
+        "instruction": "第 4 天上午的天龙寺换一个不是寺庙的地方"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "ok",
+      "result": {
+        "ok": true,
+        "attempt": 1,
+        "modelCalled": true,
+        "changed": 1,
+        "removed": 1
+      },
+      "candidates": [
+        {
+          "attempt": 1,
+          "preservation": {
+            "kept": 31,
+            "total": 31,
+            "rate": 1
+          },
+          "issues": [],
+          "rawAnswer": "{\"slots\":[{\"dayNumber\":4,\"period\":\"morning\",\"places\":[{\"id\":\"k4a\",\"name\":\"Arashiyama Bamboo Grove\",\"type\":\"attraction\",\"coordinates\":{\"lat\":35.0167419,\"lng\":135.6711482},\"estimatedCost\":0,\"duration\":75,\"aiNote\":\"清晨的竹林小径人少光线好，是岚山最经典的散步起点。\"},{\"id\":\"k4b-new\",\"poiId\":\"geoapify:51d2eb055599f5604059506b3fbe29814140f00102f901a473175000000000c002019203154d6f6e6b6579205061726b20497761746179616d61\",\"name\":\"Monkey Park Iwatayama\",\"type\":\"attraction\",\"coordinates\":{\"lat\":35.0090864,\"lng\":135.6749673},\"estimatedCost\":600,\"duration\":90,\"aiNote\":\"用岩田山猴子公园替代天龙寺，完全不是寺庙：从竹林步行约 1.7 公里即可到达，可近距离看野生猕猴并俯瞰京都市景，适合上午时段。\"}]}]}"
+        }
+      ],
+      "toolCalls": 4,
+      "steps": 3,
+      "preservationApplied": {
+        "kept": 30,
+        "total": 31,
+        "rate": 0.967741935483871
+      },
+      "checks": [
+        {
+          "check": {
+            "type": "noNewKeyword",
+            "keywords": [
+              "temple",
+              "寺",
+              "shrine",
+              "神社",
+              "-ji",
+              " ji"
+            ]
+          },
+          "pass": false,
+          "detail": "Monkey Park Iwatayama"
+        }
+      ],
+      "outcomeMatches": true,
+      "promptTokens": 11283,
+      "completionTokens": 734,
+      "completions": 4,
+      "durationMs": 5916,
+      "geoapifyRequests": 0,
+      "fullRegeneration": {
+        "promptTokens": 118443,
+        "completionTokens": 7952,
+        "durationMs": 107208,
+        "steps": 9
+      }
+    },
+    {
+      "id": "hefei-zh-replace-fish",
+      "fixture": "hefei",
+      "message": "把第 2 天晚上的臭鳜鱼换成清淡一点的餐厅",
+      "plan": {
+        "intent": "replace",
+        "targetSlots": [
+          {
+            "dayNumber": 2,
+            "period": "evening",
+            "slotId": "slot-hefei-14"
+          }
+        ],
+        "add": [
+          {
+            "what": "清淡一点的餐厅",
+            "type": "restaurant"
+          }
+        ],
+        "keep": [],
+        "instruction": "把第 2 天晚上的臭鳜鱼换成清淡一点的餐厅"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "ok",
+      "result": {
+        "ok": true,
+        "attempt": 1,
+        "modelCalled": true,
+        "changed": 1,
+        "removed": 1
+      },
+      "candidates": [
+        {
+          "attempt": 1,
+          "preservation": {
+            "kept": 13,
+            "total": 13,
+            "rate": 1
+          },
+          "issues": [],
+          "rawAnswer": "{\"slots\":[{\"dayNumber\":2,\"period\":\"evening\",\"places\":[{\"id\":\"d2e1-new\",\"poiId\":\"B0K07ADABI\",\"name\":\"绿茶餐厅(合肥天鹅湖万达店)\",\"type\":\"restaurant\",\"coordinates\":{\"lat\":31.818928,\"lng\":117.22086},\"estimatedCost\":80,\"duration\":90,\"aiNote\":\"主打江浙家常菜与清淡小炒，口味温和不重油重辣，正好替掉原来的臭鳜鱼；就在天鹅湖万达广场3层，紧接下午的万达广场行程，无需再跨城奔波。\"}]}]}"
+        }
+      ],
+      "toolCalls": 4,
+      "steps": 3,
+      "preservationApplied": {
+        "kept": 12,
+        "total": 13,
+        "rate": 0.9230769230769231
+      },
+      "checks": [
+        {
+          "check": {
+            "type": "newPlaceType",
+            "types": [
+              "restaurant"
+            ]
+          },
+          "pass": true,
+          "detail": "all match"
+        },
+        {
+          "check": {
+            "type": "noKeyword",
+            "keywords": [
+              "臭鳜鱼"
+            ]
+          },
+          "pass": false,
+          "detail": "罍+小吃(罍街店), 绿茶餐厅(合肥天鹅湖万达店)"
+        }
+      ],
+      "outcomeMatches": true,
+      "promptTokens": 10952,
+      "completionTokens": 437,
+      "completions": 4,
+      "durationMs": 8197,
+      "geoapifyRequests": 0,
+      "fullRegeneration": {
+        "promptTokens": 102272,
+        "completionTokens": 4770,
+        "durationMs": 30928,
+        "steps": 7
+      }
+    }
+  ]
+}
