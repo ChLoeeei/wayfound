@@ -2,7 +2,7 @@
 
 > Find your way, anywhere.
 
-**Live demo:** https://wayfound-ezv.pages.dev (v1; the v2 build below is not deployed yet)
+**Live demo (v2):** https://wayfound.onrender.com (Render free tier: the first request after idle takes ~30 s to wake; daily caps per IP and site-wide, see [Rate limits](#environment)). v1 remains at https://wayfound-ezv.pages.dev.
 
 ![Wayfound v2 demo: plan, see which lessons were used, replan one stop by message, add a place from a photo, compare library off vs on](docs/v2/demo.gif)
 
@@ -217,7 +217,7 @@ One table, generated from the committed result files by `npm run eval:summary --
 - **Held-out (留出集):** the library-vs-baseline rows come from the `test` split of `tests/eval/cases.json`, which the learning loop never sees; paired by case over 3 repeats with a 95% t-interval, so "significant" means the interval excludes 0. These are the only rows that estimate an effect.
 - **Development set (开发集):** the memory, edit and photo suites were written while those features were built, and the same cases were rerun after each fix (prompt wording, poiId grounding, name variants, the output-token budget of the vision call). Treat them as behaviour checks on known inputs; the Wilson intervals show how little 4 to 25 cases can say, and a single rate has nothing to be "significant" against.
 
-The photo and edit suites' last full runs predate two fixes made the same day (the vision call's `max_tokens` was too small for the model's reasoning, which returned empty answers on harder images; the replanner dropped a replacement that reused the target's id). A rerun with the fixes got through 16 of the 25 photo cases (15 of 16 top-1, every landmark) and 4 of 4 model replans before the API balance ran out; those partial numbers are listed separately and the full reruns are pending.
+The edit and photo rows are the full reruns after the last two fixes (the vision call's `max_tokens` was too small for the model's reasoning and returned empty answers on harder images; the replanner dropped a replacement that reused the target's id). For the record, the same day's earlier runs are also committed in `tests/eval/results/` (edit `…01-01-09…`: 5 of 8 edits; photo `…01-01-04…`: top-1 17/25; the partial photo rerun `…01-06-05…` that the API balance cut off at 16 cases). Remaining photo misses are OSM Overpass outages during the run (Colosseum, Shakespeare and Company, Sensō-ji: identified, no search result) and the blurred storefronts, where the model reported low confidence as intended. The three failed edit checks are notes that mention the avoided item while explaining the swap, and a fixture day that was over budget before a free park was added.
 
 <!-- eval-summary:start -->
 | 评测 | 指标 | 数字 | 样本量 | 95% 区间 | 显著 | 数据 |
@@ -230,39 +230,30 @@ The photo and edit suites' last full runs predate two fixes made the same day (t
 | 记忆评测（2026-11-15 12-18 + 1 次补跑） | Extraction recall (explicit statements found) | 9/9 (100%) | 8 cases | [70%, 100%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
 | 记忆评测（2026-11-15 12-18 + 1 次补跑） | Inferred (non-explicit) items, target 0 | 0 | 8 cases | - | - | 开发集（同一批用例修改后重跑） |
 | 记忆评测（2026-11-15 12-18 + 1 次补跑） | Check adherence with memory vs without (paired) | 83% vs 50% (+33 pp) | 6 cases × 2 runs | [-21 pp, +88 pp] | 否 | 开发集（同一批用例修改后重跑） |
-| 修改评测（2026-11-17 01-01） | Parse: intent correct | 10/10 (100%) | 10 | [72%, 100%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 修改评测（2026-11-17 01-01） | Parse: target correct | 10/10 (100%) | 10 | [72%, 100%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 修改评测（2026-11-17 01-01） | Outcome as expected (ok / locked / unclear) | 7/10 (70%) | 10 | [40%, 89%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 修改评测（2026-11-17 01-01） | Edit success where an edit was expected | 5/8 (63%) | 8 | [31%, 86%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 修改评测（2026-11-17 01-01） | Applied-result checks passed | 6/9 (67%) | 9 | [35%, 88%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 修改评测（2026-11-17 01-01） | Untouched-stop preservation, raw model answer (target 100%) | 100.0% (min 100%) | 6 model answers | - | - | 开发集（同一批用例修改后重跑） |
-| 修改评测（2026-11-17 01-01） | Untouched-stop preservation, applied result | 96.9% | 5 applied edits | - | - | 开发集（同一批用例修改后重跑） |
-| 修改评测（2026-11-17 01-01） | Prompt tokens: replan (model) vs regenerating the trip | 17,004 vs 137,997 | 3 replans vs 3 saved runs | - | - | 开发集（同一批用例修改后重跑） |
-| 修改评测（2026-11-17 01-01） | Time: replan (model) vs regenerating the trip | 14 s vs 88 s | 3 replans vs 3 saved runs | - | - | 开发集（同一批用例修改后重跑） |
-| 照片评测（2026-11-17 01-01） | All: Top-1 identification | 17/25 (68%) | 25 | [48%, 83%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测（2026-11-17 01-01） | All: Expected place among verified candidates | 15/25 (60%) | 25 | [41%, 77%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测（2026-11-17 01-01） | All: Verified by a search result | 15/25 (60%) | 25 | [41%, 77%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测（2026-11-17 01-01） | Confident but wrong (would preselect a wrong place), target 0 | 0/25 | 25 | [0%, 13%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测（2026-11-17 01-01） | Landmarks: Top-1 | 10/12 (83%) | 12 | [55%, 95%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测（2026-11-17 01-01） | Landmarks: Among verified candidates | 9/12 (75%) | 12 | [47%, 91%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测（2026-11-17 01-01） | Storefronts: Top-1 | 1/4 (25%) | 4 | [5%, 70%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测（2026-11-17 01-01） | Storefronts: Among verified candidates | 1/4 (25%) | 4 | [5%, 70%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测（2026-11-17 01-01） | Screenshots: Top-1 | 4/5 (80%) | 5 | [38%, 96%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测（2026-11-17 01-01） | Screenshots: Among verified candidates | 4/5 (80%) | 5 | [38%, 96%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测（2026-11-17 01-01） | Screenshots: caption injection resisted | 5/5 | 5 | [57%, 100%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测（2026-11-17 01-01） | Blurry: Top-1 | 2/4 (50%) | 4 | [15%, 85%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测（2026-11-17 01-01） | Blurry: Among verified candidates | 1/4 (25%) | 4 | [5%, 70%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测（2026-11-17 01-01） | Blurry: low confidence reported or right place | 4/4 | 4 | [51%, 100%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测（2026-11-17 01-01） | Errors (image fetch / API) | 0 | 25 | - | - | 开发集（同一批用例修改后重跑） |
-| 照片评测 部分重跑（2026-11-17 01-06，16/25 例，API 余额用完中断） | All: Top-1 identification | 15/16 (94%) | 16 | [72%, 99%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测 部分重跑（2026-11-17 01-06，16/25 例，API 余额用完中断） | All: Expected place among verified candidates | 14/16 (88%) | 16 | [64%, 97%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测 部分重跑（2026-11-17 01-06，16/25 例，API 余额用完中断） | All: Verified by a search result | 14/16 (88%) | 16 | [64%, 97%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测 部分重跑（2026-11-17 01-06，16/25 例，API 余额用完中断） | Confident but wrong (would preselect a wrong place), target 0 | 0/16 | 16 | [0%, 19%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测 部分重跑（2026-11-17 01-06，16/25 例，API 余额用完中断） | Landmarks: Top-1 | 12/12 (100%) | 12 | [76%, 100%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测 部分重跑（2026-11-17 01-06，16/25 例，API 余额用完中断） | Landmarks: Among verified candidates | 11/12 (92%) | 12 | [65%, 99%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测 部分重跑（2026-11-17 01-06，16/25 例，API 余额用完中断） | Storefronts: Top-1 | 3/4 (75%) | 4 | [30%, 95%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测 部分重跑（2026-11-17 01-06，16/25 例，API 余额用完中断） | Storefronts: Among verified candidates | 3/4 (75%) | 4 | [30%, 95%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
-| 照片评测 部分重跑（2026-11-17 01-06，16/25 例，API 余额用完中断） | Errors (image fetch / API) | 9 | 16 | - | - | 开发集（同一批用例修改后重跑） |
+| 修改评测（2026-11-17 01-31） | Parse: intent correct | 10/10 (100%) | 10 | [72%, 100%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 修改评测（2026-11-17 01-31） | Parse: target correct | 10/10 (100%) | 10 | [72%, 100%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 修改评测（2026-11-17 01-31） | Outcome as expected (ok / locked / unclear) | 10/10 (100%) | 10 | [72%, 100%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 修改评测（2026-11-17 01-31） | Edit success where an edit was expected | 8/8 (100%) | 8 | [68%, 100%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 修改评测（2026-11-17 01-31） | Applied-result checks passed | 11/14 (79%) | 14 | [52%, 92%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 修改评测（2026-11-17 01-31） | Untouched-stop preservation, raw model answer (target 100%) | 100.0% (min 100%) | 6 model answers | - | - | 开发集（同一批用例修改后重跑） |
+| 修改评测（2026-11-17 01-31） | Untouched-stop preservation, applied result | 98.5% | 8 applied edits | - | - | 开发集（同一批用例修改后重跑） |
+| 修改评测（2026-11-17 01-31） | Prompt tokens: replan (model) vs regenerating the trip | 13,196 vs 137,997 | 6 replans vs 3 saved runs | - | - | 开发集（同一批用例修改后重跑） |
+| 修改评测（2026-11-17 01-31） | Time: replan (model) vs regenerating the trip | 18 s vs 88 s | 6 replans vs 3 saved runs | - | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-31） | All: Top-1 identification | 21/25 (84%) | 25 | [65%, 94%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-31） | All: Expected place among verified candidates | 19/25 (76%) | 25 | [57%, 89%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-31） | All: Verified by a search result | 19/25 (76%) | 25 | [57%, 89%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-31） | Confident but wrong (would preselect a wrong place), target 0 | 0/25 | 25 | [0%, 13%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-31） | Landmarks: Top-1 | 12/12 (100%) | 12 | [76%, 100%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-31） | Landmarks: Among verified candidates | 11/12 (92%) | 12 | [65%, 99%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-31） | Storefronts: Top-1 | 3/4 (75%) | 4 | [30%, 95%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-31） | Storefronts: Among verified candidates | 3/4 (75%) | 4 | [30%, 95%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-31） | Screenshots: Top-1 | 4/5 (80%) | 5 | [38%, 96%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-31） | Screenshots: Among verified candidates | 4/5 (80%) | 5 | [38%, 96%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-31） | Screenshots: caption injection resisted | 5/5 | 5 | [57%, 100%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-31） | Blurry: Top-1 | 2/4 (50%) | 4 | [15%, 85%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-31） | Blurry: Among verified candidates | 1/4 (25%) | 4 | [5%, 70%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-31） | Blurry: low confidence reported or right place | 4/4 | 4 | [51%, 100%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-31） | Errors (image fetch / API) | 0 | 25 | - | - | 开发集（同一批用例修改后重跑） |
 <!-- eval-summary:end -->
 
 ## Known limitations
