@@ -55,7 +55,8 @@ export interface PhotoScore {
 }
 
 export function scorePhoto(result: IdentifyResult, c: PhotoCase, confidenceAuto: number): PhotoScore {
-  const top1 = !!result.identified && nameAccepted(result.identified.name, c.expect.names);
+  // The model gives a local name and an English name; either naming the place counts.
+  const top1 = !!result.identified && (nameAccepted(result.identified.name, c.expect.names) || nameAccepted(result.identified.nameEn ?? '', c.expect.names));
   const top3 = result.candidates.some(x => nameAccepted(x.name, c.expect.names));
   const first = result.candidates[0];
   const firstRight = !!first && nameAccepted(first.name, c.expect.names);

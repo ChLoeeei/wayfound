@@ -62,7 +62,13 @@ export default function PhotoCandidatesCard({ photo, availableDays, defaultDay, 
             <>
               <div className="font-medium" data-testid="photo-seen">
                 {result.identified?.name
-                  ? t('photo.seen', { name: result.identified.name, confidence: Math.round(result.identified.confidence * 100) })
+                  ? t('photo.seen', {
+                      name:
+                        result.identified.nameEn && result.identified.nameEn.toLowerCase() !== result.identified.name.toLowerCase()
+                          ? `${result.identified.name} / ${result.identified.nameEn}`
+                          : result.identified.name,
+                      confidence: Math.round(result.identified.confidence * 100),
+                    })
                   : t('photo.nothingSeen')}
                 {result.identified?.city ? ` · ${result.identified.city}` : ''}
               </div>

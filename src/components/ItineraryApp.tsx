@@ -15,6 +15,7 @@ import { insertPlace } from '../lib/itineraryOps';
 import { type ChatTurn, type EditPlan, type ReplanResponse, firstTargetDay, namesOfSlots, newTurn, pushHistory, replacePlan, toggleLock } from '../lib/editFlow';
 import { downloadAsPng } from '../lib/export';
 import { identifyPhotoRequest, placeFromCandidate, prepareImage } from '../lib/photo';
+import { apiErrorFrom, describeApiError } from '../lib/apiError';
 import type { PhotoCandidate, PhotoState } from '../lib/photoTypes';
 import { loginWithGoogle, logout, saveItinerary, shareItinerary, onAuthStateChanged } from '../supabase';
 import type { User } from '@supabase/supabase-js';
@@ -208,8 +209,8 @@ export default function ItineraryApp() {
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || t('actions.generateFailed'));
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw apiErrorFrom(res, data, t('actions.generateFailed'));
 
       const it = data as Itinerary;
       ensurePlaceIds(it);
@@ -226,7 +227,7 @@ export default function ItineraryApp() {
       updateMemory(updatedMemory);
       void extractFromSession(input);
     } catch (err: any) {
-      setError(err.message);
+      setError(describeApiError(err, t));
       setStage('idle');
     }
   };
@@ -280,8 +281,8 @@ export default function ItineraryApp() {
           specialNeeds: pendingInput?.specialNeeds,
         }),
       });
-      const data = (await res.json()) as ReplanResponse & { error?: string };
-      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      const data = (await res.json().catch(() => null)) as ReplanResponse & { error?: string };
+      if (!res.ok) throw apiErrorFrom(res, data, `HTTP ${res.status}`);
       if (data.ok === true) {
         ensurePlaceIds(data.itinerary);
         sanitiseItinerary(data.itinerary);
@@ -301,7 +302,7 @@ export default function ItineraryApp() {
         say(t('conversation.editFailed', { error: data.message }), 'error');
       }
     } catch (err: any) {
-      say(t('conversation.editFailed', { error: err?.message ?? String(err) }), 'error');
+      say(t('conversation.editFailed', { error: describeApiError(err, t) }), 'error');
     } finally {
       setEditBusy(false);
     }
@@ -319,12 +320,12 @@ export default function ItineraryApp() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ itinerary: current, message: text, language: lang, activeDay }),
       });
-      const data = (await res.json()) as { plan?: EditPlan; error?: string };
-      if (!res.ok || !data.plan) throw new Error(data.error || `HTTP ${res.status}`);
+      const data = (await res.json().catch(() => null)) as { plan?: EditPlan; error?: string } | null;
+      if (!res.ok || !data?.plan) throw apiErrorFrom(res, data, `HTTP ${res.status}`);
       plan = data.plan;
     } catch (err: any) {
       setEditBusy(false);
-      say(t('conversation.editFailed', { error: err?.message ?? String(err) }), 'error');
+      say(t('conversation.editFailed', { error: describeApiError(err, t) }), 'error');
       return;
     }
     if (plan.intent === 'unclear') {
@@ -380,7 +381,7 @@ export default function ItineraryApp() {
       const result = await identifyPhotoRequest(image, current.destination, lang);
       setPhoto({ status: 'ready', preview: image, result });
     } catch (err: any) {
-      setPhoto({ status: 'failed', preview: image, error: t('photo.errors.request', { error: err?.message ?? String(err) }) });
+      setPhoto({ status: 'failed', preview: image, error: t('photo.errors.request', { error: describeApiError(err, t) }) });
     }
   };
 

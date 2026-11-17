@@ -6,6 +6,19 @@
 
 ![Wayfound v2 demo: plan, see which lessons were used, replan one stop by message, add a place from a photo, compare library off vs on](docs/v2/demo.gif)
 
+<details>
+<summary>Screenshots (desktop and phone, EN / 中文)</summary>
+
+| | |
+|---|---|
+| ![Plan with the agent panel open: lessons used, trace](docs/v2/screenshots/desktop-en-plan-panel.png) | ![Compare page: library off vs on, same case](docs/v2/screenshots/step2-desktop-en-compare.png) |
+| ![Partial replanning by message, changed stop marked](docs/v2/screenshots/step4-desktop-zh-edit.png) | ![A place added from a photo, verified by search](docs/v2/screenshots/step5-desktop-zh-photo-added.png) |
+| ![My preferences tab](docs/v2/screenshots/step3-desktop-en-preferences.png) | ![Phone layout](docs/v2/screenshots/phone-zh-plan.png) |
+
+The upgrade brief and the design mock-ups the v2 UI was built from are in `docs/`: [`wayfound-v2-upgrade-brief.md`](docs/wayfound-v2-upgrade-brief.md), [`Main.dc.html`](docs/Main.dc.html), [`Drawer.dc.html`](docs/Drawer.dc.html), [`Compare.dc.html`](docs/Compare.dc.html).
+
+</details>
+
 Wayfound is an AI trip-planning tool: describe a trip (destination, dates, group, vibe, budget, special needs), and a tool-using LLM agent generates a structured, day-by-day itinerary — grounded in real place data wherever that data is available, and transparent about it when it isn't. You then edit the result on a map + list dual-pane view (drag places between days, swap them out, reorder a day's route).
 
 ## Problem statement
@@ -155,6 +168,9 @@ Copy `.env.example` to `.env` and fill in:
 | `GEOAPIFY_PLACES_API_KEY`, `GEOAPIFY_ROUTING_API_KEY` | recommended | Primary international place search + routing (free tier, no card) |
 | `ORS_API_KEY` | optional | Routing fallback if Geoapify is unset/fails |
 | `MAPBOX_ACCESS_TOKEN` | optional | Geocoding for search radius anchoring + last-resort routing fallback; everything degrades gracefully without it |
+| `RATE_LIMIT_PER_IP_DAILY`, `RATE_LIMIT_GLOBAL_DAILY` | optional | Daily caps (defaults 60 and 900 units; see below) |
+
+**Rate limits.** Every route that calls the model or a map provider is counted (`server/rateLimit.ts`), in cost units: a trip generation is 3, a replan 2, every other AI or search call 1 (`parse-edit`, `identify-photo`, `extract-preferences`, `verify-itinerary`, `search-places`). Two counters, reset at UTC midnight and kept in the process's memory: **per client IP, 60 units a day** (about 20 trips) and **site-wide, 900 units a day** (about 300 trips, which keeps the site under the Geoapify free tier of 2 700 requests). A refused request gets HTTP 429 with `code: "rate_limited"`, `scope: "ip" | "global"` and `resetAt`; the UI shows which cap was hit and when it resets, and nothing is run or counted for it. `GET /api/rate-limit` shows today's usage. Set a variable to `0` to turn that cap off. The server sits behind one proxy hop on Render (`trust proxy`), so the IP is the client's.
 
 Supabase table/OAuth setup: [`docs/SUPABASE_SETUP.md`](./docs/SUPABASE_SETUP.md).
 
@@ -183,6 +199,7 @@ npm run eval:compare-examples -- --baseline A.json --library B.json   # rebuild 
 npm run eval:memory                                   # two-stage memory cases: extraction recall / inferred items, adherence with vs without memory
 npm run eval:edit                                     # partial-replanning cases: parse accuracy, untouched-stop preservation, checks, cost vs full regeneration
 npm run eval:photo                                    # photo-input cases: top-1 / top-3, verified rate, confident-but-wrong (target 0), blur and caption-injection handling
+npm run eval:summary                                  # one table of every committed result (--readme rewrites the table below)
 ```
 
 `tests/eval/cases.json` (v3) holds 70 cases with a frozen train/test split, and each destination appears in only one split. The 60 v2 cases are 15 domestic + 15 international per side (pinned by a hash in `tests/unit/eval-cases.test.ts`). The 10 v3 **hard cases** (tagged `hard`: multi-city, ultra-long, tight budget, obscure destination, conflicting constraints) are 2 domestic + 3 international per side; they were added because the v2 baseline left the learning loop little headroom. `train` is reserved for the experience-library learning loop; reported numbers come from `test`, always shown twice: the full test set, and the original 30 cases (comparable with pre-v3 numbers). Each run gets a scalar reward, `0.3·tool + 0.3·constraint + 0.2·judge/5 − 0.5·hallucination`, with frozen weights (`tests/eval/scoring.ts`). Reward v2 checks the budget per day (the day's summed per-person costs must stay within the daily cap + 10%); earlier v1 results were rescored offline from their saved itineraries (`tests/eval/rescore.ts`). Runs hit by provider errors are rerun once and flagged if they stay degraded.
@@ -193,12 +210,68 @@ Setups are compared **paired by case** (`tests/eval/paired.ts`): for each case i
 
 Reports land in `tests/eval/reports/latest.{json,md}`, with each run's full generated itinerary saved alongside under `tests/eval/reports/itineraries/` for manual review. A full-split run also writes a compact summary (case ids, `cases.json` hash, commit, flags) to `tests/eval/results/`, which is meant to be committed.
 
+## Eval results
+
+One table, generated from the committed result files by `npm run eval:summary -- --readme` (`tests/eval/summary-table.ts`). Two kinds of numbers are mixed here and the last column says which:
+
+- **Held-out (留出集):** the library-vs-baseline rows come from the `test` split of `tests/eval/cases.json`, which the learning loop never sees; paired by case over 3 repeats with a 95% t-interval, so "significant" means the interval excludes 0. These are the only rows that estimate an effect.
+- **Development set (开发集):** the memory, edit and photo suites were written while those features were built, and the same cases were rerun after each fix (prompt wording, poiId grounding, name variants, the output-token budget of the vision call). Treat them as behaviour checks on known inputs; the Wilson intervals show how little 4 to 25 cases can say, and a single rate has nothing to be "significant" against.
+
+The photo and edit suites' last full runs predate two fixes made the same day (the vision call's `max_tokens` was too small for the model's reasoning, which returned empty answers on harder images; the replanner dropped a replacement that reused the target's id). A rerun with the fixes got through 16 of the 25 photo cases (15 of 16 top-1, every landmark) and 4 of 4 model replans before the API balance ran out; those partial numbers are listed separately and the full reruns are pending.
+
+<!-- eval-summary:start -->
+| 评测 | 指标 | 数字 | 样本量 | 95% 区间 | 显著 | 数据 |
+|---|---|---|---|---|---|---|
+| 经验库 vs baseline（paired, 3 repeats） | Tool-call correctness, international (core 30) | 0.863 → 0.940 (+0.077; 11 better / 2 worse) | 15 cases × 3 | [+0.033, +0.121] | 是 | 留出集（test split） |
+| 经验库 vs baseline（paired, 3 repeats） | Hallucination rate, domestic (core 30) | 2.2% → 0.4% (-1.8 pp) | 15 cases × 3 | [-3.6, -0.1] pp | 是 | 留出集（test split） |
+| 经验库 vs baseline（paired, 3 repeats） | Reward, original 30 cases | 0.731 → 0.743 (+0.013; 22 better / 6 worse) | 30 cases × 3 | [+0.003, +0.022] | 是 | 留出集（test split） |
+| 经验库 vs baseline（paired, 3 repeats） | Reward, all 35 cases | 0.724 → 0.734 (+0.010; 26 better / 7 worse) | 35 cases × 3 | [-0.008, +0.028] | 否 | 留出集（test split） |
+| 经验库 vs baseline（paired, 3 repeats） | Prompt tokens per run (core 30) | +25% (24,734 tokens) | 30 cases × 3 | [13%, 37%] | 是 | 留出集（test split） |
+| 记忆评测（2026-11-15 12-18 + 1 次补跑） | Extraction recall (explicit statements found) | 9/9 (100%) | 8 cases | [70%, 100%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 记忆评测（2026-11-15 12-18 + 1 次补跑） | Inferred (non-explicit) items, target 0 | 0 | 8 cases | - | - | 开发集（同一批用例修改后重跑） |
+| 记忆评测（2026-11-15 12-18 + 1 次补跑） | Check adherence with memory vs without (paired) | 83% vs 50% (+33 pp) | 6 cases × 2 runs | [-21 pp, +88 pp] | 否 | 开发集（同一批用例修改后重跑） |
+| 修改评测（2026-11-17 01-01） | Parse: intent correct | 10/10 (100%) | 10 | [72%, 100%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 修改评测（2026-11-17 01-01） | Parse: target correct | 10/10 (100%) | 10 | [72%, 100%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 修改评测（2026-11-17 01-01） | Outcome as expected (ok / locked / unclear) | 7/10 (70%) | 10 | [40%, 89%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 修改评测（2026-11-17 01-01） | Edit success where an edit was expected | 5/8 (63%) | 8 | [31%, 86%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 修改评测（2026-11-17 01-01） | Applied-result checks passed | 6/9 (67%) | 9 | [35%, 88%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 修改评测（2026-11-17 01-01） | Untouched-stop preservation, raw model answer (target 100%) | 100.0% (min 100%) | 6 model answers | - | - | 开发集（同一批用例修改后重跑） |
+| 修改评测（2026-11-17 01-01） | Untouched-stop preservation, applied result | 96.9% | 5 applied edits | - | - | 开发集（同一批用例修改后重跑） |
+| 修改评测（2026-11-17 01-01） | Prompt tokens: replan (model) vs regenerating the trip | 17,004 vs 137,997 | 3 replans vs 3 saved runs | - | - | 开发集（同一批用例修改后重跑） |
+| 修改评测（2026-11-17 01-01） | Time: replan (model) vs regenerating the trip | 14 s vs 88 s | 3 replans vs 3 saved runs | - | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-01） | All: Top-1 identification | 17/25 (68%) | 25 | [48%, 83%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-01） | All: Expected place among verified candidates | 15/25 (60%) | 25 | [41%, 77%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-01） | All: Verified by a search result | 15/25 (60%) | 25 | [41%, 77%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-01） | Confident but wrong (would preselect a wrong place), target 0 | 0/25 | 25 | [0%, 13%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-01） | Landmarks: Top-1 | 10/12 (83%) | 12 | [55%, 95%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-01） | Landmarks: Among verified candidates | 9/12 (75%) | 12 | [47%, 91%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-01） | Storefronts: Top-1 | 1/4 (25%) | 4 | [5%, 70%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-01） | Storefronts: Among verified candidates | 1/4 (25%) | 4 | [5%, 70%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-01） | Screenshots: Top-1 | 4/5 (80%) | 5 | [38%, 96%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-01） | Screenshots: Among verified candidates | 4/5 (80%) | 5 | [38%, 96%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-01） | Screenshots: caption injection resisted | 5/5 | 5 | [57%, 100%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-01） | Blurry: Top-1 | 2/4 (50%) | 4 | [15%, 85%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-01） | Blurry: Among verified candidates | 1/4 (25%) | 4 | [5%, 70%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-01） | Blurry: low confidence reported or right place | 4/4 | 4 | [51%, 100%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测（2026-11-17 01-01） | Errors (image fetch / API) | 0 | 25 | - | - | 开发集（同一批用例修改后重跑） |
+| 照片评测 部分重跑（2026-11-17 01-06，16/25 例，API 余额用完中断） | All: Top-1 identification | 15/16 (94%) | 16 | [72%, 99%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测 部分重跑（2026-11-17 01-06，16/25 例，API 余额用完中断） | All: Expected place among verified candidates | 14/16 (88%) | 16 | [64%, 97%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测 部分重跑（2026-11-17 01-06，16/25 例，API 余额用完中断） | All: Verified by a search result | 14/16 (88%) | 16 | [64%, 97%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测 部分重跑（2026-11-17 01-06，16/25 例，API 余额用完中断） | Confident but wrong (would preselect a wrong place), target 0 | 0/16 | 16 | [0%, 19%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测 部分重跑（2026-11-17 01-06，16/25 例，API 余额用完中断） | Landmarks: Top-1 | 12/12 (100%) | 12 | [76%, 100%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测 部分重跑（2026-11-17 01-06，16/25 例，API 余额用完中断） | Landmarks: Among verified candidates | 11/12 (92%) | 12 | [65%, 99%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测 部分重跑（2026-11-17 01-06，16/25 例，API 余额用完中断） | Storefronts: Top-1 | 3/4 (75%) | 4 | [30%, 95%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测 部分重跑（2026-11-17 01-06，16/25 例，API 余额用完中断） | Storefronts: Among verified candidates | 3/4 (75%) | 4 | [30%, 95%] (Wilson) | - | 开发集（同一批用例修改后重跑） |
+| 照片评测 部分重跑（2026-11-17 01-06，16/25 例，API 余额用完中断） | Errors (image fetch / API) | 9 | 16 | - | - | 开发集（同一批用例修改后重跑） |
+<!-- eval-summary:end -->
+
 ## Known limitations
 
 - International place/route data is best-effort across a 4–5 layer fallback chain, not a guaranteed single source of truth — see the reliability section above.
 - `get_weather`, `validate_itinerary` (auto-correction loop), `search_flights`, `search_hotels` are specced but not implemented; `/api/verify-itinerary` exists as a standalone critic endpoint, not wired into the generation loop itself.
-- User memory is per-browser until the user logs in (then it lives in the `user_memory` row). Two-stage memory eval, second run after a firmer memory block and a stricter extractor (`tests/eval/results/memory-eval-2026-11-15T12-18-49-528Z.json` plus the rerun of one lost case): extraction recall 9/9 with 0 inferred items; adherence 83% with memory vs 50% without over 6 cases (+33 pp, 95% t-interval [−21, +88] pp: too few cases to call it significant). The first run (`…07-23-41…`) had found no gain.
-- Partial replanning eval (`tests/eval/results/edit-eval-2026-11-15T12-14-48-257Z.json`, 10 cases, poiId grounding): the parser got every intent and target; untouched stops were preserved in 100% of the model's answers; 5 of 8 expected edits succeeded on the full run (the replanner gives up or runs out of its 6 steps on some `replace` requests; two of the failures passed on a rerun), and a replan costs about 18k prompt tokens / 26 s against 138k / 88 s for regenerating the trip.
-- Photo eval (`tests/eval/results/photo-eval-2026-11-15T12-17-08-596Z.json`, 25 Commons images): top-1 identification 18/25, expected place among verified candidates 15/25, confident-but-wrong 0/25, caption injection ignored 5/5, every blurry image reported low confidence or the right place. Misses are mostly "identified but no search result" (storefronts, local-language names when OSM Overpass was down).
+- User memory is per-browser until the user logs in (then it lives in the `user_memory` row). The memory eval (6 to 8 cases) shows adherence moving the right way with memory, but the interval is far too wide to call it an effect; see the results table.
+- Partial replanning: the replanner's first search is now seeded from the parsed request and a replacement that reuses the target's id counts as a change; before those fixes 5 of 8 expected edits succeeded on the full run. Replans cost about 17k prompt tokens / 14 s against 138k / 88 s for regenerating the trip. The model's notes sometimes mention the thing the user asked to avoid while explaining the swap, which the `noKeyword` checks count as failures.
+- Photo input: misses are "identified but no search result" (storefronts, a name the provider does not index) rather than wrong preselections (0 confident-but-wrong so far). The vision model now returns a local and an English name and both are tried, and OSM Overpass outages during the runs cost several verifications.
+- Rate limits are in-process counters: a restart or a second instance starts the day's counts from zero. Good enough for one free-tier instance, not a shared quota.
 - Trace files (`server/logs/traces/`) have no retention/cleanup policy yet — fine for a demo, not for long-running production use as-is.
 - Place photos only appear when a map provider actually returned one. The model used to invent plausible-looking `imageUrl`s (confirmed live: a Sensō-ji card showed an unrelated stock portrait), so the agent now blanks any `imageUrl` that isn't a `photoUrl` from that run's own tool results (`sanitizeImageUrls` in `server/agent.ts`). In practice that means mainland-China (Amap) places can have photos and international places mostly don't.

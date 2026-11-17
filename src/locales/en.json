@@ -386,6 +386,10 @@
     "retry": "Retry",
     "reload": "Reload page"
   },
+  "limits": {
+    "ip": "This network has used its daily allowance ({limit} units); it resets at {time}. Nothing was run.",
+    "global": "Wayfound has reached its site-wide daily allowance ({limit} units); it resets at {time}. Nothing was run."
+  },
   "photo": {
     "preparing": "Preparing the image…",
     "identifying": "Looking at the photo and checking the map…",

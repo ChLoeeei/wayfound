@@ -5,6 +5,7 @@
  * (EXIF, GPS) before the image leaves the device; the server strips again.
  */
 import type { Place, SlotPeriod } from '../types';
+import { apiErrorFrom } from './apiError';
 import type { PhotoCandidate, IdentifyResult } from './photoTypes';
 
 export const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
@@ -56,8 +57,8 @@ export async function identifyPhotoRequest(image: string, destination: string, l
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ image, destination, language }),
   });
-  const data = (await res.json()) as IdentifyResult & { error?: string };
-  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  const data = (await res.json().catch(() => null)) as (IdentifyResult & { error?: string }) | null;
+  if (!res.ok || !data) throw apiErrorFrom(res, data, `HTTP ${res.status}`);
   return data;
 }
 

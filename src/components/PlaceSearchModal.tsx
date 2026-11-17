@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { apiErrorFrom, describeApiError } from '../lib/apiError';
 import { Search, X, Star, MapPin, Loader2 } from 'lucide-react';
 import type { Place, SlotPeriod } from '../types';
 import { PERIOD_ORDER } from '../lib/itineraryOps';
@@ -59,11 +60,11 @@ export default function PlaceSearchModal({
       try {
         const params = new URLSearchParams({ q: query, region: destination, limit: '10' });
         const res = await fetch(`${process.env.API_BASE_URL}/api/search-places?${params.toString()}`);
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || t('search.failed'));
+        const data = await res.json().catch(() => null);
+        if (!res.ok) throw apiErrorFrom(res, data, t('search.failed'));
         setResults(data.results ?? []);
       } catch (e: any) {
-        setError(e.message);
+        setError(describeApiError(e, t));
         setResults([]);
       } finally {
         setLoading(false);

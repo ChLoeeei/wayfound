@@ -33,7 +33,7 @@ vi.mock('../../server/tools/index', () => {
   };
 });
 
-import { replanItinerary } from '../../server/replan';
+import { replanItinerary, seedKeywords } from '../../server/replan';
 import type { EditPlan } from '../../server/editParse';
 import type { Itinerary, Place } from '../../src/types';
 
@@ -138,8 +138,34 @@ describe('replanItinerary', () => {
     beforeStripped[0][1] = [];
     afterStripped[0][1] = [];
     expect(afterStripped).toEqual(beforeStripped);
-    expect(trace[0].name).toBe('search_places');
-    expect(searches[0].args.region).toBe('Kyoto');
+    // The first search is seeded from the parsed request, before the model's first step, and the model sees it.
+    expect(searches[0]).toEqual({ name: 'search_places', args: { keywords: 'food market', region: 'Kyoto', limit: 8 } });
+    expect(searches[1].args.keywords).toBe('market');
+    expect(trace.map(t => t.step)).toEqual([0, 0]);
+    const firstCall = (client.chat.completions.create as any).mock.calls[0][0].messages;
+    expect(firstCall.slice(0, 4).map((m: any) => m.role)).toEqual(['system', 'user', 'assistant', 'tool']);
+    expect(firstCall[3].content).toContain('poi-nishiki');
+  });
+
+  it('counts a replacement that reuses the target stop\'s id as a change, not as a copied fixed stop', async () => {
+    // Models often keep the slot's original id ("c") for the new place. The name differs, so it is a new stop.
+    const { client } = clientReplying(
+      JSON.stringify({ slots: [{ dayNumber: 1, period: 'afternoon', places: [{ id: 'c', poiId: 'poi-nishiki', name: 'Nishiki Market', type: 'shopping', coordinates: { lat: 1, lng: 1 }, estimatedCost: 50, duration: 90 }] }] }),
+    );
+    const r = await replanItinerary({ itinerary: base, plan: plan({ targetSlots: [{ dayNumber: 1, period: 'afternoon', slotId: 'slot-c' }], add: [{ what: 'a market' }] }) }, { client });
+    if (!r.ok) throw new Error(JSON.stringify(r));
+    expect(r.itinerary.days[0].slots[1].places.map(p => p.name)).toEqual(['Nishiki Market']);
+    expect(r.itinerary.days[0].slots[1].places[0].id).not.toBe('c');
+    expect(r.removedPlaceIds).toEqual(['c']);
+    expect(r.changedPlaceIds).toHaveLength(1);
+  });
+
+  it('seeds nothing when the parser extracted nothing to add, and normalises the keywords', () => {
+    expect(seedKeywords('a dessert cafe nearby')).toBe('dessert cafe');
+    expect(seedKeywords('something indoors instead')).toBe('something indoors');
+    expect(seedKeywords('一个免费的公园')).toBe('免费的公园');
+    expect(seedKeywords('附近的清淡一点的餐厅')).toBe('清淡一点的餐厅');
+    expect(seedKeywords('  ')).toBe('');
   });
 
   it('rejects a result that violates the avoid list, retries once with the issues, then gives up', async () => {

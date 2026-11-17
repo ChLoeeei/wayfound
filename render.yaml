@@ -1,0 +1,38 @@
+# Render Blueprint: one web service that serves the built client (dist/) and
+# the API from the same origin, so no CORS or API_BASE_URL is needed.
+# Secrets are set in the Render dashboard (sync: false), never here.
+services:
+  - type: web
+    name: wayfound
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/lessons
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: AMAP_API_KEY
+        sync: false
+      - key: AMAPJS_API_KEY
+        sync: false
+      - key: AMAP_SECURITY_CODE
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: GEOAPIFY_PLACES_API_KEY
+        sync: false
+      - key: GEOAPIFY_ROUTING_API_KEY
+        sync: false
+      - key: ORS_API_KEY
+        sync: false
+      - key: RATE_LIMIT_PER_IP_DAILY
+        value: "60"
+      - key: RATE_LIMIT_GLOBAL_DAILY
+        value: "900"

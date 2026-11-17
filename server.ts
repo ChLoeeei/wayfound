@@ -18,6 +18,7 @@ import type { Poi } from "./server/tools/provider";
 import { parseEdit } from "./server/editParse";
 import { replanItinerary, type ReplanRequest } from "./server/replan";
 import { identifyPhoto, PhotoInputError } from "./server/photo";
+import { DailyRateLimiter, rateLimit, rateLimitConfigFromEnv } from "./server/rateLimit";
 
 // Persistent per-request trace files for the debug TraceViewer
 // (src/components/TraceViewer.tsx) — one JSON file per generation request,
@@ -58,7 +59,16 @@ async function startServer() {
   const app = express();
   const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
+  // One proxy hop (Render / Railway) in front of us: req.ip is the client's address, which the rate limiter keys on.
+  app.set('trust proxy', 1);
   app.use(express.json({ limit: '1mb' }));
+
+  // Daily caps on everything that calls the model or a map provider (server/rateLimit.ts):
+  // per IP and site-wide, weighted by cost (generation 3, replan 2, the rest 1).
+  const limiter = new DailyRateLimiter(rateLimitConfigFromEnv());
+  console.log(`[rate-limit] per IP ${limiter.config.perIpDaily || 'off'} units/day, site-wide ${limiter.config.globalDaily || 'off'} units/day (generation 3, replan 2, other AI/search calls 1)`);
+  const limited = (weight: number) => rateLimit(limiter, weight);
+  app.get('/api/rate-limit', (req, res) => res.json({ ...limiter.status(req.ip), perIpDaily: limiter.config.perIpDaily, globalDaily: limiter.config.globalDaily, weights: { generate: 3, replan: 2, other: 1 } }));
 
   // Allow requests from Cloudflare Pages and local dev
   app.use((req, res, next) => {
@@ -151,7 +161,7 @@ async function startServer() {
     }
   });
 
-  app.get("/api/search-places", async (req, res) => {
+  app.get("/api/search-places", limited(1), async (req, res) => {
     try {
       const keywords = String(req.query.q || '').trim();
       const region = req.query.region ? String(req.query.region) : undefined;
@@ -181,7 +191,7 @@ async function startServer() {
     }
   });
 
-  app.post("/api/generate-itinerary", async (req, res) => {
+  app.post("/api/generate-itinerary", limited(3), async (req, res) => {
     const requestId = randomUUID();
     const startedAt = Date.now();
     // Populated so we can tell whether get_destination_context (Wikivoyage,
@@ -308,7 +318,7 @@ async function startServer() {
   });
 
   // Partial replanning (v2 feature C), step 1: what does the user want to change?
-  app.post("/api/parse-edit", async (req, res) => {
+  app.post("/api/parse-edit", limited(1), async (req, res) => {
     try {
       const { itinerary, message, language, activeDay } = req.body as { itinerary?: any; message?: unknown; language?: unknown; activeDay?: unknown };
       if (!itinerary?.days || typeof message !== "string" || !message.trim()) {
@@ -325,7 +335,7 @@ async function startServer() {
   // Partial replanning, step 2: replan only the target slots and validate
   // (server/replan.ts + replanValidate.ts). The user's avoid list comes from
   // their own memory in the browser; the experience library is not used here.
-  app.post("/api/replan", async (req, res) => {
+  app.post("/api/replan", limited(2), async (req, res) => {
     const requestId = randomUUID();
     const startedAt = Date.now();
     const trace: ToolCallRecord[] = [];
@@ -368,7 +378,7 @@ async function startServer() {
   // is checked by its bytes, stripped of metadata, shown to the vision
   // model, and the name is verified with search_places; only search results
   // come back as candidates. Nothing is written to disk.
-  app.post("/api/identify-photo", express.json({ limit: "9mb" }), async (req, res) => {
+  app.post("/api/identify-photo", limited(1), express.json({ limit: "9mb" }), async (req, res) => {
     try {
       const { image, destination, language } = req.body as { image?: unknown; destination?: unknown; language?: unknown };
       if (typeof image !== "string" || typeof destination !== "string" || !destination.trim()) {
@@ -397,7 +407,7 @@ async function startServer() {
   // session -> structured memory fields, each backed by a verbatim quote
   // (server/preferences.ts). The result goes to the user's own memory
   // (browser, or the account row when signed in), never to the experience library.
-  app.post("/api/extract-preferences", async (req, res) => {
+  app.post("/api/extract-preferences", limited(1), async (req, res) => {
     try {
       const { texts, language } = req.body as { texts?: unknown; language?: unknown };
       const clean = Array.isArray(texts) ? texts.filter((t): t is string => typeof t === "string").map(t => t.slice(0, 1000)).slice(0, 20) : [];
@@ -451,7 +461,7 @@ async function startServer() {
     }
   });
 
-  app.post("/api/verify-itinerary", async (req, res) => {
+  app.post("/api/verify-itinerary", limited(1), async (req, res) => {
     try {
       const { itinerary } = req.body;
       const prompt = `You are an AI travel assistant. Analyze the given itinerary and find issues:

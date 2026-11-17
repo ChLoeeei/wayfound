@@ -29,7 +29,8 @@
     "eval:compare-examples": "tsx tests/eval/build-compare-examples.ts",
     "eval:memory": "TOOL_CACHE_DIR=tests/eval/.tool-cache tsx tests/eval/run-memory-eval.ts",
     "eval:edit": "TOOL_CACHE_DIR=tests/eval/.tool-cache tsx tests/eval/run-edit-eval.ts",
-    "eval:photo": "TOOL_CACHE_DIR=tests/eval/.tool-cache tsx tests/eval/run-photo-eval.ts"
+    "eval:photo": "TOOL_CACHE_DIR=tests/eval/.tool-cache tsx tests/eval/run-photo-eval.ts",
+    "eval:summary": "tsx tests/eval/summary-table.ts"
   },
   "dependencies": {
     "@amap/amap-jsapi-loader": "^1.0.1",

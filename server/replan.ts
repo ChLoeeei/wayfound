@@ -19,7 +19,7 @@ import type { Itinerary, Place, PlaceType, SlotPeriod } from '../src/types';
 import { PERIOD_ORDER } from '../src/lib/itineraryOps';
 import { ToolContext, runTool, toolDefinitions } from './tools/index';
 import { parseLngLat } from './tools/provider';
-import { type AgentStepRecord, type AgentUsage, type ToolCallRecord, MAX_OUTPUT_TOKENS, addUsage, parseJsonLoose } from './agent';
+import { type AgentStepRecord, type AgentUsage, type ToolCallRecord, MAX_OUTPUT_TOKENS, addUsage, nameMatches, parseJsonLoose } from './agent';
 import { type EditPlan, type EditTarget, lockedTargets } from './editParse';
 import { structureItinerary } from './structure';
 import { type ValidationResult, validateReplan, violatesAvoid } from './replanValidate';
@@ -187,8 +187,15 @@ function applyDeterministic(req: ReplanRequest, targets: EditTarget[]): Itinerar
 function applyModelSlots(req: ReplanRequest, targets: EditTarget[], answer: unknown, ctx: ToolContext): Itinerary {
   const it = clone(req.itinerary);
   const slotsOut: any[] = Array.isArray((answer as any)?.slots) ? (answer as any).slots : [];
-  const knownIds = new Set<string>();
-  for (const d of req.itinerary.days) for (const s of d.slots) for (const p of s.places) knownIds.add(p.id);
+  const originalById = new Map<string, Place>();
+  for (const d of req.itinerary.days) for (const s of d.slots) for (const p of s.places) originalById.set(p.id, p);
+  // A returned entry is a copy of a fixed stop only when its id AND name match an
+  // existing stop. Models often reuse the target's id for its replacement; that
+  // is a new stop, not a copy (it used to be dropped as "no stop was changed").
+  const fixedCopy = (raw: any): Place | undefined => {
+    const o = originalById.get(String(raw?.id ?? ''));
+    return o && nameMatches(o.name, String(raw?.name ?? '')) ? o : undefined;
+  };
   const normalise = (raw: any): Place | null => {
     const name = String(raw?.name ?? '').trim();
     if (!name) return null;
@@ -225,7 +232,7 @@ function applyModelSlots(req: ReplanRequest, targets: EditTarget[], answer: unkn
     if (!out) continue;
     const returned: any[] = Array.isArray(out.places) ? out.places : [];
     const original = req.itinerary.days.find(d => d.dayNumber === t.dayNumber)!.slots.find(s => s.period === t.period)?.places ?? [];
-    const newOnes = returned.filter(p => !knownIds.has(String(p?.id))).map(normalise).filter((p): p is Place => !!p);
+    const newOnes = returned.filter(p => !fixedCopy(p)).map(normalise).filter((p): p is Place => !!p);
 
     if (t.slotId) {
       // Stop-level: swap that one stop for the new ones, keep everything else as it was.
@@ -240,8 +247,8 @@ function applyModelSlots(req: ReplanRequest, targets: EditTarget[], answer: unkn
       // Whole-period replace: the returned order, with fixed stops (the user's keep list) copied from the original.
       const next: Place[] = [];
       for (const raw of returned) {
-        const orig = original.find(p => p.id === String(raw?.id));
-        if (orig) next.push(clone(orig));
+        const orig = fixedCopy(raw);
+        if (orig && original.some(p => p.id === orig.id)) next.push(clone(orig));
         else {
           const np = normalise(raw);
           if (np) next.push(np);
@@ -290,6 +297,29 @@ export async function replanItinerary(req: ReplanRequest, opts: ReplanOptions): 
   let attempt = 1;
   let step = 0;
   try {
+    // Seed: search for what the parser extracted before the model's first
+    // step, as a tool exchange the model sees. It then starts from real
+    // candidates instead of spending its steps on a first query.
+    const seeds = [...new Set(plan.add.map(a => seedKeywords(a.what)).filter(Boolean))].slice(0, 2);
+    if (seeds.length > 0) {
+      const record: AgentStepRecord = { step, timestamp: new Date().toISOString(), reasoning: 'Seeded search from the parsed request (no model call)', toolCalls: [], isFinal: false, segment: 'replan-seed' };
+      const calls = seeds.map((keywords, i) => ({ id: `seed-${i}`, args: { keywords, region: req.itinerary.destination, limit: 8 } }));
+      messages.push({ role: 'assistant', content: '', tool_calls: calls.map(c => ({ id: c.id, type: 'function' as const, function: { name: 'search_places', arguments: JSON.stringify(c.args) } })) });
+      for (const c of calls) {
+        let result: unknown;
+        try {
+          result = await runTool(ctx, 'search_places', c.args);
+        } catch (err: any) {
+          result = { error: err?.message ?? String(err) };
+        }
+        const ok = !(result && typeof result === 'object' && 'error' in (result as any));
+        const summary = summarise('search_places', result);
+        opts.trace?.push({ step, name: 'search_places', args: c.args, ok, resultSummary: summary });
+        record.toolCalls.push({ name: 'search_places', args: c.args, ok, resultSummary: summary });
+        messages.push({ role: 'tool', tool_call_id: c.id, content: JSON.stringify(result) });
+      }
+      opts.stepTrace?.push(record);
+    }
     while (step < maxSteps) {
       const response = await client.chat.completions.create({ model, messages, tools: toolDefinitions, tool_choice: 'auto', temperature, max_tokens: MAX_OUTPUT_TOKENS });
       addUsage(opts.usage, response);
@@ -342,6 +372,23 @@ export async function replanItinerary(req: ReplanRequest, opts: ReplanOptions): 
   } catch (err: any) {
     return { ok: false, reason: 'error', message: err?.message ?? String(err) };
   }
+}
+
+/**
+ * Turns the parser's "what" ("a dessert cafe nearby", "一个免费的公园") into
+ * search keywords: leading articles / counters and "nearby" are dropped,
+ * the rest is passed as the user wrote it.
+ */
+export function seedKeywords(what: string): string {
+  return what
+    .trim()
+    .replace(/^(a|an|the|some|another|any)\s+/i, '')
+    .replace(/\s*\b(nearby|near ?by|close ?by|around here|in the area|instead)\b\s*/gi, ' ')
+    .replace(/^(一个|一家|一处|一座|一间|几个|某个)/, '')
+    .replace(/(附近的?|周边的?|旁边的?)/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 60);
 }
 
 /** For a move, the stop's original slot counts as a target too (it loses the stop). */

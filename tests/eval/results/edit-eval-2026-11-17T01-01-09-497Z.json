@@ -1,0 +1,742 @@
+{
+  "stamp": "2026-11-17T01-01-09-497Z",
+  "summary": {
+    "cases": 10,
+    "parseIntentAccuracy": 1,
+    "parseTargetAccuracy": 1,
+    "outcomeAccuracy": 0.7,
+    "editSuccess": 0.625,
+    "checkPassRate": 0.6666666666666666,
+    "rawPreservationFirstAttempt": 1,
+    "rawPreservationLastAttempt": 1,
+    "appliedPreservation": 0.9689149560117303,
+    "meanPromptTokensWithModel": 17004.333333333332,
+    "meanDurationMsWithModel": 13602.666666666666,
+    "meanFullRegenerationPromptTokens": 137996.5,
+    "meanFullRegenerationDurationMs": 87929.6,
+    "geoapifyRequests": 24
+  },
+  "records": [
+    {
+      "id": "tokyo-replace-kappabashi-dessert",
+      "fixture": "tokyo",
+      "message": "Swap Kappabashi kitchen street on day 1 for a dessert cafe nearby",
+      "plan": {
+        "intent": "replace",
+        "targetSlots": [
+          {
+            "dayNumber": 1,
+            "period": "afternoon",
+            "slotId": "slot-tokyo-4"
+          }
+        ],
+        "add": [
+          {
+            "what": "dessert cafe nearby",
+            "type": "cafe"
+          }
+        ],
+        "keep": [],
+        "instruction": "Swap Kappabashi kitchen street on day 1 for a dessert cafe nearby"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "ok",
+      "result": {
+        "ok": false,
+        "reason": "invalid",
+        "issues": [
+          "no stop was changed"
+        ],
+        "attempt": 2
+      },
+      "candidates": [
+        {
+          "attempt": 1,
+          "preservation": {
+            "kept": 34,
+            "total": 34,
+            "rate": 1
+          },
+          "issues": [
+            "no stop was changed"
+          ],
+          "rawAnswer": "{\n  \"slots\": [\n    {\n      \"dayNumber\": 1,\n      \"period\": \"afternoon\",\n      \"places\": [\n        {\n          \"id\": \"d1p3\",\n          \"poiId\": \"d1p3\",\n          \"name\": \"Daikokuya Tempura\",\n          \"type\": \"restaurant\",\n          \"coordinates\": { \"lat\": 35.7127374, \"lng\": 139.7955918 },\n          \"estimatedCost\": 90,\n          \"duration\": 60,\n          \"aiNote\": \"Fixed stop kept as-is: the classic Edo-style tendon lunch right off Nakamise.\"\n        },\n        {\n          \"id\": \"d1p4\",\n          \"poiId\": \"geoapify:51b57460947b796140598857a3682fdb4140f00103f9019d7a6f0d01000000c0020192030f4173616b75736120556d657a6f6e6fe203236f70656e7374726565746d61703a76656e75653a6e6f64652f34353230333736393839\",\n          \"name\": \"Asakusa Umezono\",\n          \"type\": \"cafe\",\n          \"coordinates\": { \"lat\": 35.7123843, \"lng\": 139.7963354 },\n          \"estimatedCost\": 30,\n          \"duration\": 50,\n          \"aiNote\": \"A historic wagashi and anmitsu dessert cafe on Asakusa's main street, a one-minute walk from Daikokuya — a natural swap for the kitchenware street. Order the matcha anmitsu or shiratama for a proper Japanese sweet break.\"\n        }\n      ]\n    }\n  ]\n}"
+        },
+        {
+          "attempt": 2,
+          "preservation": {
+            "kept": 34,
+            "total": 34,
+            "rate": 1
+          },
+          "issues": [
+            "no stop was changed"
+          ],
+          "rawAnswer": "{\n  \"slots\": [\n    {\n      \"dayNumber\": 1,\n      \"period\": \"afternoon\",\n      \"places\": [\n        {\n          \"id\": \"d1p3\",\n          \"poiId\": \"d1p3\",\n          \"name\": \"Daikokuya Tempura\",\n          \"type\": \"restaurant\",\n          \"coordinates\": { \"lat\": 35.7127374, \"lng\": 139.7955918 },\n          \"estimatedCost\": 90,\n          \"duration\": 60,\n          \"aiNote\": \"Fixed stop kept as-is: the classic Edo-style tendon lunch just off Nakamise.\"\n        },\n        {\n          \"id\": \"d1p4\",\n          \"poiId\": \"geoapify:51b57460947b796140598857a3682fdb4140f00103f9019d7a6f0d01000000c0020192030f4173616b75736120556d657a6f6e6fe203236f70656e7374726565746d61703a76656e75653a6e6f64652f34353230333736393839\",\n          \"name\": \"Asakusa Umezono\",\n          \"type\": \"cafe\",\n          \"coordinates\": { \"lat\": 35.7123843, \"lng\": 139.7963354 },\n          \"estimatedCost\": 30,\n          \"duration\": 50,\n          \"aiNote\": \"Replaces Kappabashi kitchen street with a historic wagashi dessert cafe on Asakusa's main street, about a one-minute walk from Daikokuya. Try the matcha anmitsu or shiratama for a proper Japanese sweet break before the evening cruise.\"\n        }\n      ]\n    }\n  ]\n}"
+        }
+      ],
+      "toolCalls": 7,
+      "steps": 6,
+      "outcomeMatches": false,
+      "promptTokens": 33017,
+      "completionTokens": 1263,
+      "completions": 6,
+      "durationMs": 19813,
+      "geoapifyRequests": 5,
+      "fullRegeneration": {
+        "promptTokens": 179455,
+        "completionTokens": 8025,
+        "durationMs": 116222,
+        "steps": 8
+      }
+    },
+    {
+      "id": "tokyo-zh-replace-ginza-kids",
+      "fixture": "tokyo",
+      "message": "第 3 天下午不想逛银座，换成一个适合小孩的地方",
+      "plan": {
+        "intent": "replace",
+        "targetSlots": [
+          {
+            "dayNumber": 3,
+            "period": "afternoon",
+            "slotId": "slot-tokyo-15"
+          }
+        ],
+        "add": [
+          {
+            "what": "适合小孩的地方",
+            "type": "attraction"
+          }
+        ],
+        "keep": [
+          "slot-tokyo-14"
+        ],
+        "instruction": "第 3 天下午不想逛银座，换成一个适合小孩的地方"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "ok",
+      "result": {
+        "ok": false,
+        "reason": "invalid",
+        "issues": [
+          "no stop was changed"
+        ],
+        "attempt": 2
+      },
+      "candidates": [
+        {
+          "attempt": 1,
+          "preservation": {
+            "kept": 34,
+            "total": 34,
+            "rate": 1
+          },
+          "issues": [
+            "no stop was changed"
+          ],
+          "rawAnswer": "{\n  \"slots\": [\n    {\n      \"dayNumber\": 3,\n      \"period\": \"afternoon\",\n      \"places\": [\n        {\n          \"id\": \"d3p3\",\n          \"name\": \"Hamarikyu Gardens\",\n          \"type\": \"attraction\",\n          \"coordinates\": { \"lat\": 35.66025, \"lng\": 139.76345 },\n          \"estimatedCost\": 20,\n          \"duration\": 75,\n          \"aiNote\": \"滨离宫恩赐庭园，草地开阔、有池塘和鸭子，孩子可以跑动休息，是从筑地步行可达的过渡点。\"\n        },\n        {\n          \"id\": \"d3p4\",\n          \"poiId\": \"geoapify:513e99daad80786140592098a3c7efd54140f00103f90163ba346402000000c0020192031941727420417175617269756d2047494e5a41\",\n          \"name\": \"Art Aquarium Museum GINZA\",\n          \"type\": \"attraction\",\n          \"coordinates\": { \"lat\": 35.67138, \"lng\": 139.7657079 },\n          \"estimatedCost\": 60,\n          \"duration\": 70,\n          \"aiNote\": \"银座室内的金鱼艺术水族馆，五彩灯光和鱼缸装置对孩子很有吸引力，就在原银座六丁目一带，从滨离宫步行约 10 分钟，下雨天也不受影响。\"\n        }\n      ]\n    }\n  ]\n}"
+        },
+        {
+          "attempt": 2,
+          "preservation": {
+            "kept": 34,
+            "total": 34,
+            "rate": 1
+          },
+          "issues": [
+            "no stop was changed"
+          ],
+          "rawAnswer": "{\n  \"slots\": [\n    {\n      \"dayNumber\": 3,\n      \"period\": \"afternoon\",\n      \"places\": [\n        {\n          \"id\": \"d3p3\",\n          \"name\": \"Hamarikyu Gardens\",\n          \"type\": \"attraction\",\n          \"coordinates\": { \"lat\": 35.66025, \"lng\": 139.76345 },\n          \"estimatedCost\": 20,\n          \"duration\": 75,\n          \"aiNote\": \"滨离宫恩赐庭园，草地开阔、有池塘和鸭子，孩子可以跑动休息，是从筑地步行可达的过渡点。\"\n        },\n        {\n          \"id\": \"d3p4\",\n          \"poiId\": \"geoapify:51b33f506edb77614059524a630f48d44140f00101f90110cf400000000000c0020192030b546f6b796f20546f776572\",\n          \"name\": \"Tokyo Tower\",\n          \"type\": \"attraction\",\n          \"coordinates\": { \"lat\": 35.6584491, \"lng\": 139.745536 },\n          \"estimatedCost\": 60,\n          \"duration\": 70,\n          \"aiNote\": \"用东京塔替换银座逛街：孩子可以坐电梯登高看城市全景，塔下还有芝公园草坪和儿童游乐设施，从滨离宫打车约 10 分钟，比商场更适合小朋友。\"\n        }\n      ]\n    }\n  ]\n}"
+        }
+      ],
+      "toolCalls": 9,
+      "steps": 7,
+      "outcomeMatches": false,
+      "promptTokens": 36150,
+      "completionTokens": 1409,
+      "completions": 7,
+      "durationMs": 70612,
+      "geoapifyRequests": 9,
+      "fullRegeneration": {
+        "promptTokens": 179455,
+        "completionTokens": 8025,
+        "durationMs": 116222,
+        "steps": 8
+      }
+    },
+    {
+      "id": "tokyo-locked-tsukiji",
+      "fixture": "tokyo",
+      "message": "Replace Tsukiji Outer Market with something less crowded",
+      "plan": {
+        "intent": "replace",
+        "targetSlots": [
+          {
+            "dayNumber": 3,
+            "period": "morning",
+            "slotId": "slot-tokyo-12"
+          }
+        ],
+        "add": [
+          {
+            "what": "something less crowded than Tsukiji Outer Market",
+            "type": "attraction"
+          }
+        ],
+        "keep": [],
+        "instruction": "Replace Tsukiji Outer Market with something less crowded"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "locked",
+      "result": {
+        "ok": false,
+        "reason": "locked",
+        "lockedSlotIds": [
+          "slot-tokyo-12"
+        ]
+      },
+      "candidates": [],
+      "toolCalls": 0,
+      "steps": 0,
+      "outcomeMatches": true,
+      "promptTokens": 1622,
+      "completionTokens": 61,
+      "completions": 1,
+      "durationMs": 1192,
+      "geoapifyRequests": 0,
+      "fullRegeneration": {
+        "promptTokens": 179455,
+        "completionTokens": 8025,
+        "durationMs": 116222,
+        "steps": 8
+      }
+    },
+    {
+      "id": "tokyo-move-skytree",
+      "fixture": "tokyo",
+      "message": "Move Tokyo Skytree to the evening of day 2",
+      "plan": {
+        "intent": "move",
+        "targetSlots": [
+          {
+            "dayNumber": 2,
+            "period": "evening"
+          }
+        ],
+        "add": [],
+        "keep": [
+          "slot-tokyo-6"
+        ],
+        "instruction": "Move Tokyo Skytree to the evening of day 2"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "ok",
+      "result": {
+        "ok": true,
+        "attempt": 1,
+        "modelCalled": false,
+        "changed": 0,
+        "removed": 0
+      },
+      "candidates": [],
+      "toolCalls": 0,
+      "steps": 0,
+      "preservationApplied": {
+        "kept": 33,
+        "total": 33,
+        "rate": 1
+      },
+      "checks": [
+        {
+          "check": {
+            "type": "placeInPeriod",
+            "name": "Tokyo Skytree",
+            "dayNumber": 2,
+            "period": "evening"
+          },
+          "pass": true,
+          "detail": "Tokyo Skytree in day 2 evening"
+        },
+        {
+          "check": {
+            "type": "placeNotInPeriod",
+            "name": "Tokyo Skytree",
+            "dayNumber": 1,
+            "period": "evening"
+          },
+          "pass": true,
+          "detail": "Tokyo Skytree not in day 1 evening"
+        }
+      ],
+      "outcomeMatches": true,
+      "promptTokens": 1620,
+      "completionTokens": 37,
+      "completions": 1,
+      "durationMs": 762,
+      "geoapifyRequests": 0,
+      "fullRegeneration": {
+        "promptTokens": 179455,
+        "completionTokens": 8025,
+        "durationMs": 116222,
+        "steps": 8
+      }
+    },
+    {
+      "id": "kyoto-remove-doutor",
+      "fixture": "kyoto",
+      "message": "Remove Doutor Coffee Shop from day 3",
+      "plan": {
+        "intent": "remove",
+        "targetSlots": [
+          {
+            "dayNumber": 3,
+            "period": "evening",
+            "slotId": "slot-kyoto-19"
+          }
+        ],
+        "add": [],
+        "keep": [],
+        "instruction": "Remove Doutor Coffee Shop from day 3"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "ok",
+      "result": {
+        "ok": true,
+        "attempt": 1,
+        "modelCalled": false,
+        "changed": 0,
+        "removed": 1
+      },
+      "candidates": [],
+      "toolCalls": 0,
+      "steps": 0,
+      "preservationApplied": {
+        "kept": 31,
+        "total": 31,
+        "rate": 1
+      },
+      "checks": [
+        {
+          "check": {
+            "type": "noKeyword",
+            "keywords": [
+              "Doutor"
+            ]
+          },
+          "pass": true,
+          "detail": "none"
+        }
+      ],
+      "outcomeMatches": true,
+      "promptTokens": 1487,
+      "completionTokens": 49,
+      "completions": 1,
+      "durationMs": 687,
+      "geoapifyRequests": 0,
+      "fullRegeneration": {
+        "promptTokens": 118443,
+        "completionTokens": 7952,
+        "durationMs": 107208,
+        "steps": 9
+      }
+    },
+    {
+      "id": "kyoto-zh-avoid-temples",
+      "fixture": "kyoto",
+      "message": "第 4 天上午的天龙寺换一个不是寺庙的地方",
+      "plan": {
+        "intent": "replace",
+        "targetSlots": [
+          {
+            "dayNumber": 4,
+            "period": "morning",
+            "slotId": "slot-kyoto-22"
+          }
+        ],
+        "add": [
+          {
+            "what": "不是寺庙的地方",
+            "type": "attraction"
+          }
+        ],
+        "keep": [
+          "slot-kyoto-21"
+        ],
+        "instruction": "第 4 天上午的天龙寺换一个不是寺庙的地方"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "ok",
+      "result": {
+        "ok": true,
+        "attempt": 1,
+        "modelCalled": true,
+        "changed": 1,
+        "removed": 1
+      },
+      "candidates": [
+        {
+          "attempt": 1,
+          "preservation": {
+            "kept": 31,
+            "total": 31,
+            "rate": 1
+          },
+          "issues": [],
+          "rawAnswer": "{\n  \"slots\": [\n    {\n      \"dayNumber\": 4,\n      \"period\": \"morning\",\n      \"places\": [\n        {\n          \"id\": \"k4a\",\n          \"poiId\": \"k4a\",\n          \"name\": \"Arashiyama Bamboo Grove\",\n          \"type\": \"attraction\",\n          \"coordinates\": { \"lat\": 35.0167419, \"lng\": 135.6711482 },\n          \"estimatedCost\": 0,\n          \"duration\": 75,\n          \"aiNote\": \"竹林小径是岚山最经典的免费散步路线，清晨人少光线好，适合作为一天的开始。\"\n        },\n        {\n          \"id\": \"k4b-new-kimono-forest\",\n          \"poiId\": \"geoapify:51766c04e2b5f5604059a0ee4d1df5814140f00103f90131c427a001000000c0020192030d4b696d6f6e6f20466f72657374\",\n          \"name\": \"Kimono Forest\",\n          \"type\": \"attraction\",\n          \"coordinates\": { \"lat\": 35.0152928, \"lng\": 135.6784525 },\n          \"estimatedCost\": 0,\n          \"duration\": 45,\n          \"aiNote\": \"用天龙寺替换为岚电岚山站内的「和服森林」——600 根友禅柱灯装置，免费开放、不是寺庙，从竹林步行约 8 分钟即到，正好衔接午餐。\"\n        }\n      ]\n    }\n  ]\n}"
+        }
+      ],
+      "toolCalls": 5,
+      "steps": 4,
+      "preservationApplied": {
+        "kept": 29,
+        "total": 31,
+        "rate": 0.9354838709677419
+      },
+      "checks": [
+        {
+          "check": {
+            "type": "noNewKeyword",
+            "keywords": [
+              "temple",
+              "寺",
+              "shrine",
+              "神社",
+              "-ji",
+              " ji"
+            ]
+          },
+          "pass": false,
+          "detail": "Kimono Forest"
+        }
+      ],
+      "outcomeMatches": true,
+      "promptTokens": 11759,
+      "completionTokens": 697,
+      "completions": 4,
+      "durationMs": 11030,
+      "geoapifyRequests": 4,
+      "fullRegeneration": {
+        "promptTokens": 118443,
+        "completionTokens": 7952,
+        "durationMs": 107208,
+        "steps": 9
+      }
+    },
+    {
+      "id": "kyoto-add-matcha",
+      "fixture": "kyoto",
+      "message": "Add a matcha dessert place to the afternoon of day 5",
+      "plan": {
+        "intent": "add",
+        "targetSlots": [
+          {
+            "dayNumber": 5,
+            "period": "afternoon"
+          }
+        ],
+        "add": [
+          {
+            "what": "matcha dessert place",
+            "type": "cafe"
+          }
+        ],
+        "keep": [],
+        "instruction": "Add a matcha dessert place to the afternoon of day 5"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "ok",
+      "result": {
+        "ok": false,
+        "reason": "invalid",
+        "issues": [
+          "no stop was changed"
+        ],
+        "attempt": 2
+      },
+      "candidates": [
+        {
+          "attempt": 1,
+          "preservation": {
+            "kept": 30,
+            "total": 30,
+            "rate": 1
+          },
+          "issues": [
+            "no stop was changed"
+          ],
+          "rawAnswer": "{\"slots\":[{\"dayNumber\":5,\"period\":\"afternoon\",\"places\":[{\"id\":\"k5c\",\"poiId\":\"geoapify:51ff6ecb919ff860405920d84c1993804140f00103f90141b37a9802000000c0020192030c4d616363686120486f757365\",\"name\":\"Maccha House\",\"type\":\"cafe\",\"coordinates\":{\"lat\":35.0044891,\"lng\":135.7694787},\"estimatedCost\":90,\"duration\":45,\"aiNote\":\"Swapped in for the tea house: Maccha House is a well-known matcha dessert specialist (matcha tiramisu, parfaits, lattes) just a two-minute walk from Nishiki Market, so it slots neatly into the afternoon without extra travel.\"},{\"id\":\"k5d\",\"poiId\":\"geoapify:5126602aecd8f860405947edd9ce527f4140f00103f901fdb8eb3f01000000c00201920317e68ab9e88cb6e382abe38395e382a7206368612d636861\",\"name\":\"抹茶カフェ cha-cha\",\"type\":\"cafe\",\"coordinates\":{\"lat\":34.9947146,\"lng\":135.7764798},\"estimatedCost\":80,\"duration\":45,\"aiNote\":\"A cosy Higashiyama matcha cafe for a second, more traditional dessert stop with soft-serve and warabi-mochi, and it sits on the way toward the evening stops near Kyoto Station.\"}]}]}"
+        },
+        {
+          "attempt": 2,
+          "preservation": {
+            "kept": 30,
+            "total": 30,
+            "rate": 1
+          },
+          "issues": [
+            "no stop was changed"
+          ],
+          "rawAnswer": "{\"slots\":[{\"dayNumber\":5,\"period\":\"afternoon\",\"places\":[{\"id\":\"k5c\",\"poiId\":\"geoapify:51ff6ecb919ff860405920d84c1993804140f00103f90141b37a9802000000c0020192030c4d616363686120486f757365\",\"name\":\"Maccha House\",\"type\":\"cafe\",\"coordinates\":{\"lat\":35.0044891,\"lng\":135.7694787},\"estimatedCost\":90,\"duration\":45,\"aiNote\":\"New matcha dessert stop added to the afternoon: Maccha House is famous for matcha tiramisu and parfaits and is a two-minute walk from Nishiki Market, so it fits right after lunch with no detour.\"},{\"id\":\"k5d\",\"poiId\":\"geoapify:5126602aecd8f860405947edd9ce527f4140f00103f901fdb8eb3f01000000c00201920317e68ab9e382abe38395e382a7206368612d636861\",\"name\":\"抹茶カフェ cha-cha\",\"type\":\"cafe\",\"coordinates\":{\"lat\":34.9947146,\"lng\":135.7764798},\"estimatedCost\":80,\"duration\":45,\"aiNote\":\"Replaces the plain tea house with a dedicated matcha dessert cafe in Higashiyama, serving matcha soft-serve and warabi-mochi; it also sits on the way south toward the evening stops near Kyoto Station.\"}]}]}"
+        }
+      ],
+      "toolCalls": 3,
+      "steps": 5,
+      "outcomeMatches": false,
+      "promptTokens": 14845,
+      "completionTokens": 989,
+      "completions": 5,
+      "durationMs": 13746,
+      "geoapifyRequests": 6,
+      "fullRegeneration": {
+        "promptTokens": 118443,
+        "completionTokens": 7952,
+        "durationMs": 107208,
+        "steps": 9
+      }
+    },
+    {
+      "id": "hefei-zh-replace-fish",
+      "fixture": "hefei",
+      "message": "把第 2 天晚上的臭鳜鱼换成清淡一点的餐厅",
+      "plan": {
+        "intent": "replace",
+        "targetSlots": [
+          {
+            "dayNumber": 2,
+            "period": "evening",
+            "slotId": "slot-hefei-14"
+          }
+        ],
+        "add": [
+          {
+            "what": "清淡一点的餐厅",
+            "type": "restaurant"
+          }
+        ],
+        "keep": [],
+        "instruction": "把第 2 天晚上的臭鳜鱼换成清淡一点的餐厅"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "ok",
+      "result": {
+        "ok": true,
+        "attempt": 2,
+        "modelCalled": true,
+        "changed": 1,
+        "removed": 1
+      },
+      "candidates": [
+        {
+          "attempt": 1,
+          "preservation": {
+            "kept": 13,
+            "total": 13,
+            "rate": 1
+          },
+          "issues": [
+            "no stop was changed"
+          ],
+          "rawAnswer": "{\"slots\":[{\"dayNumber\":2,\"period\":\"evening\",\"places\":[{\"id\":\"d2e1\",\"poiId\":\"B0KAGCPU6V\",\"name\":\"金喜·粤菜融合菜餐厅(新粮仓店)\",\"type\":\"restaurant\",\"coordinates\":{\"lat\":31.838643,\"lng\":117.219338},\"estimatedCost\":100,\"duration\":90,\"aiNote\":\"把重口味的臭鳜鱼换成粤式融合菜，以清蒸、炖汤为主，口味清淡不油腻，适合晚上慢吃。餐厅位于新粮仓文创街区，从万达广场天鹅湖店打车约15分钟，吃完还能在园区里散步消食。\"}]}]}"
+        },
+        {
+          "attempt": 2,
+          "preservation": {
+            "kept": 13,
+            "total": 13,
+            "rate": 1
+          },
+          "issues": [],
+          "rawAnswer": "{\"slots\":[{\"dayNumber\":2,\"period\":\"evening\",\"places\":[{\"id\":\"d2e1-new\",\"poiId\":\"B0KAGCPU6V\",\"name\":\"金喜·粤菜融合菜餐厅(新粮仓店)\",\"type\":\"restaurant\",\"coordinates\":{\"lat\":31.838643,\"lng\":117.219338},\"estimatedCost\":100,\"duration\":90,\"aiNote\":\"把重口味的臭鳜鱼换成粤式融合菜，以清蒸、炖汤为主，口味清淡不油腻，正合晚上想吃清淡的需求。餐厅在新粮仓文创街区，从万达广场天鹅湖店打车约15分钟，吃完还能在园区散步消食。\"}]}]}"
+        }
+      ],
+      "toolCalls": 7,
+      "steps": 6,
+      "preservationApplied": {
+        "kept": 13,
+        "total": 13,
+        "rate": 1
+      },
+      "checks": [
+        {
+          "check": {
+            "type": "newPlaceType",
+            "types": [
+              "restaurant"
+            ]
+          },
+          "pass": true,
+          "detail": "all match"
+        },
+        {
+          "check": {
+            "type": "noKeyword",
+            "keywords": [
+              "臭鳜鱼"
+            ]
+          },
+          "pass": false,
+          "detail": "罍+小吃(罍街店), 金喜·粤菜融合菜餐厅(新粮仓店)"
+        }
+      ],
+      "outcomeMatches": true,
+      "promptTokens": 25504,
+      "completionTokens": 747,
+      "completions": 6,
+      "durationMs": 18199,
+      "geoapifyRequests": 0,
+      "fullRegeneration": {
+        "promptTokens": 102272,
+        "completionTokens": 4770,
+        "durationMs": 30928,
+        "steps": 7
+      }
+    },
+    {
+      "id": "hefei-zh-add-free-park-budget",
+      "fixture": "hefei",
+      "message": "第 1 天下午加一个免费的公园",
+      "plan": {
+        "intent": "add",
+        "targetSlots": [
+          {
+            "dayNumber": 1,
+            "period": "afternoon"
+          }
+        ],
+        "add": [
+          {
+            "what": "免费的公园",
+            "type": "attraction"
+          }
+        ],
+        "keep": [],
+        "instruction": "第 1 天下午加一个免费的公园"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "ok",
+      "result": {
+        "ok": true,
+        "attempt": 1,
+        "modelCalled": true,
+        "changed": 1,
+        "removed": 0
+      },
+      "candidates": [
+        {
+          "attempt": 1,
+          "preservation": {
+            "kept": 11,
+            "total": 11,
+            "rate": 1
+          },
+          "issues": [],
+          "rawAnswer": "{\"slots\":[{\"dayNumber\":1,\"period\":\"afternoon\",\"places\":[{\"id\":\"d1a1\",\"name\":\"庐州烤鸭店(总店)\",\"type\":\"restaurant\",\"coordinates\":{\"lat\":31.864858,\"lng\":117.289336},\"estimatedCost\":70,\"duration\":60,\"aiNote\":\"保留原午餐安排，品尝合肥老字号庐州烤鸭，为下午的公园漫步补充体力。\"},{\"id\":\"d1a2\",\"name\":\"包公园\",\"type\":\"attraction\",\"coordinates\":{\"lat\":31.856782,\"lng\":117.294805},\"estimatedCost\":50,\"duration\":120,\"aiNote\":\"包公故里核心景点，下午沿包河漫步、看清风阁，与上午的逍遥津、李鸿章故居同属老城庐阳一线。\"},{\"id\":\"d1a3\",\"name\":\"合意咖啡\",\"type\":\"cafe\",\"coordinates\":{\"lat\":31.814626,\"lng\":117.221077},\"estimatedCost\":35,\"duration\":45,\"aiNote\":\"下午茶歇点，之后可顺路前往罍街，衔接晚间行程。\"},{\"id\":\"d1a4\",\"poiId\":\"B0FFLA7X0M\",\"name\":\"罍街公园\",\"type\":\"attraction\",\"coordinates\":{\"lat\":31.816446,\"lng\":117.297353},\"estimatedCost\":0,\"duration\":45,\"aiNote\":\"免费开放的城市公园，紧邻罍街，正好在傍晚逛罍街前散步消食，不增加任何门票开销。\"}]}]}"
+        }
+      ],
+      "toolCalls": 5,
+      "steps": 4,
+      "preservationApplied": {
+        "kept": 10,
+        "total": 11,
+        "rate": 0.9090909090909091
+      },
+      "checks": [
+        {
+          "check": {
+            "type": "minNewPlaces",
+            "value": 1
+          },
+          "pass": true,
+          "detail": "1 new"
+        },
+        {
+          "check": {
+            "type": "maxNewPlaceCost",
+            "value": 20
+          },
+          "pass": true,
+          "detail": "ok"
+        },
+        {
+          "check": {
+            "type": "maxDayCostPerPerson",
+            "dayNumber": 1,
+            "value": 330
+          },
+          "pass": false,
+          "detail": "¥525"
+        }
+      ],
+      "outcomeMatches": true,
+      "promptTokens": 13750,
+      "completionTokens": 648,
+      "completions": 4,
+      "durationMs": 11579,
+      "geoapifyRequests": 0,
+      "fullRegeneration": {
+        "promptTokens": 102272,
+        "completionTokens": 4770,
+        "durationMs": 30928,
+        "steps": 7
+      }
+    },
+    {
+      "id": "hefei-unclear",
+      "fixture": "hefei",
+      "message": "make it better",
+      "plan": {
+        "intent": "unclear",
+        "targetSlots": [],
+        "add": [],
+        "keep": [],
+        "instruction": "make it better",
+        "question": "Which day or stop would you like me to improve, and what kind of change do you have in mind (e.g., swap an attraction, add a restaurant, or adjust the pace)?"
+      },
+      "parse": {
+        "intent": true,
+        "target": true
+      },
+      "expectResult": "none",
+      "outcomeMatches": true,
+      "promptTokens": 921,
+      "completionTokens": 63,
+      "completions": 1,
+      "durationMs": 985,
+      "geoapifyRequests": 0,
+      "fullRegeneration": {
+        "promptTokens": 102272,
+        "completionTokens": 4770,
+        "durationMs": 30928,
+        "steps": 7
+      }
+    }
+  ]
+}

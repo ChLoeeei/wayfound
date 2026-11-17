@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Agent panel tabs</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 800px; height: 860px; box-sizing: border-box; padding: 24px; background: #F4F4F1; font-family: Inter, system-ui, sans-serif; color: #16181D; font-size: 14px; line-height: 1.45; display: flex; gap: 16px">
+
+<aside aria-label="My preferences" style="flex: 1 1 0; min-width: 0; background: #FFFFFF; border: 1px solid #E3E4E8; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 14px">
+<div role="tablist" aria-label="Agent panel sections" style="display: flex; gap: 4px; padding: 4px; background: #F4F4F1; border-radius: 10px">
+<button type="button" role="tab" aria-selected="false" style="flex: 1 1 0; min-height: 36px; border: 0; border-radius: 8px; background: transparent; color: #5B616E; font: inherit; cursor: pointer">Lessons</button>
+<button type="button" role="tab" aria-selected="true" style="flex: 1 1 0; min-height: 36px; border: 0; border-radius: 8px; background: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">My preferences</button>
+<button type="button" role="tab" aria-selected="false" style="flex: 1 1 0; min-height: 36px; border: 0; border-radius: 8px; background: transparent; color: #5B616E; font: inherit; cursor: pointer">Trace</button>
+</div>
+<p style="margin: 0; color: #5B616E; font-size: 13px">Saved to your account from what you told me. Only you see these, and they never become shared lessons.</p>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid #E3E4E8; border-radius: 10px">
+<div style="flex: 1 1 auto; min-width: 0"><div style="font-size: 12px; color: #5B616E">Pace</div><div style="font-weight: 500">Relaxed, no early starts</div></div>
+<button type="button" aria-label="Edit pace" style="width: 36px; height: 36px; border: 1px solid #D4D6DC; border-radius: 8px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16181D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
+<button type="button" aria-label="Delete pace" style="width: 36px; height: 36px; border: 1px solid #D4D6DC; border-radius: 8px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16181D" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg></button>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid #E3E4E8; border-radius: 10px">
+<div style="flex: 1 1 auto; min-width: 0"><div style="font-size: 12px; color: #5B616E">Interests</div><div style="font-weight: 500">Food, museums</div></div>
+<button type="button" aria-label="Edit interests" style="width: 36px; height: 36px; border: 1px solid #D4D6DC; border-radius: 8px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16181D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
+<button type="button" aria-label="Delete interests" style="width: 36px; height: 36px; border: 1px solid #D4D6DC; border-radius: 8px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16181D" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg></button>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid #E3E4E8; border-radius: 10px">
+<div style="flex: 1 1 auto; min-width: 0"><div style="font-size: 12px; color: #5B616E">Daily budget</div><div style="font-weight: 500">About ¥15,000 per person</div></div>
+<button type="button" aria-label="Edit daily budget" style="width: 36px; height: 36px; border: 1px solid #D4D6DC; border-radius: 8px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16181D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
+<button type="button" aria-label="Delete daily budget" style="width: 36px; height: 36px; border: 1px solid #D4D6DC; border-radius: 8px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16181D" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg></button>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid #E3E4E8; border-radius: 10px">
+<div style="flex: 1 1 auto; min-width: 0"><div style="font-size: 12px; color: #5B616E">Past trips</div><div style="font-weight: 500">Tokyo, 4 days</div></div>
+<button type="button" aria-label="Delete past trip" style="width: 36px; height: 36px; border: 1px solid #D4D6DC; border-radius: 8px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16181D" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg></button>
+</div>
+</div>
+<div style="flex: 1 1 auto"></div>
+<button type="button" style="min-height: 40px; border: 1px solid #E8B4AE; border-radius: 8px; background: #FFFFFF; color: #8F2A1E; font: inherit; font-weight: 500; cursor: pointer">Clear all preferences</button>
+<div style="font-size: 12px; color: #5B616E">Signed out? Preferences stay in this browser and move to your account when you log in.</div>
+</aside>
+
+<aside aria-label="Trace" style="flex: 1 1 0; min-width: 0; background: #FFFFFF; border: 1px solid #E3E4E8; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 14px">
+<div role="tablist" aria-label="Agent panel sections" style="display: flex; gap: 4px; padding: 4px; background: #F4F4F1; border-radius: 10px">
+<button type="button" role="tab" aria-selected="false" style="flex: 1 1 0; min-height: 36px; border: 0; border-radius: 8px; background: transparent; color: #5B616E; font: inherit; cursor: pointer">Lessons</button>
+<button type="button" role="tab" aria-selected="false" style="flex: 1 1 0; min-height: 36px; border: 0; border-radius: 8px; background: transparent; color: #5B616E; font: inherit; cursor: pointer">My preferences</button>
+<button type="button" role="tab" aria-selected="true" style="flex: 1 1 0; min-height: 36px; border: 0; border-radius: 8px; background: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Trace</button>
+</div>
+<p style="margin: 0; color: #5B616E; font-size: 13px">Every step the agent took for Day 2's edit.</p>
+<ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px">
+<li style="display: flex; gap: 10px; padding: 10px 12px; border: 1px solid #CFE3E0; background: #F3F9F8; border-radius: 10px"><span style="flex: 0 0 22px; font-weight: 600; color: #0A4F49">1</span><div><div style="font-weight: 500">Memory and lessons loaded</div><div style="font-size: 12px; color: #5B616E">4 preferences · lessons L01, L03, L04</div></div></li>
+<li style="display: flex; gap: 10px; padding: 10px 12px; border: 1px solid #E3E4E8; border-radius: 10px"><span style="flex: 0 0 22px; font-weight: 600; color: #5B616E">2</span><div><div style="font-weight: 500">Edit parsed</div><div style="font-size: 12px; color: #5B616E">Targets: Day 2, slots 3 and 4 · add: indoor</div></div></li>
+<li style="display: flex; gap: 10px; padding: 10px 12px; border: 1px solid #E3E4E8; border-radius: 10px"><span style="flex: 0 0 22px; font-weight: 600; color: #5B616E">3</span><div><div style="font-weight: 500">search_places</div><div style="font-size: 12px; color: #5B616E">"museum Ueno" · results returned</div></div></li>
+<li style="display: flex; gap: 10px; padding: 10px 12px; border: 1px solid #E3E4E8; border-radius: 10px"><span style="flex: 0 0 22px; font-weight: 600; color: #5B616E">4</span><div><div style="font-weight: 500">calculate_distance</div><div style="font-size: 12px; color: #5B616E">Slot 2 → new slot 3 → new slot 4 → slot 5</div></div></li>
+<li style="display: flex; gap: 10px; padding: 10px 12px; border: 1px solid #E3E4E8; border-radius: 10px"><span style="flex: 0 0 22px; font-weight: 600; color: #5B616E">5</span><div><div style="font-weight: 500">Replacement slots written</div><div style="font-size: 12px; color: #5B616E">2 slots changed</div></div></li>
+<li style="display: flex; gap: 10px; padding: 10px 12px; border: 1px solid #E3E4E8; border-radius: 10px"><span style="flex: 0 0 22px; font-weight: 600; color: #5B616E">6</span><div><div style="font-weight: 500">Checks passed</div><div style="font-size: 12px; color: #5B616E">Untouched slots identical · new stops grounded · travel times fit · day under budget</div></div></li>
+</ol>
+<div style="flex: 1 1 auto"></div>
+<div style="font-size: 12px; color: #5B616E">Visible in debug mode only</div>
+</aside>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":800,"height":860}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

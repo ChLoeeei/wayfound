@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const searches: any[] = [];
 let searchResults: any[] = [];
+/** When set, results depend on the keywords searched (to test the name variants). */
+let searchByKeyword: Record<string, any[]> | null = null;
 vi.mock('../../server/tools/index', () => {
   class ToolContext {
     private pois = new Map<string, any>();
@@ -18,13 +20,14 @@ vi.mock('../../server/tools/index', () => {
     toolDefinitions: [],
     runTool: async (ctx: any, name: string, args: any) => {
       searches.push({ name, args });
-      ctx.rememberPois(searchResults);
-      return { count: searchResults.length, results: searchResults };
+      const results = searchByKeyword ? (searchByKeyword[args.keywords] ?? []) : searchResults;
+      ctx.rememberPois(results);
+      return { count: results.length, results };
     },
   };
 });
 
-import { CONFIDENCE_AUTO, MAX_IMAGE_BYTES, PhotoInputError, VISION_SYSTEM_PROMPT, decodeImageDataUrl, identifyPhoto, parseVisionResult, rankCandidates, sniffImage, stripMetadata } from '../../server/photo';
+import { CONFIDENCE_AUTO, MAX_IMAGE_BYTES, PhotoInputError, VISION_SYSTEM_PROMPT, decodeImageDataUrl, identifyPhoto, parseVisionResult, rankCandidates, searchVariants, sniffImage, stripMetadata } from '../../server/photo';
 
 // --- tiny synthetic images -------------------------------------------------
 function jpegWithExif(): Buffer {
@@ -57,6 +60,7 @@ const dataUrl = (mime: string, b: Buffer) => `data:${mime};base64,${b.toString('
 beforeEach(() => {
   searches.splice(0);
   searchResults = [];
+  searchByKeyword = null;
 });
 
 describe('image intake', () => {
@@ -99,14 +103,15 @@ describe('image intake', () => {
 
 describe('vision output', () => {
   it('parses and clamps the model answer', () => {
-    expect(parseVisionResult(JSON.stringify({ name: '  Kinkaku-ji  ', city: 'Kyoto', placeType: 'attraction', visibleText: 'x'.repeat(300), confidence: 1.7 }))).toEqual({
+    expect(parseVisionResult(JSON.stringify({ name: '  Kinkaku-ji  ', nameEn: 'Golden Pavilion', city: 'Kyoto', placeType: 'attraction', visibleText: 'x'.repeat(300), confidence: 1.7 }))).toEqual({
       name: 'Kinkaku-ji',
+      nameEn: 'Golden Pavilion',
       city: 'Kyoto',
       placeType: 'attraction',
       visibleText: 'x'.repeat(200),
       confidence: 1,
     });
-    expect(parseVisionResult('garbage')).toEqual({ name: '', city: '', placeType: 'attraction', visibleText: '', confidence: 0 });
+    expect(parseVisionResult('garbage')).toEqual({ name: '', nameEn: '', city: '', placeType: 'attraction', visibleText: '', confidence: 0 });
     expect(parseVisionResult(JSON.stringify({ placeType: 'castle', confidence: 'high' })).placeType).toBe('attraction');
   });
 
@@ -135,6 +140,8 @@ describe('candidates', () => {
     expect(r.confident).toBe(true);
     expect(r.searchedIn).toBe('Kyoto');
     expect(searches[0]).toEqual({ name: 'search_places', args: { keywords: 'Kinkaku-ji', region: 'Kyoto', limit: 5 } });
+    // Room for the model's reasoning: at 400 tokens harder images came back with empty content.
+    expect(client.chat.completions.create.mock.calls[0][0].max_tokens).toBeGreaterThanOrEqual(1000);
     // The image sent to the model had its EXIF stripped.
     const sent = client.chat.completions.create.mock.calls[0][0].messages[1].content[1].image_url.url as string;
     expect(Buffer.from(sent.split(',')[1], 'base64').includes(Buffer.from('GPSLATITUDE'))).toBe(false);
@@ -153,6 +160,32 @@ describe('candidates', () => {
     const none = await identifyPhoto(mk(0.95), dataUrl('image/jpeg', jpegWithExif()), 'Kyoto');
     expect(none.candidates).toEqual([]);
     expect(none.confident).toBe(false);
+  });
+
+  it('tries the English name when the local name finds nothing, and ranks matches on either name as exact', async () => {
+    expect(searchVariants({ name: '雷門（浅草寺）', nameEn: 'Kaminarimon (Senso-ji)' })).toEqual(['雷門（浅草寺）', 'Kaminarimon (Senso-ji)', '雷門', '浅草寺', 'Kaminarimon', 'Senso-ji']);
+    expect(searchVariants({ name: 'Colosseo', nameEn: 'Colosseum' })).toEqual(['Colosseo', 'Colosseum']);
+    expect(searchVariants({ name: 'Eiffel Tower', nameEn: 'Eiffel Tower' })).toEqual(['Eiffel Tower']);
+
+    const client = { chat: { completions: { create: vi.fn().mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ name: 'Colosseo', nameEn: 'Colosseum', city: 'Rome', placeType: 'attraction', visibleText: '', confidence: 0.95 }) } }] }) } } } as any;
+    searchByKeyword = { Colosseum: [poi('c', 'Colosseum'), poi('p', 'Palatine Hill')] };
+    const r = await identifyPhoto(client, dataUrl('image/jpeg', jpegWithExif()), 'Rome', 'en');
+    expect(r.identified).toMatchObject({ name: 'Colosseo', nameEn: 'Colosseum' });
+    // "Colosseo" was tried first in both regions (city, then destination; here the same), then "Colosseum".
+    expect(searches.map(s => s.args.keywords)).toEqual(['Colosseo', 'Colosseum']);
+    expect(r.candidates.map(c => c.id)).toEqual(['c', 'p']);
+    expect(r.candidates[0].exact).toBe(true);
+    expect(r.confident).toBe(true);
+    expect(r.searchedIn).toBe('Rome');
+  });
+
+  it('falls back to the English name when the model left the local name empty', async () => {
+    const client = { chat: { completions: { create: vi.fn().mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ name: '', nameEn: 'Harrods', city: 'London', placeType: 'shopping', visibleText: '', confidence: 0.8 }) } }] }) } } } as any;
+    searchResults = [poi('h', 'Harrods')];
+    const r = await identifyPhoto(client, dataUrl('image/jpeg', jpegWithExif()), 'London');
+    expect(r.identified?.name).toBe('Harrods');
+    expect(r.candidates.map(c => c.id)).toEqual(['h']);
+    expect(r.confident).toBe(true);
   });
 
   it('skips the search when nothing was identified', async () => {

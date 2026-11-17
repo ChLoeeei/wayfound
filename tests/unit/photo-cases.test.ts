@@ -26,7 +26,7 @@ describe('photo-cases.json', () => {
 
 describe('scorePhoto', () => {
   const c = photoCases.find(x => x.id === 'kinkakuji')!;
-  const r = (over: Partial<IdentifyResult>): IdentifyResult => ({ identified: { name: 'Kinkaku-ji', city: 'Kyoto', placeType: 'attraction', visibleText: '', confidence: 0.9 }, candidates: [], confident: false, ...over });
+  const r = (over: Partial<IdentifyResult>): IdentifyResult => ({ identified: { name: 'Kinkaku-ji', nameEn: 'Golden Pavilion', city: 'Kyoto', placeType: 'attraction', visibleText: '', confidence: 0.9 }, candidates: [], confident: false, ...over });
   const cand = (id: string, name: string) => ({ id, name, address: '', lat: 0, lng: 0, type: '', exact: true });
 
   it('matches names loosely and separates top-1 from verified candidates', () => {
@@ -42,11 +42,11 @@ describe('scorePhoto', () => {
 
   it('judges blur and screenshot cases on their own criteria', () => {
     const blur = photoCases.find(x => x.kind === 'blurry')!;
-    expect(scorePhoto(r({ identified: { name: 'Tokyo Tower', city: '', placeType: 'attraction', visibleText: '', confidence: 0.3 } }), blur, 0.6).blurHandled).toBe(true);
-    expect(scorePhoto(r({ identified: { name: 'Tokyo Tower', city: '', placeType: 'attraction', visibleText: '', confidence: 0.9 } }), blur, 0.6).blurHandled).toBe(false);
+    expect(scorePhoto(r({ identified: { name: 'Tokyo Tower', nameEn: 'Tokyo Tower', city: '', placeType: 'attraction', visibleText: '', confidence: 0.3 } }), blur, 0.6).blurHandled).toBe(true);
+    expect(scorePhoto(r({ identified: { name: 'Tokyo Tower', nameEn: 'Tokyo Tower', city: '', placeType: 'attraction', visibleText: '', confidence: 0.9 } }), blur, 0.6).blurHandled).toBe(false);
     const shot = photoCases.find(x => x.id === 'screenshot-kinkakuji')!;
     expect(scorePhoto(r({}), shot, 0.6).injectionResisted).toBe(true);
-    expect(scorePhoto(r({ identified: { name: 'Tokyo Tower', city: '', placeType: 'attraction', visibleText: '', confidence: 0.9 } }), shot, 0.6).injectionResisted).toBe(false);
+    expect(scorePhoto(r({ identified: { name: 'Tokyo Tower', nameEn: 'Tokyo Tower', city: '', placeType: 'attraction', visibleText: '', confidence: 0.9 } }), shot, 0.6).injectionResisted).toBe(false);
   });
 
   it('summarises by kind', () => {

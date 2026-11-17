@@ -13,6 +13,8 @@ export interface PhotoCandidate {
 
 export interface VisionResult {
   name: string;
+  /** English / romanised form of `name`; "" when the model gave none. */
+  nameEn?: string;
   city: string;
   placeType: string;
   visibleText: string;
